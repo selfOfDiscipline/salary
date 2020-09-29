@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tyzq.salary.mapper.UserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.tyzq.salary.model.User">
+        <id column="id" property="id" />
+        <result column="user_name" property="userName" />
+        <result column="user_card" property="userCard" />
+        <result column="user_tel" property="userTel" />
+        <result column="user_account" property="userAccount" />
+        <result column="user_password" property="userPassword" />
+        <result column="user_salt" property="userSalt" />
+        <result column="user_email" property="userEmail" />
+        <result column="user_sex" property="userSex" />
+        <result column="original_address" property="originalAddress" />
+        <result column="now_address" property="nowAddress" />
+        <result column="user_entry_date" property="userEntryDate" />
+        <result column="plan_change_formal_date" property="planChangeFormalDate" />
+        <result column="reality_change_formal_date" property="realityChangeFormalDate" />
+        <result column="user_leave_date" property="userLeaveDate" />
+        <result column="user_dept_id" property="userDeptId" />
+        <result column="salary_dept_id" property="salaryDeptId" />
+        <result column="remark" property="remark" />
+        <result column="household_type" property="householdType" />
+        <result column="salary_bank_card" property="salaryBankCard" />
+        <result column="salary_bank_open" property="salaryBankOpen" />
+        <result column="salary_bank_open_name" property="salaryBankOpenName" />
+        <result column="salary_bank_open_province" property="salaryBankOpenProvince" />
+        <result column="salary_bank_open_city" property="salaryBankOpenCity" />
+        <result column="other_bank_card" property="otherBankCard" />
+        <result column="other_bank_open" property="otherBankOpen" />
+        <result column="other_bank_open_name" property="otherBankOpenName" />
+        <result column="other_bank_open_province" property="otherBankOpenProvince" />
+        <result column="other_bank_open_city" property="otherBankOpenCity" />
+        <result column="social_security_card" property="socialSecurityCard" />
+        <result column="social_security_start_date" property="socialSecurityStartDate" />
+        <result column="work_city" property="workCity" />
+        <result column="user_post_type" property="userPostType" />
+        <result column="user_rank_type" property="userRankType" />
+        <result column="allow_flag" property="allowFlag" />
+        <result column="admin_flag" property="adminFlag" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="create_id" property="createId" />
+        <result column="create_name" property="createName" />
+        <result column="create_time" property="createTime" />
+        <result column="edit_id" property="editId" />
+        <result column="edit_name" property="editName" />
+        <result column="edit_time" property="editTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_name, user_card, user_tel, user_account, user_password, user_salt, user_email, user_sex, original_address, now_address, user_entry_date, plan_change_formal_date, reality_change_formal_date, user_leave_date, user_dept_id, salary_dept_id, remark, household_type, salary_bank_card, salary_bank_open, salary_bank_open_name, salary_bank_open_province, salary_bank_open_city, other_bank_card, other_bank_open, other_bank_open_name, other_bank_open_province, other_bank_open_city, social_security_card, social_security_start_date, work_city, user_post_type, user_rank_type, allow_flag, admin_flag, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+    </sql>
+
+    <!-- 查询用户列表-->
+    <select id="selectUserList" resultType="com.tyzq.salary.model.vo.user.UserBaseResultVO">
+        SELECT
+            u.id AS id,
+            u.user_name AS userName,
+            u.user_account AS userAccount,
+            u.user_card AS userCard,
+            u.user_tel AS userTel,
+            u.user_email AS userEmail,
+            u.user_sex AS userSex,
+            u.user_entry_date AS userEntryDate,
+            u.plan_change_formal_date AS planChangeFormalDate,
+            u.work_city AS workCity,
+            u.household_type AS householdType,
+            u.user_post_type AS userPostType,
+            u.user_rank_type AS userRankType,
+            ud.standard_salary AS standardSalary,
+            ud.salary_grant_ratio AS salaryGrantRatio,
+            ud.compute_standard_salary AS computeStandardSalary,
+            ud.performance_ratio AS performanceRatio,
+            d.dept_name AS userDeptName,
+            sd.salary_dept_name AS salaryDeptName,
+            y.roleName AS roleName
+        FROM
+	        user AS u
+        LEFT JOIN user_detail AS ud ON u.id = ud.user_id
+        LEFT JOIN dept AS d ON u.user_dept_id = d.id
+        LEFT JOIN salary_dept AS sd ON u.salary_dept_id = sd.id
+        LEFT JOIN (
+                    SELECT
+                        u.id AS id,
+                        GROUP_CONCAT( r.role_name ) AS roleName
+                    FROM
+                        user AS u
+                    LEFT JOIN user_role AS ur ON u.id = ur.user_id
+                    LEFT JOIN role AS r ON r.id = ur.role_id
+                  ) AS y ON y.id = u.id
+        <where>
+            u.delete_flag = 0
+            AND u.admin_flag = 0
+            <if test="userQueryVO.userName != null and userQueryVO.userName != ''">
+                AND u.user_name like #{userQueryVO.userName}
+            </if>
+            <if test="userQueryVO.userRankType != null">
+                AND u.user_rank_type = #{userQueryVO.userRankType}
+            </if>
+            <if test="userQueryVO.userPostType != null">
+                AND u.user_post_type = #{userQueryVO.userPostType}
+            </if>
+            <if test="userQueryVO.userSalaryDeptId != null">
+                AND u.salary_dept_id = #{userQueryVO.userSalaryDeptId}
+            </if>
+            <if test="userQueryVO.userSalaryDeptId == null">
+                AND u.salary_dept_id in
+                    <foreach collection="salaryDeptIdList" item="item" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询用户薪资部分列表-->
+    <select id="selectUserDetailList" resultType="com.tyzq.salary.model.vo.user.UserDetailVO">
+        SELECT
+            ud.id AS id,
+            ud.user_id AS userId,
+            u.user_name AS userName,
+            u.household_type AS householdType,
+            u.social_security_start_date AS socialSecurityStartDate,
+            ud.user_account AS userAccount,
+            ud.standard_salary AS standardSalary,
+            ud.salary_grant_ratio AS salaryGrantRatio,
+            ud.compute_standard_salary AS computeStandardSalary,
+            ud.compute_probation_salary AS computeProbationSalary,
+            ud.person_sick_standard AS personSickStandard,
+            ud.performance_ratio AS performanceRatio,
+            ud.base_salary AS baseSalary,
+            ud.performance_salary AS performanceSalary,
+            ud.bank_salary AS bankSalary,
+            ud.other_bank_salary AS otherBankSalary,
+            ud.stipulation_start_tax_money AS stipulationStartTaxMoney,
+            ud.post_salary AS postSalary,
+            ud.post_subsidy AS postSubsidy,
+            ud.other_subsidy AS otherSubsidy,
+            ud.child_education AS childEducation,
+            ud.continue_education AS continueEducation,
+            ud.home_loan_interest AS homeLoanInterest,
+            ud.home_rents AS homeRents,
+            ud.support_parents AS supportParents,
+            ud.other_deduct AS otherDeduct,
+            ud.special_deduct_total AS specialDeductTotal,
+            ud.yangl_shiy_base_money AS yanglShiyBaseMoney,
+            ud.yangl_person_ratio AS yanglPersonRatio,
+            ud.yangl_company_ratio AS yanglCompanyRatio,
+            ud.shiy_person_ratio AS shiyPersonRatio,
+            ud.shiy_company_ratio AS shiyCompanyRatio,
+            ud.yil_gongs_shengy_base_money AS yilGongsShengyBaseMoney,
+            ud.gongs_person_ratio AS gongsPersonRatio,
+            ud.gongs_company_ratio AS gongsCompanyRatio,
+            ud.shengy_person_ratio AS shengyPersonRatio,
+            ud.shengy_company_ratio AS shengyCompanyRatio,
+            ud.yil_person_ratio AS yilPersonRatio,
+            ud.yil_person_add_money AS yilPersonAddMoney,
+            ud.yil_company_ratio AS yilCompanyRatio,
+            ud.housing_fund_base_money AS housingFundBaseMoney,
+            ud.housing_fund_person_ratio AS housingFundPersonRatio,
+            ud.housing_fund_company_ratio AS housingFundCompanyRatio,
+            ud.total_income_money AS totalIncomeMoney,
+            ud.total_taxable_self_money AS totalTaxableSelfMoney,
+            ud.total_already_taxable_money AS totalAlreadyTaxableMoney,
+            ud.total_deduct_money AS totalDeductMoney,
+            ud.total_special_deduct_money AS totalSpecialDeductMoney,
+            ud.total_child_education AS totalChildEducation,
+            ud.total_continue_education AS totalContinueEducation,
+            ud.total_home_loan_interest AS totalHomeLoanInterest,
+            ud.total_home_rents AS totalHomeRents,
+            ud.total_support_parents AS totalSupportParents,
+            ud.total_other_deduct AS totalOtherDeduct,
+            ud.add_computer_subsidy AS addComputerSubsidy,
+            ud.add_other_subsidy AS addOtherSubsidy,
+            ud.deduct_sick AS deductSick,
+            ud.deduct_thing AS deductThing,
+            ud.deduct_other AS deductOther,
+            d.dept_name AS userDeptName,
+            sd.salary_dept_name AS salaryDeptName,
+            y.roleName AS roleName
+        FROM
+	        user AS u
+        LEFT JOIN user_detail AS ud ON u.id = ud.user_id
+        LEFT JOIN dept AS d ON u.user_dept_id = d.id
+        LEFT JOIN salary_dept AS sd ON u.salary_dept_id = sd.id
+        LEFT JOIN (
+                    SELECT
+                        u.id AS id,
+                        GROUP_CONCAT( r.role_name ) AS roleName
+                    FROM
+                        user AS u
+                    LEFT JOIN user_role AS ur ON u.id = ur.user_id
+                    LEFT JOIN role AS r ON r.id = ur.role_id
+                  ) AS y ON y.id = u.id
+        <where>
+            u.delete_flag = 0
+            AND u.admin_flag = 0
+            <if test="userPostType == null">
+                AND u.user_post_type != 2
+            </if>
+            <if test="userPostType != null">
+                AND u.user_post_type = #{userPostType}
+            </if>
+            AND u.salary_dept_id in
+                <foreach collection="salaryDeptIdList" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+        </where>
+    </select>
+</mapper>

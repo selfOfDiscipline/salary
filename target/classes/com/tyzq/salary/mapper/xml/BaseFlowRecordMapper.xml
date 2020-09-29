@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tyzq.salary.mapper.BaseFlowRecordMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.tyzq.salary.model.BaseFlowRecord">
+        <id column="id" property="id" />
+        <result column="base_flow_config_id" property="baseFlowConfigId" />
+        <result column="base_flow_config_detail_id" property="baseFlowConfigDetailId" />
+        <result column="node_name" property="nodeName" />
+        <result column="approver_id" property="approverId" />
+        <result column="approver_account" property="approverAccount" />
+        <result column="approver_name" property="approverName" />
+        <result column="flow_code" property="flowCode" />
+        <result column="application_code" property="applicationCode" />
+        <result column="approver_status" property="approverStatus" />
+        <result column="approver_opinion" property="approverOpinion" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="create_id" property="createId" />
+        <result column="create_name" property="createName" />
+        <result column="create_time" property="createTime" />
+        <result column="edit_id" property="editId" />
+        <result column="edit_name" property="editName" />
+        <result column="edit_time" property="editTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, base_flow_config_id, base_flow_config_detail_id, node_name, approver_id, approver_account, approver_name, flow_code, application_code, approver_status, approver_opinion, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+    </sql>
+
+</mapper>

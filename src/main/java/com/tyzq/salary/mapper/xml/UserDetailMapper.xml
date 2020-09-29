@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tyzq.salary.mapper.UserDetailMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.tyzq.salary.model.UserDetail">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="user_account" property="userAccount" />
+        <result column="standard_salary" property="standardSalary" />
+        <result column="salary_grant_ratio" property="salaryGrantRatio" />
+        <result column="compute_standard_salary" property="computeStandardSalary" />
+        <result column="compute_probation_salary" property="computeProbationSalary" />
+        <result column="person_sick_standard" property="personSickStandard" />
+        <result column="performance_ratio" property="performanceRatio" />
+        <result column="base_salary" property="baseSalary" />
+        <result column="performance_salary" property="performanceSalary" />
+        <result column="bank_salary" property="bankSalary" />
+        <result column="other_bank_salary" property="otherBankSalary" />
+        <result column="stipulation_start_tax_money" property="stipulationStartTaxMoney" />
+        <result column="post_salary" property="postSalary" />
+        <result column="post_subsidy" property="postSubsidy" />
+        <result column="other_subsidy" property="otherSubsidy" />
+        <result column="child_education" property="childEducation" />
+        <result column="continue_education" property="continueEducation" />
+        <result column="home_loan_interest" property="homeLoanInterest" />
+        <result column="home_rents" property="homeRents" />
+        <result column="support_parents" property="supportParents" />
+        <result column="other_deduct" property="otherDeduct" />
+        <result column="special_deduct_total" property="specialDeductTotal" />
+        <result column="yangl_shiy_base_money" property="yanglShiyBaseMoney" />
+        <result column="yangl_person_ratio" property="yanglPersonRatio" />
+        <result column="yangl_company_ratio" property="yanglCompanyRatio" />
+        <result column="shiy_person_ratio" property="shiyPersonRatio" />
+        <result column="shiy_company_ratio" property="shiyCompanyRatio" />
+        <result column="yil_gongs_shengy_base_money" property="yilGongsShengyBaseMoney" />
+        <result column="gongs_person_ratio" property="gongsPersonRatio" />
+        <result column="gongs_company_ratio" property="gongsCompanyRatio" />
+        <result column="shengy_person_ratio" property="shengyPersonRatio" />
+        <result column="shengy_company_ratio" property="shengyCompanyRatio" />
+        <result column="yil_person_ratio" property="yilPersonRatio" />
+        <result column="yil_person_add_money" property="yilPersonAddMoney" />
+        <result column="yil_company_ratio" property="yilCompanyRatio" />
+        <result column="housing_fund_base_money" property="housingFundBaseMoney" />
+        <result column="housing_fund_person_ratio" property="housingFundPersonRatio" />
+        <result column="housing_fund_company_ratio" property="housingFundCompanyRatio" />
+        <result column="total_income_money" property="totalIncomeMoney" />
+        <result column="total_taxable_self_money" property="totalTaxableSelfMoney" />
+        <result column="total_already_taxable_money" property="totalAlreadyTaxableMoney" />
+        <result column="total_deduct_money" property="totalDeductMoney" />
+        <result column="total_special_deduct_money" property="totalSpecialDeductMoney" />
+        <result column="total_child_education" property="totalChildEducation" />
+        <result column="total_continue_education" property="totalContinueEducation" />
+        <result column="total_home_loan_interest" property="totalHomeLoanInterest" />
+        <result column="total_home_rents" property="totalHomeRents" />
+        <result column="total_support_parents" property="totalSupportParents" />
+        <result column="total_other_deduct" property="totalOtherDeduct" />
+        <result column="add_computer_subsidy" property="addComputerSubsidy" />
+        <result column="add_other_subsidy" property="addOtherSubsidy" />
+        <result column="deduct_sick" property="deductSick" />
+        <result column="deduct_thing" property="deductThing" />
+        <result column="deduct_other" property="deductOther" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="create_id" property="createId" />
+        <result column="create_name" property="createName" />
+        <result column="create_time" property="createTime" />
+        <result column="edit_id" property="editId" />
+        <result column="edit_name" property="editName" />
+        <result column="edit_time" property="editTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, user_account, standard_salary, salary_grant_ratio, compute_standard_salary, compute_probation_salary, person_sick_standard, performance_ratio, base_salary, performance_salary, bank_salary, other_bank_salary, stipulation_start_tax_money, post_salary, post_subsidy, other_subsidy, child_education, continue_education, home_loan_interest, home_rents, support_parents, other_deduct, special_deduct_total, yangl_shiy_base_money, yangl_person_ratio, yangl_company_ratio, shiy_person_ratio, shiy_company_ratio, yil_gongs_shengy_base_money, gongs_person_ratio, gongs_company_ratio, shengy_person_ratio, shengy_company_ratio, yil_person_ratio, yil_person_add_money, yil_company_ratio, housing_fund_base_money, housing_fund_person_ratio, housing_fund_company_ratio, total_income_money, total_taxable_self_money, total_already_taxable_money, total_deduct_money, total_special_deduct_money, total_child_education, total_continue_education, total_home_loan_interest, total_home_rents, total_support_parents, total_other_deduct, add_computer_subsidy, add_other_subsidy, deduct_sick, deduct_thing, deduct_other, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+    </sql>
+
+</mapper>
