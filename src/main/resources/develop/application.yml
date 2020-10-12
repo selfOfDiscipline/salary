@@ -12,9 +12,12 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
   datasource:
-    url: jdbc:mysql://192.168.1.77:3306/salary?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=convertToNull
+    url: jdbc:mysql://118.89.249.206:3306/salary?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=convertToNull
     username: root
-    password: 123
+    password: tyzqRoot
+#    url: jdbc:mysql://192.168.1.77:3306/salary?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=convertToNull
+#    username: root
+#    password: 123
     driver-class-name: com.mysql.cj.jdbc.Driver
     druid:
       initial-size: 5 #连接池初始化大小
@@ -27,6 +30,7 @@ spring:
         login-password: druid
   redis:
     database: 6
+#    host: 118.89.249.206
     host: 192.168.1.77
     port: 6379
     password: myroot

@@ -498,4 +498,114 @@ public class UserServiceImpl implements UserService {
         tablePageVO.setDataList(dataList);
         return ApiResult.getSuccessApiResponse(tablePageVO);
     }
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:40 2020/10/12
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 修改密码
+     **/
+    @Override
+    public ApiResult updateUserPassword(UpdatePasswordVO updatePasswordVO, UserSessionVO userSessionVO) {
+// 校验
+        if (null == updatePasswordVO) {
+            return ApiResult.getFailedApiResponse("参数对象为空！");
+        }
+        // 校验类别和账号
+        if (null == updatePasswordVO.getUpdateFlag() || StringUtils.isBlank(updatePasswordVO.getAccount())) {
+            return ApiResult.getFailedApiResponse("账号为空！");
+        }
+        // 是否为总经理或副总
+        boolean adminFlag = false;
+        List<Long> roleIdList = userSessionVO.getRoleIdList();
+        if (!CollectionUtils.isEmpty(roleIdList) && (roleIdList.contains(Constants.ADMIN_ROLE_ID) || roleIdList.contains(Constants.OTHER_ROLE_ID))) {
+            adminFlag = true;
+        }
+        // 查询该用户信息
+        User user = new User();
+        user.setUserAccount(updatePasswordVO.getAccount());
+        user.setDeleteFlag(0);
+        user = userMapper.selectOne(user);
+        // 校验
+        if (null == user) {
+            return ApiResult.getFailedApiResponse("该用户不存在！");
+        }
+        // 类别处理
+        // updateFlag == 1  （管理员权限）为重置密码，只需要 account 即可，将新生成密码放入返回结果对象
+        if (1 == updatePasswordVO.getUpdateFlag().intValue()) {
+            // 校验当前登录用户权限
+            if (!adminFlag) {
+                return ApiResult.getFailedApiResponse("您无权操作！");
+            }
+            // 生成新salt
+            // 获取32位随机用户盐值
+            String userSalt = PasswordUtil.randomGenerate(32);
+            // 获取32位加密密码
+            String passwordBySalt = PasswordUtil.getPasswordBySalt(user.getUserAccount(), "tyzq-123456", userSalt);
+            // 修改入库
+            user.setUserSalt(userSalt);
+            user.setUserPassword(passwordBySalt);
+            user.setEditId(user.getUserAccount());
+            user.setEditName(user.getUserName());
+            user.setEditTime(new Date());
+            userMapper.updateById(user);
+            // 密码返回
+            return ApiResult.getSuccessApiResponse("tyzq-123456");
+        }
+        // updateFlag == 2  为修改密码，必传【account  oldPassword  newPassword confirmPassword】
+        if (2 == updatePasswordVO.getUpdateFlag().intValue()) {
+            // 校验
+            if (StringUtils.isBlank(updatePasswordVO.getOldPassword()) || StringUtils.isBlank(updatePasswordVO.getNewPassword()) || StringUtils.isBlank(updatePasswordVO.getConfirmPassword())) {
+                return ApiResult.getFailedApiResponse("原密码/新密码/确认密码必填！");
+            }
+            // 密码校验
+            // 校验密码
+            if (!user.getUserPassword().equals(PasswordUtil.getPasswordBySalt(updatePasswordVO.getAccount(), updatePasswordVO.getOldPassword(), user.getUserSalt()))) {
+                return ApiResult.getFailedApiResponse("原密码错误！");
+            }
+            // 生成新salt
+            // 获取32位随机用户盐值
+            String userSalt = PasswordUtil.randomGenerate(32);
+            // 获取32位加密密码
+            String passwordBySalt = PasswordUtil.getPasswordBySalt(user.getUserAccount(), "tyzq-123456", userSalt);
+            // 修改入库
+            user.setUserSalt(userSalt);
+            user.setUserPassword(passwordBySalt);
+            user.setEditId(user.getUserAccount());
+            user.setEditName(user.getUserName());
+            user.setEditTime(new Date());
+            userMapper.updateById(user);
+            // 密码返回
+            return ApiResult.getSuccessApiResponse("tyzq-123456");
+        }
+        // updateFlag == 3  (管理员权限) 为修改账号并重置密码，必传【account  newAccount】将新生成密码放入返回结果对象
+        if (3 == updatePasswordVO.getUpdateFlag().intValue()) {
+            // 校验当前登录用户权限
+            if (!adminFlag) {
+                return ApiResult.getFailedApiResponse("您无权操作！");
+            }
+            // 校验
+            if (StringUtils.isBlank(updatePasswordVO.getNewAccount())) {
+                return ApiResult.getFailedApiResponse("新账号必填！");
+            }
+            // 生成新salt
+            // 获取32位随机用户盐值
+            String userSalt = PasswordUtil.randomGenerate(32);
+            // 获取32位加密密码
+            String passwordBySalt = PasswordUtil.getPasswordBySalt(updatePasswordVO.getNewAccount(), "tyzq-123456", userSalt);
+            // 修改入库
+            user.setUserAccount(updatePasswordVO.getNewAccount());
+            user.setUserSalt(userSalt);
+            user.setUserPassword(passwordBySalt);
+            user.setEditId(user.getUserAccount());
+            user.setEditName(user.getUserName());
+            user.setEditTime(new Date());
+            userMapper.updateById(user);
+            // 密码返回
+            return ApiResult.getSuccessApiResponse("tyzq-123456");
+        }
+        return ApiResult.getFailedApiResponse("类别填写有误！");
+    }
 }

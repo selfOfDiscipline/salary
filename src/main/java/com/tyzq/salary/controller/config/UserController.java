@@ -460,4 +460,27 @@ public class UserController {
             return ApiResult.getFailedApiResponse("查询全量人员基础信息列表出现错误异常！");
         }
     }
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 10:53 2020/10/12
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 修改密码
+     **/
+    @ApiOperation(value = "修改密码", httpMethod = "POST", notes = "修改密码")
+    @PostMapping(value = "/updateUserPassword")
+    public ApiResult updateUserPassword(@RequestBody UpdatePasswordVO updatePasswordVO, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return userService.updateUserPassword(updatePasswordVO, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("修改密码错误异常：" + e);
+            return ApiResult.getFailedApiResponse("修改密码出现错误异常！");
+        }
+    }
 }

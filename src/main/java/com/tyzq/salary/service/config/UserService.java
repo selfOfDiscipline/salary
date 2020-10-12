@@ -2,10 +2,7 @@ package com.tyzq.salary.service.config;
 
 import com.tyzq.salary.common.vo.ApiResult;
 import com.tyzq.salary.model.vo.base.UserSessionVO;
-import com.tyzq.salary.model.vo.user.UpdateUserRankParamVO;
-import com.tyzq.salary.model.vo.user.UserQueryVO;
-import com.tyzq.salary.model.vo.user.UserSaveVO;
-import com.tyzq.salary.model.vo.user.UserUpdateVO;
+import com.tyzq.salary.model.vo.user.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -87,4 +84,14 @@ public interface UserService {
      * @Description //TODO 查询全量人员基础信息列表
      **/
     ApiResult selectAllUserList(UserQueryVO userQueryVO, UserSessionVO userSessionVO);
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:39 2020/10/12
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO  修改密码
+     **/
+    ApiResult updateUserPassword(UpdatePasswordVO updatePasswordVO, UserSessionVO userSessionVO);
 }
