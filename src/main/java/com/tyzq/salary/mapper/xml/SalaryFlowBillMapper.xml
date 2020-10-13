@@ -17,6 +17,8 @@
         <result column="handle_id" property="handleId" />
         <result column="handle_account" property="handleAccount" />
         <result column="handle_name" property="handleName" />
+        <result column="handle_opinion" property="handleOpinion" />
+        <result column="handle_date" property="handleDate" />
         <result column="user_salary_ids" property="userSalaryIds" />
         <result column="delete_flag" property="deleteFlag" />
         <result column="create_id" property="createId" />
@@ -29,7 +31,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, application_code, base_flow_config_id, flow_code, application_type, salary_dept_id, salary_dept_name, role_id, role_name, application_status, handle_id, handle_account, handle_name, user_salary_ids, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, application_code, base_flow_config_id, flow_code, application_type, salary_dept_id, salary_dept_name, role_id, role_name, application_status, handle_id, handle_account, handle_name, handle_opinion, handle_date, user_salary_ids, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
 </mapper>

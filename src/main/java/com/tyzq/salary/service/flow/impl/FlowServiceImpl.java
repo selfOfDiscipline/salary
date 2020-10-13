@@ -158,6 +158,10 @@ public class FlowServiceImpl implements FlowService {
             List<Long> havaIdList = haveIdDetailList.stream().map(BaseFlowConfigDetail::getId).collect(Collectors.toList());
             // 去重
             oldIdList.removeAll(havaIdList);
+            // 校验 老id集合是否为空
+            if (CollectionUtils.isEmpty(oldIdList)) {
+                return ApiResult.getSuccessApiResponse();
+            }
             // 批量删除
             baseFlowConfigDetailMapper.deleteBatchIds(oldIdList);
             // 循环修改有id的集合

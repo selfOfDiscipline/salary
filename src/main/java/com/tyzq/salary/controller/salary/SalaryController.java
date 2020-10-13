@@ -264,9 +264,9 @@ public class SalaryController {
      * @Version 1.0
      * @Description //TODO 发起薪资审批流程，根据所传薪资归属部门id
      **/
-    @ApiOperation(value = "发起薪资审批流程", httpMethod = "GET", notes = "发起薪资审批流程，根据所传薪资归属部门id+所选岗位类型")
+    @ApiOperation(value = "发起薪资审批流程", httpMethod = "GET", notes = "发起薪资审批流程，根据所传Long类型的salaryDeptId薪资归属部门id && Integer类型的userPostType所选岗位类型，当userPostType==0代表管理岗，否则为技术岗")
     @GetMapping(value = "/startSalaryFlow")
-    public ApiResult startSalaryFlow(@RequestParam("salaryDeptId") Long salaryDeptId, @RequestParam("userPostType") Integer userPostType, HttpServletRequest request) {
+    public ApiResult startSalaryFlow(@RequestParam(value = "salaryDeptId", required = false) Long salaryDeptId, @RequestParam("userPostType") Integer userPostType, HttpServletRequest request) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         try {

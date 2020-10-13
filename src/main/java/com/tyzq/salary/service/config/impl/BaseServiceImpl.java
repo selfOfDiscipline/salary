@@ -250,12 +250,15 @@ public class BaseServiceImpl implements BaseService {
         }
         // 查询用户角色表中角色id为  12 部门薪资核算角色
         List<UserRole> userRoleList = userRoleMapper.selectList(Condition.create().eq("role_id", Constants.SALARY_DEPT_ROLE_ID));
-        // 定义用户id集合
-        List<Long> userIdList = Lists.newArrayList();
+        // 定义分页工具类并赋值   总条数 & 总页数 & 返回数据
+        BootstrapTablePageVO<User> tablePageVO = new BootstrapTablePageVO<>();
         // 校验
-        if (!CollectionUtils.isEmpty(userRoleList)) {
-            userIdList = userRoleList.stream().map(UserRole::getUserId).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(userRoleList)) {
+            tablePageVO.setTotal(0l);
+            tablePageVO.setPages(0l);
+            return ApiResult.getSuccessApiResponse(tablePageVO);
         }
+        List<Long> userIdList = userRoleList.stream().map(UserRole::getUserId).collect(Collectors.toList());
         // 条件构造
         Wrapper wrapper = Condition.create();
         // 校验 用户名称
@@ -268,8 +271,6 @@ public class BaseServiceImpl implements BaseService {
         // 分页查询
         Page<User> page = new Page<>(userSalaryDeptQueryVO.getPageNum(), userSalaryDeptQueryVO.getPageSize());
         List<User> dataList = userMapper.selectPage(page, wrapper);
-        // 定义分页工具类并赋值   总条数 & 总页数 & 返回数据
-        BootstrapTablePageVO<User> tablePageVO = new BootstrapTablePageVO<>();
         tablePageVO.setTotal(page.getTotal());
         tablePageVO.setPages(page.getPages());
         tablePageVO.setDataList(dataList);

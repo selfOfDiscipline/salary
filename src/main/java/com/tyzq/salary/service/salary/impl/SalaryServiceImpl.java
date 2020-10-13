@@ -656,6 +656,8 @@ public class SalaryServiceImpl implements SalaryService {
         // 操作数据库
         // 将用户本月薪资表更新
         userSalary.setNewEntryAttendanceDays(computeSalaryParamVO.getNewEntryAttendanceDays());// 赋值上月出勤天数
+        userSalary.setCurrentComputeFlag(1);// 给本月是否计算过标识赋值为 本月已计算过。
+        // 将用户本月薪资表更新
         userSalaryMapper.updateById(userSalary);
         return ApiResult.getSuccessApiResponse(userSalary);
     }
@@ -958,6 +960,7 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setPositiveAfterOtherAttendanceDays(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays());// 转正后其他缺勤天数
         userSalary.setPositiveAfterSickAttendanceDays(computeSalaryParamVO.getPositiveAfterSickAttendanceDays());// 转正后病假天数
         userSalary.setMonthPerformanceRatio(computeSalaryParamVO.getMonthPerformanceRatio());// 本月绩效比例
+        userSalary.setCurrentComputeFlag(1);// 给本月是否计算过标识赋值为 本月已计算过。
         // 将用户本月薪资表更新
         userSalaryMapper.updateById(userSalary);
         return ApiResult.getSuccessApiResponse(userSalary);
@@ -1242,6 +1245,7 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setOtherAbsenceDays(computeSalaryParamVO.getOtherAbsenceDays());// 其他缺勤天数
         userSalary.setSickAdsenceDays(computeSalaryParamVO.getSickAbsenceDays());// 病假缺勤天数
         userSalary.setMonthPerformanceRatio(computeSalaryParamVO.getMonthPerformanceRatio());// 本月绩效比例
+        userSalary.setCurrentComputeFlag(1);// 给本月是否计算过标识赋值为 本月已计算过。
         // 将用户本月薪资表更新
         userSalaryMapper.updateById(userSalary);
         return ApiResult.getSuccessApiResponse(userSalary);
@@ -1267,11 +1271,18 @@ public class SalaryServiceImpl implements SalaryService {
         if (roleIdList.contains(Constants.ADMIN_ROLE_ID) || roleIdList.contains(Constants.OTHER_ROLE_ID)) {
             adminFlag = true;
         }
-        // 校验
+        // 校验流程发起类型， userPostType == 0为副总发起的管理岗员工，此时salaryDeptId为空，会将公司所有的管理岗一并发起
+        // userPostType == 1为薪资核算人员发起的技术岗员工，此时salaryDeptId必填，会按所传薪资归属部门发起流程
+
+        // 校验  Integer类型的userPostType所选岗位类型，当userPostType==0代表管理岗，否则为技术岗
         if (0 == userPostType.intValue()) {
             // 管理岗计薪列表
             if (!adminFlag) {
                 return ApiResult.getFailedApiResponse("您无权操作管理岗流程！");
+            }
+        } else {
+            if (salaryDeptId == null) {
+                return ApiResult.getFailedApiResponse("薪资归属部门ID必传！");
             }
         }
         String userPostTypeString = null;
@@ -1303,6 +1314,7 @@ public class SalaryServiceImpl implements SalaryService {
             baseFlowConfig.setDeleteFlag(0);
             baseFlowConfig.setUseFlag(0);
             baseFlowConfig.setFlowRoleId(Constants.SALARY_DEPT_ROLE_ID);
+            baseFlowConfig.setFlowSalaryDeptId(salaryDeptId);
             baseFlowConfig = baseFlowConfigMapper.selectOne(baseFlowConfig);
             // 校验
             if (null == baseFlowConfig) {
@@ -1312,25 +1324,34 @@ public class SalaryServiceImpl implements SalaryService {
             // 赋值薪资归属部门id
             salaryDeptIdList.add(salaryDeptId);
         }
+        // 获取上个月时间
         Date thisDateLastMonth = DateUtils.getThisDateLastMonth();
-        // 查询薪资表id
-        List<Long> userSalaryIdList = userSalaryMapper.selectUserSalaryList(userPostTypeString, thisDateLastMonth, salaryDeptIdList);
+        // 查询薪资表id   条件为上个月份，且用户角色，薪资归属部门id集合， 另外加上“本月已经结算过”条件， currentComputeFlag == 0  未结算， currentComputeFlag == 1  已经结算
+        Integer currentComputeFlag = 1;
+        List<Long> userSalaryIdList = userSalaryMapper.selectUserSalaryList(userPostTypeString, thisDateLastMonth, salaryDeptIdList, currentComputeFlag);
         // 校验
         if (CollectionUtils.isEmpty(userSalaryIdList)) {
-            return ApiResult.getFailedApiResponse("您所选部门的本月可提流程工资单为空！");
+            return ApiResult.getFailedApiResponse("您所选部门的本月已计算过并且可发起流程工资单为空！");
+        }
+        // 再查询 【结算和不结算一起查】
+        currentComputeFlag = null;
+        List<Long> userSalaryIdListAll = userSalaryMapper.selectUserSalaryList(userPostTypeString, thisDateLastMonth, salaryDeptIdList, currentComputeFlag);
+        // 校验
+        if (userSalaryIdList.size() != userSalaryIdListAll.size()) {
+            return ApiResult.getFailedApiResponse("请将您所关联的所有员工本月工资计薪后再发起流程！");
         }
         // 将薪资id的  是否允许再次编辑状态 批量改为 1 不允许   again_compute_flag
         UserSalary userSalary = new UserSalary();
         userSalary.setAgainComputeFlag(1);
         userSalaryMapper.update(userSalary, Condition.create().in("id", userSalaryIdList));
         // 获取薪资单据编号
-        String billCodeByBillType = baseService.getBillCodeByBillType(1);
+        String applicationCode = baseService.getBillCodeByBillType(1);
         // 获取流程code
-        String flowCode = baseService.getFlowCodeByApplicationCode(billCodeByBillType);
+        String flowCode = baseService.getFlowCodeByApplicationCode(applicationCode);
         // 准备新增
         SalaryFlowBill salaryFlowBill = new SalaryFlowBill();
         // 赋值
-        salaryFlowBill.setApplicationCode(billCodeByBillType);
+        salaryFlowBill.setApplicationCode(applicationCode);
         salaryFlowBill.setFlowCode(flowCode);
         salaryFlowBill.setBaseFlowConfigId(flowConfigId);
         salaryFlowBill.setApplicationType("薪资审批");
@@ -1348,6 +1369,7 @@ public class SalaryServiceImpl implements SalaryService {
             salaryFlowBill.setRoleId(Constants.SALARY_DEPT_ROLE_ID);
             salaryFlowBill.setRoleName("薪资核算人员");
         }
+        // 单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废
         salaryFlowBill.setApplicationStatus(1);
         salaryFlowBill.setUserSalaryIds(userSalaryIdList.toString());
         // 新增
@@ -1367,7 +1389,7 @@ public class SalaryServiceImpl implements SalaryService {
                 break;
             }
         }
-        // 拆分出用户id集合
+        // 拆分出用户id集合 && 用户名称集合
         List<Long> approverIdList = Arrays.asList(configDetail.getApproverIds().split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
         List<String> approverNameList = Arrays.asList(configDetail.getApproverIds().split(","));
         // 定义序号
@@ -1381,8 +1403,9 @@ public class SalaryServiceImpl implements SalaryService {
             record.setNodeName(configDetail.getNodeName());
             record.setApproverId(approverId);
             record.setApproverName(approverNameList.get(number));
-            record.setApplicationCode(billCodeByBillType);
+            record.setApplicationCode(applicationCode);
             record.setFlowCode(flowCode);
+            // 审批状态：0--通过，1--驳回
             record.setApproverStatus(0);
             record.setDeleteFlag(0);
             record.setCreateId(userSessionVO.getUserAccount());

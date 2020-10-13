@@ -11,7 +11,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-09-27
+ * @since 2020-10-13
  */
 public class SalaryFlowBill implements Serializable {
 
@@ -70,6 +70,14 @@ public class SalaryFlowBill implements Serializable {
      * 处理人名称
      */
     private String handleName;
+    /**
+     * 处理意见
+     */
+    private String handleOpinion;
+    /**
+     * 处理时间
+     */
+    private String handleDate;
     /**
      * 薪资表id字符串，多个用英文逗号分隔
      */
@@ -208,6 +216,22 @@ public class SalaryFlowBill implements Serializable {
         this.handleName = handleName;
     }
 
+    public String getHandleOpinion() {
+        return handleOpinion;
+    }
+
+    public void setHandleOpinion(String handleOpinion) {
+        this.handleOpinion = handleOpinion;
+    }
+
+    public String getHandleDate() {
+        return handleDate;
+    }
+
+    public void setHandleDate(String handleDate) {
+        this.handleDate = handleDate;
+    }
+
     public String getUserSalaryIds() {
         return userSalaryIds;
     }
@@ -288,6 +312,8 @@ public class SalaryFlowBill implements Serializable {
         ", handleId=" + handleId +
         ", handleAccount=" + handleAccount +
         ", handleName=" + handleName +
+        ", handleOpinion=" + handleOpinion +
+        ", handleDate=" + handleDate +
         ", userSalaryIds=" + userSalaryIds +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +

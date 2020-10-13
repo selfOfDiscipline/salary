@@ -41,7 +41,8 @@ public interface UserSalaryMapper extends BaseMapper<UserSalary> {
      * @Version 1.0
      * @Description //TODO 查询薪资表id集合
      **/
-    List<Long> selectUserSalaryList(@Param("userPostType") String userPostType, @Param("thisDateLastMonth") Date thisDateLastMonth, @Param("salaryDeptIdList") List<Long> salaryDeptIdList);
+    List<Long> selectUserSalaryList(@Param("userPostType") String userPostType, @Param("thisDateLastMonth") Date thisDateLastMonth,
+                                    @Param("salaryDeptIdList") List<Long> salaryDeptIdList, @Param("currentComputeFlag") Integer currentComputeFlag);
 
     /*
      * @Author zwc   zwc_503@163.com
