@@ -100,6 +100,9 @@
             <if test="userQueryVO.userRankType != null">
                 AND u.user_rank_type = #{userQueryVO.userRankType}
             </if>
+            <if test="userQueryVO.userPostType == null">
+                AND u.user_post_type != 0
+            </if>
             <if test="userQueryVO.userPostType != null">
                 AND u.user_post_type = #{userQueryVO.userPostType}
             </if>
@@ -122,6 +125,7 @@
             ud.user_id AS userId,
             u.user_name AS userName,
             u.household_type AS householdType,
+            u.salary_dept_id AS salaryDeptId,
             u.social_security_start_date AS socialSecurityStartDate,
             ud.user_account AS userAccount,
             ud.standard_salary AS standardSalary,
@@ -198,7 +202,7 @@
             u.delete_flag = 0
             AND u.admin_flag = 0
             <if test="userPostType == null">
-                AND u.user_post_type != 2
+                AND u.user_post_type != 0
             </if>
             <if test="userPostType != null">
                 AND u.user_post_type = #{userPostType}

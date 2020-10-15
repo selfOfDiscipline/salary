@@ -30,7 +30,7 @@ import java.util.List;
  * @CreateTime: 2020-09-27 15:05
  * @Description: //TODO 流程配置模块
  **/
-@Api(tags = "【基础配置配置】··【流程管理】")
+@Api(tags = "【基础配置】··【流程管理】")
 @RestController
 @RequestMapping(value = "/flow")
 public class FlowController {

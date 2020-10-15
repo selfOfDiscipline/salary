@@ -40,9 +40,9 @@ public class AgendaController {
      * @Param
      * @return
      * @Version 1.0
-     * @Description //TODO  查询个人待办列表
+     * @Description //TODO  查询待办列表--待处理
      **/
-    @ApiOperation(value = "查询个人待办列表", httpMethod = "POST", notes = "查询个人待办列表")
+    @ApiOperation(value = "查询待办列表--待处理", httpMethod = "POST", notes = "查询待办列表--待处理")
     @PostMapping(value = "/selectPersonAgendaList")
     public ApiResult selectPersonAgendaList(@RequestBody FlowRecordQueryVO flowRecordQueryVO, HttpServletRequest request) {
         // 获取session用户
@@ -52,8 +52,8 @@ public class AgendaController {
             return agendaService.selectPersonAgendaList(flowRecordQueryVO, userSessionVO);
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("查询个人待办列表出现错误异常：" + e);
-            return ApiResult.getFailedApiResponse("查询个人待办列表出现错误异常！");
+            logger.error("查询待办列表--待处理出现错误异常：" + e);
+            return ApiResult.getFailedApiResponse("查询待办列表--待处理出现错误异常！");
         }
     }
 
@@ -115,9 +115,9 @@ public class AgendaController {
      * @Param
      * @return
      * @Version 1.0
-     * @Description //TODO 个人发起的流程列表
+     * @Description //TODO 查询个人发起的流程
      **/
-    @ApiOperation(value = "个人发起的流程列表", httpMethod = "POST", notes = "个人发起的流程列表")
+    @ApiOperation(value = "查询个人发起的流程", httpMethod = "POST", notes = "查询个人发起的流程")
     @PostMapping(value = "/selectMineAgendaList")
     public ApiResult selectMineAgendaList(@RequestBody SalaryBillQueryVO salaryBillQueryVO, HttpServletRequest request) {
         // 获取session用户
@@ -127,8 +127,57 @@ public class AgendaController {
             return agendaService.selectMineAgendaList(salaryBillQueryVO, userSessionVO);
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("个人发起的流程列表出现错误异常：" + e);
-            return ApiResult.getFailedApiResponse("个人发起的流程列表出现错误异常！");
+            logger.error("查询个人发起的流程出现错误异常：" + e);
+            return ApiResult.getFailedApiResponse("查询个人发起的流程出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 16:35 2020/10/13
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 根据单据编号，查询该流程的工资列表
+     **/
+    @ApiOperation(value = "查询该流程工资列表", httpMethod = "GET", notes = "根据单据编号，查询该流程的工资列表")
+    @GetMapping(value = "/selectSalaryByApplicationCode")
+    public ApiResult selectSalaryByApplicationCode(@RequestParam("applicationCode") String applicationCode, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return agendaService.selectSalaryByApplicationCode(applicationCode, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("查询该流程工资列表出现错误异常：" + e);
+            return ApiResult.getFailedApiResponse("查询该流程工资列表出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:55 2020/10/15
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 汇总薪资流程，根据薪资流程表id集合
+     **/
+    @ApiOperation(value = "汇总薪资流程", httpMethod = "GET", notes = "汇总薪资流程")
+    @GetMapping(value = "/collectTheMonthSalaryFlow")
+    public ApiResult collectTheMonthSalaryFlow(@RequestParam("ids") String ids, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        if (StringUtils.isBlank(ids)) {
+            return ApiResult.getFailedApiResponse("至少选中一条待办进行汇总！");
+        }
+        try {
+            // 业务操作
+            return agendaService.collectTheMonthSalaryFlow(ids, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("汇总薪资流程出现错误异常：" + e);
+            return ApiResult.getFailedApiResponse("汇总薪资流程出现错误异常！");
         }
     }
 }

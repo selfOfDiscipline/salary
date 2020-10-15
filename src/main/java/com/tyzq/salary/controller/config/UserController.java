@@ -404,8 +404,10 @@ public class UserController {
         // 校验是否有权限查看
         if (false == adminFlag) {
             // 校验是否是按岗位类型查的，该角色只能看成本岗和技术岗
-            if (0 == userQueryVO.getUserPostType()) {
+            if (null != userQueryVO.getUserPostType() && 0 == userQueryVO.getUserPostType()) {
                 return ApiResult.getFailedApiResponse("您无权查看管理岗员工信息！");
+            } else {
+                userQueryVO.setUserPostType(2);
             }
             // 查询登录人是否在薪资管理人员表中
             List<UserSalaryDept> userSalaryDeptList = userSalaryDeptMapper.selectList(Condition.create().eq("user_id", userSessionVO.getId()).eq("delete_flag", 0));
@@ -418,10 +420,12 @@ public class UserController {
             // 先校验用户是否是按部门id查询的
             if (null != userQueryVO.getUserSalaryDeptId()) {
                 // 校验
-                if (!salaryDeptIdList.contains(userQueryVO.getUserSalaryDeptId().intValue())) {
+                if (!salaryDeptIdList.contains(userQueryVO.getUserSalaryDeptId())) {
                     return ApiResult.getFailedApiResponse("您无权查看该部门信息！");
                 }
             }
+        } else {
+            userQueryVO.setUserPostType(null);
         }
         try {
             // 业务操作

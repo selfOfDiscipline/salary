@@ -85,6 +85,11 @@ public class BaseServiceImpl implements BaseService {
                 billType = "薪资审批";
                 billPrefix = enCode + yyyyMMdd;
                 break;
+            case 2 :
+                enCode = "HZXZ";
+                billType = "汇总薪资审批";
+                billPrefix = enCode + yyyyMMdd;
+                break;
             default:
                 enCode = "FF";
                 billType = "非法单据";

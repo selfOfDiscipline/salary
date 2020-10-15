@@ -27,6 +27,9 @@ public class UserComputeSalaryQueryVO extends PageUtilVO implements Serializable
     /* 日期区间结束*/
     private Date thisDateLastMonth;
 
+    /* 员工岗位类型：0--管理岗，1--成本岗，2--技术岗*/
+    private Integer userPostType;
+
     /* 查询的菜单类型  menuType==0为上月入职员工计薪；menuType==1为上月转正员工计薪；menuType==2为正常员工计薪【默认为2】*/
     private int menuType = 2;
 
@@ -68,5 +71,13 @@ public class UserComputeSalaryQueryVO extends PageUtilVO implements Serializable
 
     public void setMenuType(int menuType) {
         this.menuType = menuType;
+    }
+
+    public Integer getUserPostType() {
+        return userPostType;
+    }
+
+    public void setUserPostType(Integer userPostType) {
+        this.userPostType = userPostType;
     }
 }

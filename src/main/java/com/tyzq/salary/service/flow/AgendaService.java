@@ -53,4 +53,24 @@ public interface AgendaService {
      * @Description //TODO 个人发起的流程列表
      **/
     ApiResult selectMineAgendaList(SalaryBillQueryVO salaryBillQueryVO, UserSessionVO userSessionVO);
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 16:42 2020/10/13
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 查询该流程工资列表
+     **/
+    ApiResult selectSalaryByApplicationCode(String applicationCode, UserSessionVO userSessionVO);
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:59 2020/10/15
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 汇总待办列表
+     **/
+    ApiResult collectTheMonthSalaryFlow(String ids, UserSessionVO userSessionVO);
 }

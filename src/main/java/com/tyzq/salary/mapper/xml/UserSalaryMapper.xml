@@ -154,6 +154,12 @@
             <if test="userVO.userSalaryDeptId != null">
                 AND u.salary_dept_id = #{userVO.userSalaryDeptId}
             </if>
+            <if test="userVO.userPostType == null">
+                AND u.user_post_type != 0
+            </if>
+            <if test="userVO.userPostType != null">
+                AND u.user_post_type = 0
+            </if>
             /* 为2代表正常员工，我们即用员工实际转正日期小于上月1号*/
             <if test="userVO.menuType == 2">
                 AND u.reality_change_formal_date <![CDATA[<]]> #{userVO.thisDateLastMonth}
@@ -185,13 +191,13 @@
                 AND s.salary_date <![CDATA[=]]> #{thisDateLastMonth}
             </if>
             <if test="currentComputeFlag != null">
-                AND u.current_compute_flag = #{currentComputeFlag}
+                AND s.current_compute_flag = #{currentComputeFlag}
             </if>
             <if test="userPostType != null and userPostType != ''">
-                AND u.user_post_type = 2
+                AND u.user_post_type = 0
             </if>
             <if test="userPostType == null">
-                AND u.user_post_type != 2
+                AND u.user_post_type != 0
             </if>
             AND s.salary_dept_id in
                 <foreach collection="salaryDeptIdList" item="item" open="(" separator="," close=")">
@@ -398,7 +404,10 @@
                 AND u.user_name like CONCAT('%', #{queryVO.userName}, '%')
             </if>
             <if test="queryVO.userPostType != null">
-                AND u.user_post_type = #{queryVO.userPostType}
+                AND u.user_post_type = 0
+            </if>
+            <if test="queryVO.userPostType == null">
+                AND u.user_post_type != 0
             </if>
             <if test="queryVO.salaryDeptId != null">
                 AND s.salary_dept_id = #{queryVO.salaryDeptId}

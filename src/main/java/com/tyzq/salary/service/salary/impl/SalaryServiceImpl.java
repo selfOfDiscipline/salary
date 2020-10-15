@@ -2,6 +2,7 @@ package com.tyzq.salary.service.salary.impl;
 
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.mapper.Condition;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -123,6 +124,7 @@ public class SalaryServiceImpl implements SalaryService {
                 userComputeSalaryQueryVO.setUserSalaryDeptId(salaryDeptIdList.get(0));
             }
         } else {
+            userComputeSalaryQueryVO.setUserPostType(0);
             // 获取所有的薪资核算部门集合
             List<SalaryDept> salaryDeptList = salaryDeptMapper.selectList(Condition.create().eq("delete_flag", 0));
             // 校验
@@ -166,6 +168,7 @@ public class SalaryServiceImpl implements SalaryService {
         Integer userPostType = null;
         // 校验用户角色  用户角色类型  false--薪资核算人员角色；true--总经理/副总角色
         if (false == adminFlag) {
+
             // 获取当前核算人员所管理的部门集合
             List<UserSalaryDept> userSalaryDeptList = userSalaryDeptMapper.selectList(Condition.create().eq("user_id", userSessionVO.getId().intValue()).eq("delete_flag", 0));
             salaryDeptIdList = userSalaryDeptList.stream().map(UserSalaryDept::getSalaryDeptId).collect(Collectors.toList());
@@ -757,8 +760,9 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setAddComputerSubsidy(userDetail.getAddComputerSubsidy());
         userSalary.setAddOtherSubsidy(userDetail.getAddOtherSubsidy());
         userSalary.setDeductOther(userDetail.getDeductOther());
+        // todo 计算
         userSalary.setDeductSick(allSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPersonSickStandard())).setScale(2, BigDecimal.ROUND_HALF_UP));
-        userSalary.setDeductThing(allSalary.multiply(computeSalaryParamVO.getOtherAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        userSalary.setDeductThing(allSalary.multiply(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP));
 
 
         // 赋值本月基本工资 = 转正前工资 + 转正后工资*(1 - 绩效占工资比例)
@@ -1309,6 +1313,7 @@ public class SalaryServiceImpl implements SalaryService {
             List<SalaryDept> salaryDeptList = salaryDeptMapper.selectList(Condition.create().eq("delete_flag", 0));
             salaryDeptIdList = salaryDeptList.stream().map(SalaryDept::getId).collect(Collectors.toList());
         } else {
+            userPostTypeString = null;
             // 查询薪资核算角色的流程
             BaseFlowConfig baseFlowConfig = new BaseFlowConfig();
             baseFlowConfig.setDeleteFlag(0);
@@ -1359,6 +1364,11 @@ public class SalaryServiceImpl implements SalaryService {
         salaryFlowBill.setHandleAccount(userSessionVO.getUserAccount());
         salaryFlowBill.setHandleName(userSessionVO.getUserName());
         salaryFlowBill.setDeleteFlag(0);
+        salaryFlowBill.setCreateId(userSessionVO.getUserAccount());
+        salaryFlowBill.setCreateName(userSessionVO.getUserName());
+        salaryFlowBill.setCreateTime(new Date());
+        salaryFlowBill.setEditTime(new Date());
+
         // 校验
         if (adminFlag) {
             salaryFlowBill.setSalaryDeptId(0l);// 副总这里声明薪资归属部门id为0
@@ -1371,7 +1381,7 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废
         salaryFlowBill.setApplicationStatus(1);
-        salaryFlowBill.setUserSalaryIds(userSalaryIdList.toString());
+        salaryFlowBill.setUserSalaryIds(JSONArray.toJSONString(userSalaryIdList));
         // 新增
         salaryFlowBillMapper.insert(salaryFlowBill);
         // 新增一条待审记录到流程记录表中

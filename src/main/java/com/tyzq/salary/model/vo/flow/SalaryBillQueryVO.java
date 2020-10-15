@@ -17,11 +17,22 @@ public class SalaryBillQueryVO extends PageUtilVO implements Serializable {
     /* 单据编号*/
     private String applicationCode;
 
+    /* 单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废*/
+    private Integer applicationStatus;
+
     public String getApplicationCode() {
         return applicationCode;
     }
 
     public void setApplicationCode(String applicationCode) {
         this.applicationCode = applicationCode;
+    }
+
+    public Integer getApplicationStatus() {
+        return applicationStatus;
+    }
+
+    public void setApplicationStatus(Integer applicationStatus) {
+        this.applicationStatus = applicationStatus;
     }
 }
