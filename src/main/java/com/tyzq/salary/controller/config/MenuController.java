@@ -91,9 +91,9 @@ public class MenuController {
                         menuVO.setComponent(m.getMenuPath());
                         menuVO.setTitle(m.getMenuName());
                         menuVO.setIcon(m.getMenuIcon());
-                        menuVO.setName(m.getMenuName());
-                        menuVO.setPath(m.getMenuName());
-                        menuVO.setRedirect(m.getMenuRedirect());
+                        menuVO.setName(m.getMenuRedirect());
+                        menuVO.setPath(m.getMenuRedirect());
+                        menuVO.setRedirect(m.getMenuPath());
                         menuVO.setPid(m.getPid());
                         menuVO.setFullPath(m.getFullPath());
                         menuVO.setSortNum(m.getSortNum());
@@ -199,9 +199,9 @@ public class MenuController {
                         menuVO.setComponent(m.getMenuPath());
                         menuVO.setTitle(m.getMenuName());
                         menuVO.setIcon(m.getMenuIcon());
-                        menuVO.setName(m.getMenuName());
-                        menuVO.setPath(m.getMenuName());
-                        menuVO.setRedirect(m.getMenuRedirect());
+                        menuVO.setName(m.getMenuRedirect());
+                        menuVO.setPath(m.getMenuRedirect());
+                        menuVO.setRedirect(m.getMenuPath());
                         menuVO.setPid(m.getPid());
                         menuVO.setFullPath(m.getFullPath());
                         menuVO.setSortNum(m.getSortNum());
