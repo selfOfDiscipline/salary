@@ -15,7 +15,6 @@ import com.tyzq.salary.model.vo.flow.FlowHandleParamVO;
 import com.tyzq.salary.model.vo.flow.FlowRecordQueryVO;
 import com.tyzq.salary.model.vo.flow.SalaryBillQueryVO;
 import com.tyzq.salary.model.vo.salary.UserComputeResultVO;
-import com.tyzq.salary.model.vo.salary.UserComputeSalaryQueryVO;
 import com.tyzq.salary.service.config.BaseService;
 import com.tyzq.salary.service.flow.AgendaService;
 import com.tyzq.salary.utils.DateUtils;
@@ -163,11 +162,11 @@ public class AgendaServiceImpl implements AgendaService {
             // 修改
             salaryFlowBillMapper.updateById(salaryFlowBill);
             // 将所有的薪资的  是否允许再次结算  改为允许    是否允许再次计算：0--允许，1--不允许
-            List<String> stringList = Arrays.asList(salaryFlowBill.getUserSalaryIds());
+            List<Long> userSalaryIdList = (List<Long>) JSONArray.parse(salaryFlowBill.getUserSalaryIds());
             // 批量修改
             userSalaryMapper.update(new UserSalary() {{
                 setAgainComputeFlag(0);
-            }}, Condition.create().in("id", stringList));
+            }}, Condition.create().in("id", userSalaryIdList));
             // 驳回完毕
             return ApiResult.getSuccessApiResponse();
         }
@@ -200,7 +199,7 @@ public class AgendaServiceImpl implements AgendaService {
             baseFlowGenerateMapper.update(new BaseFlowGenerate() {{
                 // 该流程状态：0--在审，1--审批完结，2--驳回，3--作废
                 setApproverStatus(1);
-            }}, Condition.create().eq("", salaryFlowBill.getFlowCode()).eq("", salaryFlowBill.getApplicationCode()));
+            }}, Condition.create().eq("flow_code", salaryFlowBill.getFlowCode()).eq("application_code", salaryFlowBill.getApplicationCode()));
             // TODO =======================员工年度累计个人所得税等计算赋值========================
             // 校验权限是否为总经理/副总角色
             List<Long> roleIdList = userSessionVO.getRoleIdList();
@@ -383,7 +382,7 @@ public class AgendaServiceImpl implements AgendaService {
         // 校验角色
         List<Long> roleIdList = userSessionVO.getRoleIdList();
         if (!roleIdList.contains(Constants.FINANCE_ROLE_ID)) {
-            return ApiResult.getFailedApiResponse("您无权汇总待办数据！");
+            return ApiResult.getFailedApiResponse("您无权汇总待办流程数据！");
         }
         // 查询到各个流程单据数据
         List<String> stringList = Arrays.asList(ids.split(","));

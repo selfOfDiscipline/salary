@@ -87,7 +87,16 @@ public class MenuController {
                     List<MenuVO> thisMenuVOList = Lists.newArrayListWithCapacity(menuList.size());
                     menuList.forEach(m -> {
                         MenuVO menuVO = new MenuVO();
-                        BeanUtils.copyProperties(m, menuVO);
+                        menuVO.setId(m.getId());
+                        menuVO.setComponent(m.getMenuPath());
+                        menuVO.setTitle(m.getMenuName());
+                        menuVO.setIcon(m.getMenuIcon());
+                        menuVO.setName(m.getMenuName());
+                        menuVO.setPath(m.getMenuName());
+                        menuVO.setRedirect(m.getMenuRedirect());
+                        menuVO.setPid(m.getPid());
+                        menuVO.setFullPath(m.getFullPath());
+                        menuVO.setSortNum(m.getSortNum());
                         thisMenuVOList.add(menuVO);
                     });
                     // 赋值
@@ -131,7 +140,7 @@ public class MenuController {
                 return ApiResult.getFailedApiResponse("未能匹配到您的权限！");
             }
             // 按照父级节点分组
-            Map<Long, List<MenuVO>> rootMap = menuVOList.stream().sorted(Comparator.comparing(Menu::getSortNum)).collect(Collectors.groupingBy(Menu::getPid));
+            Map<Long, List<MenuVO>> rootMap = menuVOList.stream().sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.groupingBy(MenuVO::getPid));
             // 获取到父级根目录节点集合
             List<MenuVO> rootList = menuVOList.stream().filter(a -> a.getPid() == 0).sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.toList());
             // 递归
@@ -155,7 +164,7 @@ public class MenuController {
             List<MenuVO> children = rootMap.get(m.getId());
             if (children != null){
                 children = children.stream().sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.toList());
-                m.setChildList(children);
+                m.setChildren(children);
                 // 依次递归
                 putChildrenList(children, rootMap);
             }
@@ -186,7 +195,16 @@ public class MenuController {
                     List<MenuVO> thisMenuVOList = Lists.newArrayListWithCapacity(menuList.size());
                     menuList.forEach(m -> {
                         MenuVO menuVO = new MenuVO();
-                        BeanUtils.copyProperties(m, menuVO);
+                        menuVO.setId(m.getId());
+                        menuVO.setComponent(m.getMenuPath());
+                        menuVO.setTitle(m.getMenuName());
+                        menuVO.setIcon(m.getMenuIcon());
+                        menuVO.setName(m.getMenuName());
+                        menuVO.setPath(m.getMenuName());
+                        menuVO.setRedirect(m.getMenuRedirect());
+                        menuVO.setPid(m.getPid());
+                        menuVO.setFullPath(m.getFullPath());
+                        menuVO.setSortNum(m.getSortNum());
                         thisMenuVOList.add(menuVO);
                     });
                     // 赋值
@@ -216,7 +234,7 @@ public class MenuController {
                 });
             });
             // 按照父级节点分组
-            Map<Long, List<MenuVO>> rootMap = allMenuVOList.stream().sorted(Comparator.comparing(Menu::getSortNum)).collect(Collectors.groupingBy(Menu::getPid));
+            Map<Long, List<MenuVO>> rootMap = allMenuVOList.stream().sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.groupingBy(MenuVO::getPid));
             // 获取到父级根目录节点集合
             List<MenuVO> rootList = allMenuVOList.stream().filter(a -> a.getPid() == 0).sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.toList());
             // 递归

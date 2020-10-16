@@ -11,7 +11,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-09-14
+ * @since 2020-10-16
  */
 public class Menu implements Serializable {
 
@@ -23,17 +23,25 @@ public class Menu implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     /**
-     * 菜单名称
+     * 菜单icon
      */
-    private String menuName;
+    private String menuIcon;
     /**
      * 描述
      */
     private String menuDescription;
     /**
-     * 菜单路径
+     * 菜单名称
      */
-    private String menuUrl;
+    private String menuName;
+    /**
+     * 菜单文件夹路径
+     */
+    private String menuPath;
+    /**
+     * 菜单重定向浏览器路径
+     */
+    private String menuRedirect;
     /**
      * 父级菜单id
      */
@@ -88,12 +96,12 @@ public class Menu implements Serializable {
         this.id = id;
     }
 
-    public String getMenuName() {
-        return menuName;
+    public String getMenuIcon() {
+        return menuIcon;
     }
 
-    public void setMenuName(String menuName) {
-        this.menuName = menuName;
+    public void setMenuIcon(String menuIcon) {
+        this.menuIcon = menuIcon;
     }
 
     public String getMenuDescription() {
@@ -104,12 +112,28 @@ public class Menu implements Serializable {
         this.menuDescription = menuDescription;
     }
 
-    public String getMenuUrl() {
-        return menuUrl;
+    public String getMenuName() {
+        return menuName;
     }
 
-    public void setMenuUrl(String menuUrl) {
-        this.menuUrl = menuUrl;
+    public void setMenuName(String menuName) {
+        this.menuName = menuName;
+    }
+
+    public String getMenuPath() {
+        return menuPath;
+    }
+
+    public void setMenuPath(String menuPath) {
+        this.menuPath = menuPath;
+    }
+
+    public String getMenuRedirect() {
+        return menuRedirect;
+    }
+
+    public void setMenuRedirect(String menuRedirect) {
+        this.menuRedirect = menuRedirect;
     }
 
     public Long getPid() {
@@ -204,9 +228,11 @@ public class Menu implements Serializable {
     public String toString() {
         return "Menu{" +
         "id=" + id +
-        ", menuName=" + menuName +
+        ", menuIcon=" + menuIcon +
         ", menuDescription=" + menuDescription +
-        ", menuUrl=" + menuUrl +
+        ", menuName=" + menuName +
+        ", menuPath=" + menuPath +
+        ", menuRedirect=" + menuRedirect +
         ", pid=" + pid +
         ", sortNum=" + sortNum +
         ", fullPath=" + fullPath +

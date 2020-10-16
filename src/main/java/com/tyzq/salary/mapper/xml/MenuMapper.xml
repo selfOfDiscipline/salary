@@ -5,9 +5,11 @@
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.tyzq.salary.model.Menu">
         <id column="id" property="id" />
-        <result column="menu_name" property="menuName" />
+        <result column="menu_icon" property="menuIcon" />
         <result column="menu_description" property="menuDescription" />
-        <result column="menu_url" property="menuUrl" />
+        <result column="menu_name" property="menuName" />
+        <result column="menu_path" property="menuPath" />
+        <result column="menu_redirect" property="menuRedirect" />
         <result column="pid" property="pid" />
         <result column="sort_num" property="sortNum" />
         <result column="full_path" property="fullPath" />
@@ -23,7 +25,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, menu_name, menu_description, menu_url, pid, sort_num, full_path, use_flag, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, menu_icon, menu_description, menu_name, menu_path, menu_redirect, pid, sort_num, full_path, use_flag, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
     <!-- 根据管理员id查询所有菜单-->

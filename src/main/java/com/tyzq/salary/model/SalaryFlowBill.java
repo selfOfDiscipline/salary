@@ -11,7 +11,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-10-13
+ * @since 2020-10-16
  */
 public class SalaryFlowBill implements Serializable {
 
@@ -26,6 +26,10 @@ public class SalaryFlowBill implements Serializable {
      * 单据编号
      */
     private String applicationCode;
+    /**
+     * 薪资归属日期
+     */
+    private Date salaryDate;
     /**
      * 关联流程主表id
      */
@@ -126,6 +130,14 @@ public class SalaryFlowBill implements Serializable {
 
     public void setApplicationCode(String applicationCode) {
         this.applicationCode = applicationCode;
+    }
+
+    public Date getSalaryDate() {
+        return salaryDate;
+    }
+
+    public void setSalaryDate(Date salaryDate) {
+        this.salaryDate = salaryDate;
     }
 
     public Long getBaseFlowConfigId() {
@@ -301,6 +313,7 @@ public class SalaryFlowBill implements Serializable {
         return "SalaryFlowBill{" +
         "id=" + id +
         ", applicationCode=" + applicationCode +
+        ", salaryDate=" + salaryDate +
         ", baseFlowConfigId=" + baseFlowConfigId +
         ", flowCode=" + flowCode +
         ", applicationType=" + applicationType +
