@@ -106,4 +106,14 @@ public interface SalaryService {
      * @Description //TODO 导出工资单，默认导出上月
      **/
     void exportSalaryBill(Date salaryDate, UserSessionVO userSessionVO, HttpServletResponse response);
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:36 2020/10/16
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO  驳回后再次发起流程，根据薪资流程记录表id
+     **/
+    ApiResult updateSalaryFlowById(Long salaryFlowId, UserSessionVO userSessionVO);
 }

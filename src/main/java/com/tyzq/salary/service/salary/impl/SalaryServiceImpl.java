@@ -1415,7 +1415,7 @@ public class SalaryServiceImpl implements SalaryService {
             record.setApproverName(approverNameList.get(number));
             record.setApplicationCode(applicationCode);
             record.setFlowCode(flowCode);
-            // 审批状态：0--通过，1--驳回
+            // 审批状态：0--待审，1--驳回，2--通过
             record.setApproverStatus(0);
             record.setDeleteFlag(0);
             record.setCreateId(userSessionVO.getUserAccount());
@@ -1583,6 +1583,98 @@ public class SalaryServiceImpl implements SalaryService {
         Workbook workbook = ExcelExportUtil.exportExcel(params, map);
         //导出
         ExcelExpUtil.excelDownload(workbook, response, "本月薪资表");
+    }
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:36 2020/10/16
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 驳回后再次发起流程，根据薪资流程记录表id
+     *                 这里再次发起是重新建一个新流程code
+     **/
+    @Override
+    public ApiResult updateSalaryFlowById(Long salaryFlowId, UserSessionVO userSessionVO) {
+        // 校验流程id是否存在
+        if (null == salaryFlowId) {
+            return ApiResult.getFailedApiResponse("薪资流程表ID必传！");
+        }
+        // 查询
+        SalaryFlowBill salaryFlowBill = salaryFlowBillMapper.selectById(salaryFlowId);
+        // 校验 非空  或者 审批状态不为“驳回”  单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废
+        if (null == salaryFlowBill || 2 != salaryFlowBill.getApplicationStatus().intValue()) {
+            return ApiResult.getFailedApiResponse("仅驳回的单据才能再次发起流程！");
+        }
+        // 获取新的流程code
+        String flowCode = baseService.getFlowCodeByApplicationCode(salaryFlowBill.getApplicationCode());
+        // 获取所有关联的薪资id
+        List<Long> userSalaryIdList = (List<Long>) JSONArray.parse(salaryFlowBill.getUserSalaryIds());
+        // 将薪资id的  是否允许再次编辑状态 批量改为 1 不允许   again_compute_flag
+        UserSalary userSalary = new UserSalary();
+        userSalary.setAgainComputeFlag(1);
+        userSalaryMapper.update(userSalary, Condition.create().in("id", userSalaryIdList));
+        // 重新赋值
+        salaryFlowBill.setFlowCode(flowCode);
+        salaryFlowBill.setApplicationType("薪资审批驳回后重新发起");
+        salaryFlowBill.setHandleId(userSessionVO.getId());
+        salaryFlowBill.setHandleAccount(userSessionVO.getUserAccount());
+        salaryFlowBill.setHandleName(userSessionVO.getUserName());
+        salaryFlowBill.setDeleteFlag(0);
+        salaryFlowBill.setEditId(userSessionVO.getUserAccount());
+        salaryFlowBill.setEditName(userSessionVO.getUserName());
+        salaryFlowBill.setEditTime(new Date());
+        // 单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废
+        salaryFlowBill.setApplicationStatus(1);
+        // 新增
+        salaryFlowBillMapper.updateById(salaryFlowBill);
+        // 新增一条待审记录到流程记录表中
+        Long flowConfigId = salaryFlowBill.getBaseFlowConfigId();
+        String applicationCode = salaryFlowBill.getApplicationCode();
+        // 先查询流程详情表
+        List<BaseFlowConfigDetail> detailList = baseFlowConfigDetailMapper.selectList(Condition.create().eq("base_flow_config_id", flowConfigId).eq("delete_flag", 0));
+        // 定义流程详情对象
+        BaseFlowConfigDetail configDetail = null;
+        // 获取第一个审批节点
+        for (BaseFlowConfigDetail detail : detailList) {
+            // 校验
+            if (1 == detail.getFirstFlag().intValue()) {
+                // 赋值
+                configDetail = detail;
+                // 跳出
+                break;
+            }
+        }
+        // 拆分出用户id集合 && 用户名称集合
+        List<Long> approverIdList = Arrays.asList(configDetail.getApproverIds().split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
+        List<String> approverNameList = Arrays.asList(configDetail.getApproverIds().split(","));
+        // 定义序号
+        int number = 0;
+        // 遍历
+        for (Long approverId : approverIdList) {
+            // 定义对象并赋值
+            BaseFlowRecord record = new BaseFlowRecord();
+            record.setBaseFlowConfigId(flowConfigId);
+            record.setBaseFlowConfigDetailId(configDetail.getId());
+            record.setNodeName(configDetail.getNodeName());
+            record.setApproverId(approverId);
+            record.setApproverName(approverNameList.get(number));
+            record.setApplicationCode(applicationCode);
+            record.setFlowCode(flowCode);
+            // 审批状态：审批状态：0--待审，1--驳回，2--通过
+            record.setApproverStatus(0);
+            record.setDeleteFlag(0);
+            record.setCreateId(userSessionVO.getUserAccount());
+            record.setCreateName(userSessionVO.getUserName());
+            record.setCreateTime(new Date());
+            record.setEditTime(new Date());
+            // 新增入库
+            baseFlowRecordMapper.insert(record);
+            // 自增
+            number++;
+        }
+        // 流程审批重新发起成功
+        return ApiResult.getSuccessApiResponse();
     }
 
 }

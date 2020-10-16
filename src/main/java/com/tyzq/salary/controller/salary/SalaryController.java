@@ -281,6 +281,29 @@ public class SalaryController {
 
     /*
      * @Author zwc   zwc_503@163.com
+     * @Date 14:34 2020/10/16
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 驳回后再次发起流程，根据薪资流程记录表id
+     **/
+    @ApiOperation(value = "驳回后再次发起流程", httpMethod = "GET", notes = "驳回后再次发起流程，根据薪资流程记录表id")
+    @GetMapping(value = "/updateSalaryFlowById")
+    public ApiResult updateSalaryFlowById(@RequestParam(value = "salaryFlowId") Long salaryFlowId, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return salaryService.updateSalaryFlowById(salaryFlowId, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("驳回后再次发起流程错误异常：" + e);
+            return ApiResult.getFailedApiResponse("驳回后再次发起流程出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author zwc   zwc_503@163.com
      * @Date 9:54 2020/9/28
      * @Param 
      * @return 
