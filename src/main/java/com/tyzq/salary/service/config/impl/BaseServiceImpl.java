@@ -142,7 +142,7 @@ public class BaseServiceImpl implements BaseService {
         baseBillRecord.setBillPrefix(billPrefix);
         baseBillRecord.setBillCode(billPrefix + billSuffix);
         baseBillRecord.setBillSuffix(billSuffix);
-        Integer sortNum = baseBillRecord.getSortNum();
+        Integer sortNum = billRecord.getSortNum();
         baseBillRecord.setSortNum(++sortNum);
         // 入库
         baseBillRecordMapper.insert(baseBillRecord);
