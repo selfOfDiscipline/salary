@@ -203,7 +203,7 @@ public class UserController {
             // 取出登录人所负责的部门id
             List<Long> salaryDeptIdList = userSalaryDeptList.stream().map(UserSalaryDept::getSalaryDeptId).collect(Collectors.toList());
             // 校验
-            if (!salaryDeptIdList.contains(user.getSalaryDeptId().intValue())) {
+            if (!salaryDeptIdList.contains(user.getSalaryDeptId())) {
                 return ApiResult.getFailedApiResponse("您无权查看该员工信息！");
             }
         }

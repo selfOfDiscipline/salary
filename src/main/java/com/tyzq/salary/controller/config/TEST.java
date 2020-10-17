@@ -1,5 +1,8 @@
 package com.tyzq.salary.controller.config;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.google.common.collect.Lists;
 import com.tyzq.salary.utils.DateUtils;
 
 import java.math.BigDecimal;
@@ -7,6 +10,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @ProJectName: salary
@@ -70,6 +74,16 @@ public class TEST {
         } else {
             System.out.println("\"xiaoyu\" = " + "xiaoyu");
         }
+
+        List<Long> testList = Lists.newArrayList();
+        testList.add(11l);
+        testList.add(12l);
+        String jsonString = JSON.toJSONString(testList);
+        System.out.println("jsonString = " + jsonString);
+        Object parse = JSONArray.parse(jsonString);
+        System.out.println("parse = " + parse);
+        List<Long> TESTS = (List<Long>) JSONArray.parse(jsonString);
+        System.out.println("TESTS = " + TESTS);
 
 
     }

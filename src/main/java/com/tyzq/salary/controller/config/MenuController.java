@@ -28,10 +28,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 
 /**
  * @ProJectName: zhongyi
@@ -119,6 +121,8 @@ public class MenuController {
             List<Long> roleIdList = userRoleList.stream().map(UserRole::getRoleId).collect(Collectors.toList());
             // 获取以上角色集合所配置的角色权限集合
             List<MenuRole> menuRoleList = menuRoleMapper.selectList(Condition.create().in("role_id", roleIdList));
+            // 根据菜单id去重
+            menuRoleList = menuRoleList.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(MenuRole::getMenuId))), ArrayList::new));
             // 校验
             if (CollectionUtils.isEmpty(menuRoleList)) {
                 return ApiResult.getFailedApiResponse("您的角色尚未配置权限！");
@@ -140,9 +144,9 @@ public class MenuController {
                 return ApiResult.getFailedApiResponse("未能匹配到您的权限！");
             }
             // 按照父级节点分组
-            Map<Long, List<MenuVO>> rootMap = menuVOList.stream().sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.groupingBy(MenuVO::getPid));
+            Map<Long, List<MenuVO>> rootMap = menuVOList.stream().sorted(comparing(MenuVO::getSortNum)).collect(Collectors.groupingBy(MenuVO::getPid));
             // 获取到父级根目录节点集合
-            List<MenuVO> rootList = menuVOList.stream().filter(a -> a.getPid() == 0).sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.toList());
+            List<MenuVO> rootList = menuVOList.stream().filter(a -> a.getPid() == 0).sorted(comparing(MenuVO::getSortNum)).collect(Collectors.toList());
             // 递归
             putChildrenList(rootList, rootMap);
             return ApiResult.getSuccessApiResponse(rootList);
@@ -163,7 +167,7 @@ public class MenuController {
             // 通过根节点id，查看是否有子节点
             List<MenuVO> children = rootMap.get(m.getId());
             if (children != null){
-                children = children.stream().sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.toList());
+                children = children.stream().sorted(comparing(MenuVO::getSortNum)).collect(Collectors.toList());
                 m.setChildren(children);
                 // 依次递归
                 putChildrenList(children, rootMap);
@@ -234,9 +238,9 @@ public class MenuController {
                 });
             });
             // 按照父级节点分组
-            Map<Long, List<MenuVO>> rootMap = allMenuVOList.stream().sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.groupingBy(MenuVO::getPid));
+            Map<Long, List<MenuVO>> rootMap = allMenuVOList.stream().sorted(comparing(MenuVO::getSortNum)).collect(Collectors.groupingBy(MenuVO::getPid));
             // 获取到父级根目录节点集合
-            List<MenuVO> rootList = allMenuVOList.stream().filter(a -> a.getPid() == 0).sorted(Comparator.comparing(MenuVO::getSortNum)).collect(Collectors.toList());
+            List<MenuVO> rootList = allMenuVOList.stream().filter(a -> a.getPid() == 0).sorted(comparing(MenuVO::getSortNum)).collect(Collectors.toList());
             // 递归
             putChildrenList(rootList, rootMap);
             return ApiResult.getSuccessApiResponse(rootList);

@@ -90,8 +90,8 @@ public class AgendaController {
      * @Version 1.0
      * @Description //TODO 处理当前节点
      **/
-    @ApiOperation(value = "处理当前节点", httpMethod = "GET", notes = "处理当前节点")
-    @GetMapping(value = "/handleThisNode")
+    @ApiOperation(value = "处理当前节点", httpMethod = "POST", notes = "处理当前节点")
+    @PostMapping(value = "/handleThisNode")
     public ApiResult handleThisNode(@RequestBody FlowHandleParamVO handleParamVO, HttpServletRequest request) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
@@ -161,9 +161,9 @@ public class AgendaController {
      * @Param
      * @return
      * @Version 1.0
-     * @Description //TODO 汇总薪资流程，根据薪资流程表id集合
+     * @Description //TODO 汇总薪资流程，根据薪资流程表id集合(仅人力资源总监角色)
      **/
-    @ApiOperation(value = "汇总薪资流程", httpMethod = "GET", notes = "汇总薪资流程")
+    @ApiOperation(value = "汇总薪资流程", httpMethod = "GET", notes = "汇总薪资流程(仅人力资源总监角色)")
     @GetMapping(value = "/collectTheMonthSalaryFlow")
     public ApiResult collectTheMonthSalaryFlow(@RequestParam("ids") String ids, HttpServletRequest request) {
         // 获取session用户

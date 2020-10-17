@@ -55,6 +55,10 @@ public class ComputeSalaryParamVO implements Serializable {
      * 本月绩效比例
      */
     private BigDecimal monthPerformanceRatio;
+    /**
+     * 本月奖惩金额(可为正负)
+     */
+    private BigDecimal monthRewordsMoney;
 
     /* 是否计算社保公积金标识：computeSocialFlag == true 为计算，computeSocialFlag == false为不计算 【默认为true】*/
     private boolean computeSocialFlag = true;
@@ -145,6 +149,14 @@ public class ComputeSalaryParamVO implements Serializable {
 
     public void setMonthPerformanceRatio(BigDecimal monthPerformanceRatio) {
         this.monthPerformanceRatio = monthPerformanceRatio;
+    }
+
+    public BigDecimal getMonthRewordsMoney() {
+        return monthRewordsMoney;
+    }
+
+    public void setMonthRewordsMoney(BigDecimal monthRewordsMoney) {
+        this.monthRewordsMoney = monthRewordsMoney;
     }
 
     public boolean isComputeSocialFlag() {

@@ -196,7 +196,7 @@ public class UserDetail implements Serializable {
      */
     private BigDecimal totalDeductMoney;
     /**
-     * 累计专项扣除金额
+     * 累计专项附加扣除金额
      */
     private BigDecimal totalSpecialDeductMoney;
     /**
@@ -220,7 +220,7 @@ public class UserDetail implements Serializable {
      */
     private BigDecimal totalSupportParents;
     /**
-     * 累计其他款项扣除
+     * 累计专项扣除（个人年度社保+公积金）
      */
     private BigDecimal totalOtherDeduct;
     /**

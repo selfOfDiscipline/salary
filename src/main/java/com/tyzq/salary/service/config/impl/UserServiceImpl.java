@@ -102,6 +102,10 @@ public class UserServiceImpl implements UserService {
                 // 放入session中
                 userSessionVO.setRoleIdList(roleIdList);
                 userSessionVO.setRoleNameList(roleNameList);
+                // 校验是否有 人力资源总监角色，有该角色即允许流程汇总，无该角色则不允许
+                if (roleIdList.contains(Constants.FINANCE_ROLE_ID)) {
+                    userSessionVO.setAllowCollectFlag(true);
+                }
             }
         }
         // 生成token
@@ -607,5 +611,33 @@ public class UserServiceImpl implements UserService {
             return ApiResult.getSuccessApiResponse("tyzq-123456");
         }
         return ApiResult.getFailedApiResponse("类别填写有误！");
+    }
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 12:29 2020/10/17
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO  校验登录人权限----管理员/副总 角色   还是普通用户角色
+     **/
+    @Override
+    public Boolean checkUserSessionAuthrity(UserSessionVO userSessionVO) {
+        // 校验
+
+        return null;
+    }
+
+    public ApiResult checkUserRoleConfig(UserSessionVO userSessionVO) {
+        // 校验是否登录
+        if (null == userSessionVO) {
+            return ApiResult.getFailedApiResponse("您未登录！");
+        }
+        // 校验是否配置了角色
+        List<Long> roleIdList = userSessionVO.getRoleIdList();
+        if (CollectionUtils.isEmpty(roleIdList)) {
+            return ApiResult.getFailedApiResponse("您尚未配置角色！");
+        }
+        return null;
     }
 }

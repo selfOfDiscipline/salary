@@ -51,6 +51,9 @@ public class Constants implements Serializable {
     /* 定义副总经理ID*/
     public static final long OTHER_ROLE_ID = 2l;
 
+    /* 定义财务经理ID*/
+    public static final long MONEY_ROLE_ID = 3l;
+
     /* 定义薪资核算角色ID*/
     public static final long SALARY_DEPT_ROLE_ID = 12l;
 

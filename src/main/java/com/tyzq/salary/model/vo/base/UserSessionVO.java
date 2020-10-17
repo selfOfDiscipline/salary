@@ -31,6 +31,9 @@ public class UserSessionVO implements Serializable {
     /* 用户登录token*/
     private String tokenKey;
 
+    /* 是否可汇总流程标识  allowCollectFlag == true允许汇总；allowCollectFlag == false不允许汇总，默认为false*/
+    private boolean allowCollectFlag = false;
+
     /* 用户的最后登录时间（也就是token的最后赋值时间）*/
     private String lastLoginTime;
 
@@ -80,6 +83,14 @@ public class UserSessionVO implements Serializable {
 
     public void setTokenKey(String tokenKey) {
         this.tokenKey = tokenKey;
+    }
+
+    public boolean isAllowCollectFlag() {
+        return allowCollectFlag;
+    }
+
+    public void setAllowCollectFlag(boolean allowCollectFlag) {
+        this.allowCollectFlag = allowCollectFlag;
     }
 
     public String getLastLoginTime() {

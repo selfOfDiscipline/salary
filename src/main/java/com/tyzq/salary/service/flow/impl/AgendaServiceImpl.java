@@ -24,10 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 
 
 /**
@@ -63,6 +65,9 @@ public class AgendaServiceImpl implements AgendaService {
 
     @Resource
     private BaseFlowConfigMapper baseFlowConfigMapper;
+
+    @Resource
+    private SalaryDeptMapper salaryDeptMapper;
 
     /*
      * @Author zwc   zwc_503@163.com
@@ -135,12 +140,16 @@ public class AgendaServiceImpl implements AgendaService {
      * @Param 
      * @return 
      * @Version 1.0
-     * @Description //TODO 处理当前节点
+     * @Description //TODO 处理当前节点(通过/驳回)
      **/
     @Override
     public ApiResult handleThisNode(FlowHandleParamVO handleParamVO, UserSessionVO userSessionVO) {
         // 查询到当前待办对象
         BaseFlowRecord baseFlowRecord = baseFlowRecordMapper.selectById(handleParamVO.getId());
+        // 校验只能处理待审的单据
+        if (null == baseFlowRecord || 0 != baseFlowRecord.getApproverStatus().intValue()) {
+            return ApiResult.getFailedApiResponse("非待审状态的单据不可处理！");
+        }
         // 查询审批明细对象
         BaseFlowConfigDetail detail = baseFlowConfigDetailMapper.selectById(baseFlowRecord.getBaseFlowConfigDetailId());
         // 校验
@@ -159,8 +168,18 @@ public class AgendaServiceImpl implements AgendaService {
             salaryFlowBill = salaryFlowBillMapper.selectOne(salaryFlowBill);
             // 将状态改为驳回    单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废
             salaryFlowBill.setApplicationStatus(2);
+            salaryFlowBill.setHandleId(userSessionVO.getId());
+            salaryFlowBill.setHandleAccount(userSessionVO.getUserAccount());
+            salaryFlowBill.setHandleName(userSessionVO.getUserName());
+            salaryFlowBill.setHandleOpinion(handleParamVO.getOpinion());
+            salaryFlowBill.setHandleDate(DateUtils.getNowDateString());
             // 修改
             salaryFlowBillMapper.updateById(salaryFlowBill);
+            // 将该流程置为已结束
+            baseFlowGenerateMapper.update(new BaseFlowGenerate() {{
+                // 该流程状态：0--在审，1--审批完结，2--驳回，3--作废
+                setApproverStatus(2);
+            }}, Condition.create().eq("flow_code", salaryFlowBill.getFlowCode()).eq("application_code", salaryFlowBill.getApplicationCode()));
             // 将所有的薪资的  是否允许再次结算  改为允许    是否允许再次计算：0--允许，1--不允许
             List<Long> userSalaryIdList = (List<Long>) JSONArray.parse(salaryFlowBill.getUserSalaryIds());
             // 批量修改
@@ -191,6 +210,9 @@ public class AgendaServiceImpl implements AgendaService {
             salaryFlowBill = salaryFlowBillMapper.selectOne(salaryFlowBill);
             // 将状态改为审批通过    单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废
             salaryFlowBill.setApplicationStatus(3);
+            salaryFlowBill.setHandleId(userSessionVO.getId());
+            salaryFlowBill.setHandleAccount(userSessionVO.getUserAccount());
+            salaryFlowBill.setHandleName(userSessionVO.getUserName());
             salaryFlowBill.setHandleOpinion(handleParamVO.getOpinion());
             salaryFlowBill.setHandleDate(DateUtils.getNowDateString());
             // 修改
@@ -201,58 +223,69 @@ public class AgendaServiceImpl implements AgendaService {
                 setApproverStatus(1);
             }}, Condition.create().eq("flow_code", salaryFlowBill.getFlowCode()).eq("application_code", salaryFlowBill.getApplicationCode()));
             // TODO =======================员工年度累计个人所得税等计算赋值========================
-            // 校验权限是否为总经理/副总角色
+            // 校验权限是否为  人力资源总监角色    到该角色的单子，通过后即进行年度累计金额累加
             List<Long> roleIdList = userSessionVO.getRoleIdList();
             // 校验角色
-            if (CollectionUtils.isNotEmpty(roleIdList) && roleIdList.contains(Constants.CASHIER_ROLE_ID)) {
+            if (CollectionUtils.isNotEmpty(roleIdList) && roleIdList.contains(Constants.FINANCE_ROLE_ID)) {
                 // 给员工累加年度金额
                 annualMoneyAccumulation(salaryFlowBill, userSessionVO);
             }
             return ApiResult.getSuccessApiResponse();
-        } else {
-            // 不是最后一个节点，查询到下一个节点
-            BaseFlowConfigDetail nextDetail = new BaseFlowConfigDetail();
-            nextDetail.setBaseFlowConfigId(detail.getBaseFlowConfigId());
-            nextDetail.setDeleteFlag(0);
-            // 自增查询下一个节点
-            Integer sortNum = detail.getSortNum();
-            nextDetail.setSortNum(sortNum++);
-            // 查询
-            nextDetail = baseFlowConfigDetailMapper.selectOne(nextDetail);
-            // 校验
-            if (null == nextDetail) {
-                return ApiResult.getFailedApiResponse("未查询到下一个流程节点！");
-            }
-            // 拆分出用户id集合
-            List<Long> approverIdList = Arrays.asList(nextDetail.getApproverIds().split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
-            List<String> approverNameList = Arrays.asList(nextDetail.getApproverIds().split(","));
-            // 定义序号
-            int number = 0;
-            // 遍历 新增该节点流程记录表
-            for (Long approverId : approverIdList) {
-                // 定义对象并赋值
-                BaseFlowRecord record = new BaseFlowRecord();
-                record.setBaseFlowConfigId(nextDetail.getBaseFlowConfigId());
-                record.setBaseFlowConfigDetailId(nextDetail.getId());
-                record.setNodeName(nextDetail.getNodeName());
-                record.setApproverId(approverId);
-                record.setApproverName(approverNameList.get(number));
-                record.setApplicationCode(baseFlowRecord.getApplicationCode());
-                record.setFlowCode(baseFlowRecord.getFlowCode());
-                // 审批状态：0--待审，1--驳回，2--通过
-                record.setApproverStatus(0);
-                record.setDeleteFlag(0);
-                record.setCreateId(userSessionVO.getUserAccount());
-                record.setCreateName(userSessionVO.getUserName());
-                record.setCreateTime(new Date());
-                record.setEditTime(new Date());
-                // 新增入库
-                baseFlowRecordMapper.insert(record);
-                // 自增
-                number++;
-            }
-            return ApiResult.getSuccessApiResponse();
         }
+        // 查询单据对象
+        SalaryFlowBill salaryFlowBill = new SalaryFlowBill();
+        salaryFlowBill.setApplicationCode(baseFlowRecord.getApplicationCode());
+        salaryFlowBill.setDeleteFlag(0);
+        salaryFlowBill = salaryFlowBillMapper.selectOne(salaryFlowBill);
+        salaryFlowBill.setHandleId(userSessionVO.getId());
+        salaryFlowBill.setHandleAccount(userSessionVO.getUserAccount());
+        salaryFlowBill.setHandleName(userSessionVO.getUserName());
+        salaryFlowBill.setHandleOpinion(handleParamVO.getOpinion());
+        salaryFlowBill.setHandleDate(DateUtils.getNowDateString());
+        // 修改
+        salaryFlowBillMapper.updateById(salaryFlowBill);
+        // 不是最后一个节点，查询到下一个节点
+        BaseFlowConfigDetail nextDetail = new BaseFlowConfigDetail();
+        nextDetail.setBaseFlowConfigId(detail.getBaseFlowConfigId());
+        nextDetail.setDeleteFlag(0);
+        // 自增查询下一个节点
+        Integer sortNum = detail.getSortNum();
+        nextDetail.setSortNum(++sortNum);
+        // 查询
+        nextDetail = baseFlowConfigDetailMapper.selectOne(nextDetail);
+        // 校验
+        if (null == nextDetail) {
+            return ApiResult.getFailedApiResponse("未查询到下一个流程节点！");
+        }
+        // 拆分出用户id集合
+        List<Long> approverIdList = Arrays.asList(nextDetail.getApproverIds().split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
+        List<String> approverNameList = Arrays.asList(nextDetail.getApproverNames().split(","));
+        // 定义序号
+        int number = 0;
+        // 遍历 新增该节点流程记录表
+        for (Long approverId : approverIdList) {
+            // 定义对象并赋值
+            BaseFlowRecord record = new BaseFlowRecord();
+            record.setBaseFlowConfigId(nextDetail.getBaseFlowConfigId());
+            record.setBaseFlowConfigDetailId(nextDetail.getId());
+            record.setNodeName(nextDetail.getNodeName());
+            record.setApproverId(approverId);
+            record.setApproverName(approverNameList.get(number));
+            record.setApplicationCode(baseFlowRecord.getApplicationCode());
+            record.setFlowCode(baseFlowRecord.getFlowCode());
+            // 审批状态：0--待审，1--驳回，2--通过
+            record.setApproverStatus(0);
+            record.setDeleteFlag(0);
+            record.setCreateId(userSessionVO.getUserAccount());
+            record.setCreateName(userSessionVO.getUserName());
+            record.setCreateTime(new Date());
+            record.setEditTime(new Date());
+            // 新增入库
+            baseFlowRecordMapper.insert(record);
+            // 自增
+            number++;
+        }
+        return ApiResult.getSuccessApiResponse();
     }
 
     /*
@@ -280,9 +313,13 @@ public class AgendaServiceImpl implements AgendaService {
                     // 用户详情表赋值
                     // 赋值 年度累计收入金额 = 年度累计收入金额 + 预设银行代发工资金额
                     userDetail.setTotalIncomeMoney(userDetail.getTotalIncomeMoney().add(userDetail.getBankSalary()));
+                    // 赋值 年度累计应纳税所得额 = 年度累计应纳税所得额 + 本月应纳税所得额
+                    userDetail.setTotalIncomeMoney(userDetail.getTotalIncomeMoney().add(userSalary.getBankTaxableSelfMoney()));
+                    // 赋值 年度累计已纳税额 = 年度累计已纳税额 + 本月已纳税额
+                    userDetail.setTotalIncomeMoney(userDetail.getTotalIncomeMoney().add(userSalary.getBankRealityShouldTaxMoney()));
                     // 赋值 年度累计减除费用金额 = 年度累计减除费用金额 + 国家纳税起步金额
                     userDetail.setTotalDeductMoney(userDetail.getTotalDeductMoney().add(userDetail.getStipulationStartTaxMoney()));
-                    // 赋值 年度累计专项扣除金额 = 年度累计专项扣除金额 + 本月专项扣除的总金额
+                    // 赋值 年度累计专项附加扣除金额 = 年度累计专项附加扣除金额 + 本月专项附加扣除的总金额
                     userDetail.setTotalSpecialDeductMoney(userDetail.getTotalSpecialDeductMoney().add(userDetail.getSpecialDeductTotal()));
                     // 赋值 年度累计子女教育扣除金额 = 年度累计子女教育扣除金额 + 本月子女教育扣除金额
                     userDetail.setTotalChildEducation(userDetail.getTotalChildEducation().add(userDetail.getChildEducation()));
@@ -294,8 +331,8 @@ public class AgendaServiceImpl implements AgendaService {
                     userDetail.setTotalHomeRents(userDetail.getTotalHomeRents().add(userDetail.getHomeRents()));
                     // 赋值 年度累计赡养老人扣除金额 = 年度累计赡养老人扣除金额 + 本月赡养老人扣除金额
                     userDetail.setTotalSupportParents(userDetail.getTotalSupportParents().add(userDetail.getSupportParents()));
-                    // 赋值 年度累计其他款项扣除金额 = 年度累计其他款项扣除金额 + 本月其他款项扣除金额
-                    userDetail.setTotalOtherDeduct(userDetail.getTotalOtherDeduct().add(userDetail.getOtherDeduct()));
+                    // 赋值 年度累计专项扣除金额（个人社保公积金部分） = 年度累计专项扣除金额 + 工资表  本月费用个人总计
+                    userDetail.setTotalOtherDeduct(userDetail.getTotalOtherDeduct().add(userSalary.getMonthPersonPayTotal()));
                     userDetail.setEditId(userSessionVO.getUserAccount());
                     userDetail.setEditName(userSessionVO.getUserName());
                     userDetail.setEditTime(new Date());
@@ -317,7 +354,7 @@ public class AgendaServiceImpl implements AgendaService {
     @Override
     public ApiResult selectMineAgendaList(SalaryBillQueryVO salaryBillQueryVO, UserSessionVO userSessionVO) {
         // 条件构造
-        Wrapper wrapper = Condition.create().eq("handle_id", userSessionVO.getId());
+        Wrapper wrapper = Condition.create().eq("create_id", userSessionVO.getUserAccount());
         // 校验 单据编号
         if (StringUtils.isNotBlank(salaryBillQueryVO.getApplicationCode())) {
             wrapper.like("application_code", salaryBillQueryVO.getApplicationCode());
@@ -393,6 +430,20 @@ public class AgendaServiceImpl implements AgendaService {
             return ApiResult.getFailedApiResponse("未查询到流程单数据！");
         }
         // TODO 校验他们是否为同一个月份
+        // 根据月份去重
+        List<SalaryFlowBill> collectBillList = flowBillList.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(SalaryFlowBill::getSalaryDate))), ArrayList::new));
+        if (collectBillList.size() > 1) {
+            return ApiResult.getFailedApiResponse("请选择同一个月份的流程单据汇总！");
+        }
+        // 校验是否是全部的单据
+        // 查询所有薪资归属部门集合
+        Integer salaryDeptCount = salaryDeptMapper.selectCount(Condition.create().eq("delete_flag", 0));
+        // 拿薪资归属部门条数  +  1   （管理岗也是一条流程）
+        int thisCount = salaryDeptCount.intValue() + 1;
+        // 校验
+        if (thisCount != flowBillList.size()) {
+            return ApiResult.getFailedApiResponse("请等待本月各部门所有单据一并汇总！");
+        }
         // 合并成一个新的
         // 定义一个存放薪资表id的集合
         List<Long> salaryIdList = Lists.newArrayList();
@@ -419,19 +470,17 @@ public class AgendaServiceImpl implements AgendaService {
         String flowCode = baseService.getFlowCodeByApplicationCode(applicationCode);
         SalaryFlowBill salaryFlowBill = new SalaryFlowBill();
         // 赋值
+        salaryFlowBill.setSalaryDate(flowBillList.get(0).getSalaryDate());
         salaryFlowBill.setApplicationCode(applicationCode);
         salaryFlowBill.setFlowCode(flowCode);
         salaryFlowBill.setBaseFlowConfigId(flowConfigId);
-        salaryFlowBill.setApplicationType("汇总薪资审批");
-        salaryFlowBill.setHandleId(userSessionVO.getId());
-        salaryFlowBill.setHandleAccount(userSessionVO.getUserAccount());
-        salaryFlowBill.setHandleName(userSessionVO.getUserName());
+        salaryFlowBill.setApplicationType(baseFlowConfig.getFlowType());
         salaryFlowBill.setDeleteFlag(0);
         salaryFlowBill.setCreateId(userSessionVO.getUserAccount());
         salaryFlowBill.setCreateName(userSessionVO.getUserName());
         salaryFlowBill.setCreateTime(new Date());
         salaryFlowBill.setEditTime(new Date());
-        salaryFlowBill.setSalaryDeptId(999999l);// 人力资源总监这里声明薪资归属部门id为 999999
+        salaryFlowBill.setSalaryDeptId(888888L);// 人力资源总监这里声明薪资归属部门id为 888888L
         salaryFlowBill.setRoleId(Constants.FINANCE_ROLE_ID);
         salaryFlowBill.setRoleName("人力资源总监");
         // 单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废
@@ -456,7 +505,7 @@ public class AgendaServiceImpl implements AgendaService {
         }
         // 拆分出用户id集合 && 用户名称集合
         List<Long> approverIdList = Arrays.asList(configDetail.getApproverIds().split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
-        List<String> approverNameList = Arrays.asList(configDetail.getApproverIds().split(","));
+        List<String> approverNameList = Arrays.asList(configDetail.getApproverNames().split(","));
         // 定义序号
         int number = 0;
         // 遍历
@@ -470,7 +519,7 @@ public class AgendaServiceImpl implements AgendaService {
             record.setApproverName(approverNameList.get(number));
             record.setApplicationCode(applicationCode);
             record.setFlowCode(flowCode);
-            // 审批状态：0--通过，1--驳回
+            // 审批状态：0--待审，1--驳回，2--通过
             record.setApproverStatus(0);
             record.setDeleteFlag(0);
             record.setCreateId(userSessionVO.getUserAccount());

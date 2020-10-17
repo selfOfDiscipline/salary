@@ -15,8 +15,8 @@ public class UserSalaryDeptQueryVO extends PageUtilVO implements Serializable {
     /* 核算人员名称*/
     private String userName;
 
-    /* 薪资归属部门名称*/
-    private String salaryDeptName;
+    /* 薪资归属部门Id*/
+    private Long salaryDeptId;
 
     public String getUserName() {
         return userName;
@@ -26,11 +26,11 @@ public class UserSalaryDeptQueryVO extends PageUtilVO implements Serializable {
         this.userName = userName;
     }
 
-    public String getSalaryDeptName() {
-        return salaryDeptName;
+    public Long getSalaryDeptId() {
+        return salaryDeptId;
     }
 
-    public void setSalaryDeptName(String salaryDeptName) {
-        this.salaryDeptName = salaryDeptName;
+    public void setSalaryDeptId(Long salaryDeptId) {
+        this.salaryDeptId = salaryDeptId;
     }
 }

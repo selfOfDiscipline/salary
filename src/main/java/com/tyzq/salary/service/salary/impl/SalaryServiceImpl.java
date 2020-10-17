@@ -219,6 +219,7 @@ public class SalaryServiceImpl implements SalaryService {
                             UserSalary userSalary = new UserSalary();
                             // 常量赋值
                             userSalary.setAgainComputeFlag(0);
+                            userSalary.setCurrentComputeFlag(0);
                             userSalary.setDeleteFlag(0);
                             userSalary.setCreateId(userSessionVO.getUserAccount());
                             userSalary.setCreateName(userSessionVO.getUserName());
@@ -232,11 +233,12 @@ public class SalaryServiceImpl implements SalaryService {
                             userSalary.setSalaryDeptName(user.getSalaryDeptName());
                             userSalary.setUserRoleName(user.getRoleName());
                             // 薪资部分 赋值
+                            userSalary.setAddComputerSubsidy(user.getAddComputerSubsidy());// 增加项：电脑补
+                            userSalary.setMonthPerformanceRatio(new BigDecimal("1.00"));// 本月绩效比例
                             userSalary.setMonthBankSalary(user.getBankSalary());// 本月银行代发工资
                             userSalary.setMonthOtherBankSalary(user.getOtherBankSalary());// 本月他行代发工资
                             userSalary.setMonthBaseSalary(user.getBaseSalary());// 本月基本工资
                             userSalary.setMonthPerformanceSalary(user.getPerformanceSalary());// 本月绩效工资
-                            userSalary.setMonthPerformanceRatio(new BigDecimal("1.00"));// 本月绩效比例
                             userSalary.setMonthPostSalary(user.getPostSalary());// 本月岗位工资
                             userSalary.setMonthPostSubsidy(user.getPostSubsidy());// 本月岗位津贴
                             userSalary.setMonthOtherSubsidy(user.getOtherSubsidy());// 本月其他补贴
@@ -255,6 +257,8 @@ public class SalaryServiceImpl implements SalaryService {
             // 定义薪资对象
             UserSalary userSalary = new UserSalary();
             // 常量赋值
+            userSalary.setAgainComputeFlag(0);
+            userSalary.setCurrentComputeFlag(0);
             userSalary.setDeleteFlag(0);
             userSalary.setCreateId(userSessionVO.getUserAccount());
             userSalary.setCreateName(userSessionVO.getUserName());
@@ -268,11 +272,12 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setSalaryDeptName(user.getSalaryDeptName());
             userSalary.setUserRoleName(user.getRoleName());
             // 薪资部分 赋值
+            userSalary.setAddComputerSubsidy(user.getAddComputerSubsidy());// 增加项：电脑补
+            userSalary.setMonthPerformanceRatio(new BigDecimal("1.00"));// 本月绩效比例
             userSalary.setMonthBankSalary(user.getBankSalary());// 本月银行代发工资
             userSalary.setMonthOtherBankSalary(user.getOtherBankSalary());// 本月他行代发工资
             userSalary.setMonthBaseSalary(user.getBaseSalary());// 本月基本工资
             userSalary.setMonthPerformanceSalary(user.getPerformanceSalary());// 本月绩效工资
-            userSalary.setMonthPerformanceRatio(new BigDecimal("1.00"));// 本月绩效比例
             userSalary.setMonthPostSalary(user.getPostSalary());// 本月岗位工资
             userSalary.setMonthPostSubsidy(user.getPostSubsidy());// 本月岗位津贴
             userSalary.setMonthOtherSubsidy(user.getOtherSubsidy());// 本月其他补贴
@@ -446,8 +451,9 @@ public class SalaryServiceImpl implements SalaryService {
         // 计算
         // PS:上月入职员工无绩效
         // 本月出勤工资 = （员工标准薪资*薪资发放比例/21.75）*出勤天数
-        BigDecimal theDecimal = userDetail.getComputeStandardSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
-        BigDecimal theMonthAttendanceSalary = theDecimal.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
+        // 本月平均一天工资为
+        BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP).add(computeSalaryParamVO.getMonthRewordsMoney());
 
         // 赋值本月基本工资
         userSalary.setMonthBaseSalary(theMonthAttendanceSalary);
@@ -659,6 +665,7 @@ public class SalaryServiceImpl implements SalaryService {
         // 操作数据库
         // 将用户本月薪资表更新
         userSalary.setNewEntryAttendanceDays(computeSalaryParamVO.getNewEntryAttendanceDays());// 赋值上月出勤天数
+        userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());// 赋值本月奖惩金额
         userSalary.setCurrentComputeFlag(1);// 给本月是否计算过标识赋值为 本月已计算过。
         // 将用户本月薪资表更新
         userSalaryMapper.updateById(userSalary);
@@ -733,42 +740,55 @@ public class SalaryServiceImpl implements SalaryService {
         // 本月出勤工资 = 转正前工资 + 转正后工资
 
         // 计算 转正前部分
-        // (员工标准薪资*转正前薪资发放比例/21.75)
+        // 转正前 本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
         BigDecimal theBeforeDecimal = userDetail.getComputeProbationSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+        // todo 计算
+        // 转正前病假扣款
+        BigDecimal beforeSick = theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeSickAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
+        // 转正前其他假扣款
+        BigDecimal beforeOther = theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeOtherAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 转正前工资
         BigDecimal beforeSalary = theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP)
-                .subtract(theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeOtherAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
-                .subtract(theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeSickAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
-                .add(theBeforeDecimal.multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
-        // 转正后  计算后比例工资
+                .subtract(beforeSick)
+                .subtract(beforeOther)
+                .add(theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeSickAttendanceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        // 转正后  本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
         BigDecimal theAfterDecimal = userDetail.getComputeStandardSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
         // 转正后预估基本工资
         BigDecimal afterBaseSalary = theAfterDecimal.multiply(computeSalaryParamVO.getPositiveAfterAttendanceDays()).multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 转正后本月绩效工资
-        BigDecimal allPerformaneSalary = theAfterDecimal.multiply(userDetail.getPerformanceRatio()).multiply(computeSalaryParamVO.getMonthPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP);
-        // 转正后全勤工资
+        BigDecimal allPerformaneSalary = theAfterDecimal.multiply(computeSalaryParamVO.getPositiveAfterAttendanceDays())
+                .multiply(userDetail.getPerformanceRatio()).multiply(computeSalaryParamVO.getMonthPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP);
+        // 转正后全勤工资  转正后预估基本工资 + 转正后本月绩效工资
         BigDecimal allSalary = afterBaseSalary.add(allPerformaneSalary);
+        //TODO 这里转正后缺勤和病假，目前按照的  转正后绩效1/21.75得到的钱数来算的，是否需要累加再除以21.75
+        // 转正后且计算绩效后，一天平均工资为
+        BigDecimal oneDayMoney = allSalary.divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+        // 转正后病假扣款
+        BigDecimal afterSick = oneDayMoney.multiply(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
+        // 转正后其他假扣款
+        BigDecimal afterOther = oneDayMoney.multiply(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 转正后工资
-        BigDecimal afterSalary = allSalary.subtract(allSalary.multiply(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
-                .subtract(allSalary.multiply(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
-                .add(allSalary.multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        BigDecimal afterSalary = allSalary.subtract(afterSick)
+                .subtract(afterOther)
+                .add(oneDayMoney.multiply(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
         // 本月出勤工资
         BigDecimal theMonthAttendanceSalary = beforeSalary.add(afterSalary);
-        // 本月出勤工资 = 本月出勤工资 + 电脑补 + 其他补 - 其他扣款
-        theMonthAttendanceSalary = theMonthAttendanceSalary.add(userDetail.getAddComputerSubsidy()).add(userDetail.getAddOtherSubsidy()).subtract(userDetail.getDeductOther());
-        // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款
+        // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额
+        theMonthAttendanceSalary = theMonthAttendanceSalary.add(userDetail.getAddComputerSubsidy()).add(computeSalaryParamVO.getMonthRewordsMoney());
+        // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款、本月奖惩金额
         userSalary.setAddComputerSubsidy(userDetail.getAddComputerSubsidy());
         userSalary.setAddOtherSubsidy(userDetail.getAddOtherSubsidy());
         userSalary.setDeductOther(userDetail.getDeductOther());
-        // todo 计算
-        userSalary.setDeductSick(allSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPersonSickStandard())).setScale(2, BigDecimal.ROUND_HALF_UP));
-        userSalary.setDeductThing(allSalary.multiply(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        userSalary.setDeductSick(beforeSick.add(afterSick));
+        userSalary.setDeductThing(beforeOther.add(afterOther));
+        userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
 
 
-        // 赋值本月基本工资 = 转正前工资 + 转正后工资*(1 - 绩效占工资比例)
-        userSalary.setMonthBaseSalary(beforeSalary.add(afterSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP)));
-        // 赋值本月绩效工资 = 转正后工资*绩效占工资比例
-        userSalary.setMonthPerformanceSalary(afterSalary.multiply(userDetail.getPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        // 赋值本月基本工资 = 转正后工资*(1 - 绩效占工资比例)
+        userSalary.setMonthBaseSalary(afterSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP));
+        // 赋值本月绩效工资 = 转正前工资 + 转正后工资*绩效占工资比例
+        userSalary.setMonthPerformanceSalary(beforeSalary.add(afterSalary.multiply(userDetail.getPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP)));
 
         // 计算个税  这里要先判断  【本月出勤工资 >= 预设银行代发工资】
         // 接上：大于等于的话，1.拿 【预设银行代发工资】去计算银行代发工资个税，2.拿本月出勤工资 - 去计算他行代发工资个税
@@ -964,6 +984,7 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setPositiveAfterOtherAttendanceDays(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays());// 转正后其他缺勤天数
         userSalary.setPositiveAfterSickAttendanceDays(computeSalaryParamVO.getPositiveAfterSickAttendanceDays());// 转正后病假天数
         userSalary.setMonthPerformanceRatio(computeSalaryParamVO.getMonthPerformanceRatio());// 本月绩效比例
+        userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());// 赋值本月奖惩金额
         userSalary.setCurrentComputeFlag(1);// 给本月是否计算过标识赋值为 本月已计算过。
         // 将用户本月薪资表更新
         userSalaryMapper.updateById(userSalary);
@@ -1040,19 +1061,22 @@ public class SalaryServiceImpl implements SalaryService {
         BigDecimal allPerformaneSalary = userDetail.getComputeStandardSalary().multiply(userDetail.getPerformanceRatio()).multiply(computeSalaryParamVO.getMonthPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 本月全勤工资
         BigDecimal allSalary = baseSalary.add(allPerformaneSalary);
+        // 本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
+        BigDecimal oneDayMoney = allSalary.divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
         // 本月出勤工资
-        BigDecimal theMonthAttendanceSalary = allSalary.subtract(allSalary.multiply(computeSalaryParamVO.getOtherAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
-                .subtract(allSalary.multiply(computeSalaryParamVO.getSickAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
-                .add(allSalary.multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        BigDecimal theMonthAttendanceSalary = allSalary.subtract(oneDayMoney.multiply(computeSalaryParamVO.getOtherAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
+                .subtract(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
+                .add(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
 
-        // 本月出勤工资 = 本月出勤工资 + 电脑补 + 其他补 - 其他扣款
-        theMonthAttendanceSalary = theMonthAttendanceSalary.add(userDetail.getAddComputerSubsidy()).add(userDetail.getAddOtherSubsidy()).subtract(userDetail.getDeductOther());
-        // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款
+        // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额(可为正负)
+        theMonthAttendanceSalary = theMonthAttendanceSalary.add(userDetail.getAddComputerSubsidy()).add(computeSalaryParamVO.getMonthRewordsMoney());
+        // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款、本月奖惩金额(可为正负)
         userSalary.setAddComputerSubsidy(userDetail.getAddComputerSubsidy());
         userSalary.setAddOtherSubsidy(userDetail.getAddOtherSubsidy());
         userSalary.setDeductOther(userDetail.getDeductOther());
-        userSalary.setDeductSick(allSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPersonSickStandard())).setScale(2, BigDecimal.ROUND_HALF_UP));
-        userSalary.setDeductThing(allSalary.multiply(computeSalaryParamVO.getOtherAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        userSalary.setDeductSick(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).multiply(new BigDecimal("1.00").subtract(userDetail.getPersonSickStandard())).setScale(2, BigDecimal.ROUND_HALF_UP));
+        userSalary.setDeductThing(oneDayMoney.multiply(computeSalaryParamVO.getOtherAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
 
         // 赋值本月基本工资 = 本月出勤工资*(1 - 绩效占工资比例)
         userSalary.setMonthBaseSalary(theMonthAttendanceSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP));
@@ -1249,6 +1273,7 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setOtherAbsenceDays(computeSalaryParamVO.getOtherAbsenceDays());// 其他缺勤天数
         userSalary.setSickAdsenceDays(computeSalaryParamVO.getSickAbsenceDays());// 病假缺勤天数
         userSalary.setMonthPerformanceRatio(computeSalaryParamVO.getMonthPerformanceRatio());// 本月绩效比例
+        userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());// 赋值本月奖惩金额
         userSalary.setCurrentComputeFlag(1);// 给本月是否计算过标识赋值为 本月已计算过。
         // 将用户本月薪资表更新
         userSalaryMapper.updateById(userSalary);
@@ -1265,12 +1290,12 @@ public class SalaryServiceImpl implements SalaryService {
      **/
     @Override
     public ApiResult startSalaryFlow(Long salaryDeptId, Integer userPostType, UserSessionVO userSessionVO) {
-        // 校验权限是否为总经理/副总/薪资核算角色
+        // 校验权限是否为    总经理/副总/薪资核算     两个角色，只有这两个角色才能发起流程
         List<Long> roleIdList = userSessionVO.getRoleIdList();
         if (CollectionUtils.isEmpty(roleIdList) || (!roleIdList.contains(Constants.ADMIN_ROLE_ID) && !roleIdList.contains(Constants.OTHER_ROLE_ID) && !roleIdList.contains(Constants.SALARY_DEPT_ROLE_ID))) {
             return ApiResult.getFailedApiResponse("您无权发起流程！");
         }
-        // 定义是否为总经理/副总 角色标识
+        // 定义是否为  总经理/副总 角色标识
         boolean adminFlag = false;
         if (roleIdList.contains(Constants.ADMIN_ROLE_ID) || roleIdList.contains(Constants.OTHER_ROLE_ID)) {
             adminFlag = true;
@@ -1294,14 +1319,15 @@ public class SalaryServiceImpl implements SalaryService {
         Long flowConfigId = null;
         // 定义薪资归属部门id集合
         List<Long> salaryDeptIdList = Lists.newArrayList();
+        // 定义流程主表查询条件
+        BaseFlowConfig baseFlowConfig = new BaseFlowConfig();
+        baseFlowConfig.setDeleteFlag(0);
+        baseFlowConfig.setUseFlag(0);
         // 校验是副总还是薪资核算人员
         if (adminFlag) {
             // 只查询管理岗
             userPostTypeString = "true";
             // 查询副总角色的流程
-            BaseFlowConfig baseFlowConfig = new BaseFlowConfig();
-            baseFlowConfig.setDeleteFlag(0);
-            baseFlowConfig.setUseFlag(0);
             baseFlowConfig.setFlowRoleId(Constants.OTHER_ROLE_ID);
             baseFlowConfig = baseFlowConfigMapper.selectOne(baseFlowConfig);
             // 校验
@@ -1315,9 +1341,6 @@ public class SalaryServiceImpl implements SalaryService {
         } else {
             userPostTypeString = null;
             // 查询薪资核算角色的流程
-            BaseFlowConfig baseFlowConfig = new BaseFlowConfig();
-            baseFlowConfig.setDeleteFlag(0);
-            baseFlowConfig.setUseFlag(0);
             baseFlowConfig.setFlowRoleId(Constants.SALARY_DEPT_ROLE_ID);
             baseFlowConfig.setFlowSalaryDeptId(salaryDeptId);
             baseFlowConfig = baseFlowConfigMapper.selectOne(baseFlowConfig);
@@ -1353,25 +1376,24 @@ public class SalaryServiceImpl implements SalaryService {
         String applicationCode = baseService.getBillCodeByBillType(1);
         // 获取流程code
         String flowCode = baseService.getFlowCodeByApplicationCode(applicationCode);
+        // 查询一条薪资对象
+        UserSalary userSalaryById = userSalaryMapper.selectById(userSalaryIdList.get(0));
         // 准备新增
         SalaryFlowBill salaryFlowBill = new SalaryFlowBill();
         // 赋值
+        salaryFlowBill.setSalaryDate(userSalaryById.getSalaryDate());
         salaryFlowBill.setApplicationCode(applicationCode);
         salaryFlowBill.setFlowCode(flowCode);
         salaryFlowBill.setBaseFlowConfigId(flowConfigId);
-        salaryFlowBill.setApplicationType("薪资审批");
-        salaryFlowBill.setHandleId(userSessionVO.getId());
-        salaryFlowBill.setHandleAccount(userSessionVO.getUserAccount());
-        salaryFlowBill.setHandleName(userSessionVO.getUserName());
+        salaryFlowBill.setApplicationType(baseFlowConfig.getFlowType());
         salaryFlowBill.setDeleteFlag(0);
         salaryFlowBill.setCreateId(userSessionVO.getUserAccount());
         salaryFlowBill.setCreateName(userSessionVO.getUserName());
         salaryFlowBill.setCreateTime(new Date());
         salaryFlowBill.setEditTime(new Date());
-
         // 校验
         if (adminFlag) {
-            salaryFlowBill.setSalaryDeptId(0l);// 副总这里声明薪资归属部门id为0
+            salaryFlowBill.setSalaryDeptId(999999L);// 副总这里声明薪资归属部门id为 999999L
             salaryFlowBill.setRoleId(Constants.OTHER_ROLE_ID);
             salaryFlowBill.setRoleName("副总");
         } else {
@@ -1401,7 +1423,7 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 拆分出用户id集合 && 用户名称集合
         List<Long> approverIdList = Arrays.asList(configDetail.getApproverIds().split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
-        List<String> approverNameList = Arrays.asList(configDetail.getApproverIds().split(","));
+        List<String> approverNameList = Arrays.asList(configDetail.getApproverNames().split(","));
         // 定义序号
         int number = 0;
         // 遍历

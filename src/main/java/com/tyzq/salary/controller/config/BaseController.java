@@ -36,9 +36,9 @@ public class BaseController {
      * @Param
      * @return
      * @Version 1.0
-     * @Description //TODO 查询薪资归属部门列表
+     * @Description //TODO 查询薪资归属部门列表(追加按权限)
      **/
-    @ApiOperation(value = "薪资归属部门列表", httpMethod = "POST", notes = "查询薪资归属部门列表")
+    @ApiOperation(value = "薪资归属部门列表", httpMethod = "POST", notes = "查询薪资归属部门列表（追加按权限）")
     @PostMapping(value = "/selectSalaryDeptList")
     public ApiResult selectSalaryDeptList(@RequestBody SalaryDeptQueryVO salaryDeptQueryVO, HttpServletRequest request) {
         try {

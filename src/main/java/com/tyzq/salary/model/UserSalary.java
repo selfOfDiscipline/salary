@@ -80,6 +80,10 @@ public class UserSalary implements Serializable {
      */
     private BigDecimal sickAdsenceDays;
     /**
+     * 病假缺勤天数
+     */
+    private BigDecimal monthRewordsMoney;
+    /**
      * 本月绩效比例
      */
     private BigDecimal monthPerformanceRatio;
@@ -801,6 +805,14 @@ public class UserSalary implements Serializable {
         this.editTime = editTime;
     }
 
+    public BigDecimal getMonthRewordsMoney() {
+        return monthRewordsMoney;
+    }
+
+    public void setMonthRewordsMoney(BigDecimal monthRewordsMoney) {
+        this.monthRewordsMoney = monthRewordsMoney;
+    }
+
     @Override
     public String toString() {
         return "UserSalary{" +
@@ -819,6 +831,7 @@ public class UserSalary implements Serializable {
         ", positiveBeforeSickAttendanceDays=" + positiveBeforeSickAttendanceDays +
         ", otherAbsenceDays=" + otherAbsenceDays +
         ", sickAdsenceDays=" + sickAdsenceDays +
+        ", monthRewordsMoney=" + monthRewordsMoney +
         ", monthPerformanceRatio=" + monthPerformanceRatio +
         ", monthBankSalary=" + monthBankSalary +
         ", monthOtherBankSalary=" + monthOtherBankSalary +

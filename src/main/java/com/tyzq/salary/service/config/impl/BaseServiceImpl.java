@@ -143,7 +143,7 @@ public class BaseServiceImpl implements BaseService {
         baseBillRecord.setBillCode(billPrefix + billSuffix);
         baseBillRecord.setBillSuffix(billSuffix);
         Integer sortNum = baseBillRecord.getSortNum();
-        baseBillRecord.setSortNum(sortNum++);
+        baseBillRecord.setSortNum(++sortNum);
         // 入库
         baseBillRecordMapper.insert(baseBillRecord);
         return baseBillRecord.getBillCode();
@@ -166,6 +166,9 @@ public class BaseServiceImpl implements BaseService {
         baseFlowGenerate.setApplicationCode(applicationCode);
         baseFlowGenerate.setApproverStatus(0);
         baseFlowGenerate.setFlowCode(flowCode);
+        baseFlowGenerate.setCreateName("程序自动生成");
+        baseFlowGenerate.setCreateTime(new Date());
+        baseFlowGenerate.setEditTime(new Date());
         // 入库
         baseFlowGenerateMapper.insert(baseFlowGenerate);
         return flowCode;
@@ -181,8 +184,43 @@ public class BaseServiceImpl implements BaseService {
      **/
     @Override
     public ApiResult selectSalaryDeptList(SalaryDeptQueryVO salaryDeptQueryVO, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        // 校验是否登录
+        if (null == userSessionVO) {
+            return ApiResult.getFailedApiResponse("您未登录！");
+        }
+        // 校验是否配置了角色
+        List<Long> roleIdList = userSessionVO.getRoleIdList();
+        if (CollectionUtils.isEmpty(roleIdList)) {
+            return ApiResult.getFailedApiResponse("您尚未配置角色！");
+        }
+        // 定义是否为总经理/副总/财务经理/人力资源总监   or   薪资核算人员/其他角色 角色标识
+        boolean adminFlag = false;
+        if (roleIdList.contains(Constants.ADMIN_ROLE_ID)
+                || roleIdList.contains(Constants.OTHER_ROLE_ID)
+                || roleIdList.contains(Constants.MONEY_ROLE_ID)
+                || roleIdList.contains(Constants.FINANCE_ROLE_ID)) {
+            adminFlag = true;
+        }
         // 条件构造
         Wrapper wrapper = Condition.create();
+        // 校验
+        if (!adminFlag) {
+            // 薪资核算人员/其他角色
+            // 查询登录人是否在薪资管理人员表中
+            List<UserSalaryDept> userSalaryDeptList = userSalaryDeptMapper.selectList(Condition.create().eq("user_id", userSessionVO.getId()).eq("delete_flag", 0));
+            // 校验
+            if (CollectionUtils.isEmpty(userSalaryDeptList)) {
+                return ApiResult.getFailedApiResponse("您无权查看薪资归属部门信息！");
+            }
+            // 取出登录人所负责的部门id
+            List<Long> salaryDeptIdList = userSalaryDeptList.stream().map(UserSalaryDept::getSalaryDeptId).collect(Collectors.toList());
+            // 赋值查询条件
+            wrapper.in("id", salaryDeptIdList);
+            // 校验部门id
+
+        }
         // 校验 薪资核算部门名称
         if (StringUtils.isNotBlank(salaryDeptQueryVO.getSalaryDeptName())) {
             wrapper.like("salary_dept_name", salaryDeptQueryVO.getSalaryDeptName());
@@ -221,9 +259,9 @@ public class BaseServiceImpl implements BaseService {
         if (StringUtils.isNotBlank(userSalaryDeptQueryVO.getUserName())) {
             wrapper.like("user_name", userSalaryDeptQueryVO.getUserName());
         }
-        // 校验 薪资核算部门名称
-        if (StringUtils.isNotBlank(userSalaryDeptQueryVO.getSalaryDeptName())) {
-            wrapper.like("salary_dept_name", userSalaryDeptQueryVO.getSalaryDeptName());
+        // 校验 薪资核算部门id
+        if (null != userSalaryDeptQueryVO.getSalaryDeptId()) {
+            wrapper.eq("salary_dept_id", userSalaryDeptQueryVO.getSalaryDeptId());
         }
         // 最后条件 + 倒序排序
         wrapper.eq("delete_flag", 0).orderBy("create_time", false);

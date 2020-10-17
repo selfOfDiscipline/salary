@@ -55,7 +55,7 @@ public class BaseFlowRecord implements Serializable {
      */
     private String applicationCode;
     /**
-     * 审批状态：0--通过，1--驳回
+     * 审批状态：0--待审，1--驳回，2--通过
      */
     private Integer approverStatus;
     /**
