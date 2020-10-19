@@ -479,27 +479,14 @@ public class UserServiceImpl implements UserService {
      **/
     @Override
     public ApiResult selectAllUserList(UserQueryVO userQueryVO, UserSessionVO userSessionVO) {
-        // 条件构造
-        Wrapper wrapper = Condition.create();
-        // 校验 用户名称
-        if (StringUtils.isNotBlank(userQueryVO.getUserName())) {
-            wrapper.like("user_name", userQueryVO.getUserName());
-        }
-        // 校验岗位类型
-        if (null != userQueryVO.getUserPostType()) {
-            wrapper.eq("user_post_type", userQueryVO.getUserPostType());
-        }
-        // 最后条件 + 倒序排序
-        wrapper.eq("admin_flag", 0);
-        wrapper.eq("delete_flag", 0).orderBy("create_time", false);
-        // 分页查询
-        Page<User> page = new Page<>(userQueryVO.getPageNum(), userQueryVO.getPageSize());
-        List<User> dataList = userMapper.selectPage(page, wrapper);
+        // 查询数据库
+        PageHelper.startPage(userQueryVO.getPageNum(), userQueryVO.getPageSize());
+        List<UserBaseResultVO> dataList = userMapper.selectAllUserList(userQueryVO);
+        PageInfo<UserBaseResultVO> info = new PageInfo<>(dataList);
         // 定义分页工具类并赋值   总条数 & 总页数 & 返回数据
-        BootstrapTablePageVO<User> tablePageVO = new BootstrapTablePageVO<>();
-        tablePageVO.setTotal(page.getTotal());
-        tablePageVO.setPages(page.getPages());
-        tablePageVO.setDataList(dataList);
+        BootstrapTablePageVO<UserBaseResultVO> tablePageVO = new BootstrapTablePageVO<>();
+        tablePageVO.setTotal(info.getTotal());
+        tablePageVO.setDataList(info.getList());
         return ApiResult.getSuccessApiResponse(tablePageVO);
     }
 

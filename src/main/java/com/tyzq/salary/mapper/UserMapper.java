@@ -40,4 +40,14 @@ public interface UserMapper extends BaseMapper<User> {
      * @Description //TODO 查询用户薪资部分
      **/
     List<UserDetailVO> selectUserDetailList(@Param("userPostType") Integer userPostType, @Param("salaryDeptIdList") List<Long> salaryDeptIdList);
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 15:55 2020/10/19
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 查询全量用户列表
+     **/
+    List<UserBaseResultVO> selectAllUserList(@Param("userQueryVO") UserQueryVO userQueryVO);
 }
