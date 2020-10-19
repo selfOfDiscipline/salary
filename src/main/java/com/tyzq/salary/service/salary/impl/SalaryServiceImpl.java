@@ -444,6 +444,12 @@ public class SalaryServiceImpl implements SalaryService {
         userDetail.setDeleteFlag(0);
         userDetail.setUserId(userSalary.getUserId());
         userDetail = userDetailMapper.selectOne(userDetail);
+        // 这里校验该工资单是否已经被计算过了，如果被计算过了，就需要先置换生成原工资基础单据数据，再进行计算
+        // currentComputeFlag  本月是否计算过该数据：0--未计算过，1--已计算过
+        if (1 == userSalary.getCurrentComputeFlag().intValue()) {
+            // 置换生成
+            convertProduct(userSalary, userDetail);
+        }
         // ========先计算社保部分======
         computeSocialSecurity(computeSalaryParamVO.isComputeSocialFlag(), user, userSalary, userDetail);
         // 计算
@@ -723,6 +729,12 @@ public class SalaryServiceImpl implements SalaryService {
         userDetail.setDeleteFlag(0);
         userDetail.setUserId(userSalary.getUserId());
         userDetail = userDetailMapper.selectOne(userDetail);
+        // 这里校验该工资单是否已经被计算过了，如果被计算过了，就需要先置换生成原工资基础单据数据，再进行计算
+        // currentComputeFlag  本月是否计算过该数据：0--未计算过，1--已计算过
+        if (1 == userSalary.getCurrentComputeFlag().intValue()) {
+            // 置换生成
+            convertProduct(userSalary, userDetail);
+        }
         // ========先计算社保部分======
         computeSocialSecurity(computeSalaryParamVO.isComputeSocialFlag(), user, userSalary, userDetail);
         // 计算
@@ -1042,6 +1054,12 @@ public class SalaryServiceImpl implements SalaryService {
         userDetail.setDeleteFlag(0);
         userDetail.setUserId(userSalary.getUserId());
         userDetail = userDetailMapper.selectOne(userDetail);
+        // 这里校验该工资单是否已经被计算过了，如果被计算过了，就需要先置换生成原工资基础单据数据，再进行计算
+        // currentComputeFlag  本月是否计算过该数据：0--未计算过，1--已计算过
+        if (1 == userSalary.getCurrentComputeFlag().intValue()) {
+            // 置换生成
+            convertProduct(userSalary, userDetail);
+        }
         // ========先计算社保部分======
         computeSocialSecurity(computeSalaryParamVO.isComputeSocialFlag(), user, userSalary, userDetail);
         // 计算
@@ -1276,6 +1294,27 @@ public class SalaryServiceImpl implements SalaryService {
         // 将用户本月薪资表更新
         userSalaryMapper.updateById(userSalary);
         return ApiResult.getSuccessApiResponse(userSalary);
+    }
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 18:12 2020/10/19
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 置换生成该工资单的原单据数据信息
+     **/
+    public void convertProduct(UserSalary userSalary, UserDetail userDetail) {
+        // 替换基础数据信息
+        userSalary.setAddComputerSubsidy(userDetail.getAddComputerSubsidy());// 增加项：电脑补
+        userSalary.setMonthPerformanceRatio(new BigDecimal("1.00"));// 本月绩效比例
+        userSalary.setMonthBankSalary(userDetail.getBankSalary());// 本月银行代发工资
+        userSalary.setMonthOtherBankSalary(userDetail.getOtherBankSalary());// 本月他行代发工资
+        userSalary.setMonthBaseSalary(userDetail.getBaseSalary());// 本月基本工资
+        userSalary.setMonthPerformanceSalary(userDetail.getPerformanceSalary());// 本月绩效工资
+        userSalary.setMonthPostSalary(userDetail.getPostSalary());// 本月岗位工资
+        userSalary.setMonthPostSubsidy(userDetail.getPostSubsidy());// 本月岗位津贴
+        userSalary.setMonthOtherSubsidy(userDetail.getOtherSubsidy());// 本月其他补贴
     }
 
     /*
