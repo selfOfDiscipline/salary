@@ -322,9 +322,9 @@ public class AgendaServiceImpl implements AgendaService {
                     // 赋值 年度累计收入金额 = 年度累计收入金额 + 预设银行代发工资金额
                     userDetail.setTotalIncomeMoney(userDetail.getTotalIncomeMoney().add(userDetail.getBankSalary()));
                     // 赋值 年度累计应纳税所得额 = 年度累计应纳税所得额 + 本月应纳税所得额
-                    userDetail.setTotalIncomeMoney(userDetail.getTotalIncomeMoney().add(userSalary.getBankTaxableSelfMoney()));
+                    userDetail.setTotalTaxableSelfMoney(userDetail.getTotalTaxableSelfMoney().add(userSalary.getBankTaxableSelfMoney()));
                     // 赋值 年度累计已纳税额 = 年度累计已纳税额 + 本月已纳税额
-                    userDetail.setTotalIncomeMoney(userDetail.getTotalIncomeMoney().add(userSalary.getBankRealityShouldTaxMoney()));
+                    userDetail.setTotalAlreadyTaxableMoney(userDetail.getTotalAlreadyTaxableMoney().add(userSalary.getBankRealityShouldTaxMoney()));
                     // 赋值 年度累计减除费用金额 = 年度累计减除费用金额 + 国家纳税起步金额
                     userDetail.setTotalDeductMoney(userDetail.getTotalDeductMoney().add(userDetail.getStipulationStartTaxMoney()));
                     // 赋值 年度累计专项附加扣除金额 = 年度累计专项附加扣除金额 + 本月专项附加扣除的总金额

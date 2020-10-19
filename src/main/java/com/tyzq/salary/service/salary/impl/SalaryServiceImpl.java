@@ -1352,12 +1352,12 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 获取上个月时间
         Date thisDateLastMonth = DateUtils.getThisDateLastMonth();
-        // 查询薪资表id   条件为上个月份，且用户角色，薪资归属部门id集合， 另外加上“本月已经结算过”条件， currentComputeFlag == 0  未结算， currentComputeFlag == 1  已经结算
+        // 查询薪资表id   条件为上个月份，且允许结算，且用户角色，薪资归属部门id集合， 另外加上“本月已经结算过”条件， currentComputeFlag == 0  未结算， currentComputeFlag == 1  已经结算
         Integer currentComputeFlag = 1;
         List<Long> userSalaryIdList = userSalaryMapper.selectUserSalaryList(userPostTypeString, thisDateLastMonth, salaryDeptIdList, currentComputeFlag);
         // 校验
         if (CollectionUtils.isEmpty(userSalaryIdList)) {
-            return ApiResult.getFailedApiResponse("您所选部门的本月已计算过并且可发起流程工资单为空！");
+            return ApiResult.getFailedApiResponse("您所选部门的本月已计算过并且可发起流程工资单为空！或您已发起过！");
         }
         // 再查询 【结算和不结算一起查】
         currentComputeFlag = null;
