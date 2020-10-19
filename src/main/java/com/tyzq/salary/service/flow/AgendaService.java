@@ -32,7 +32,7 @@ public interface AgendaService {
      * @Version 1.0
      * @Description //TODO 根据单据编号，查询该单据对应的所有薪资列表
      **/
-    ApiResult getSalaryInfoByApplicationCode(String applicationCode);
+    ApiResult getSalaryInfoByApplicationCode(String applicationCode, Integer menuType);
 
     /*
      * @Author zwc   zwc_503@163.com
@@ -53,16 +53,6 @@ public interface AgendaService {
      * @Description //TODO 个人发起的流程列表
      **/
     ApiResult selectMineAgendaList(SalaryBillQueryVO salaryBillQueryVO, UserSessionVO userSessionVO);
-
-    /*
-     * @Author zwc   zwc_503@163.com
-     * @Date 16:42 2020/10/13
-     * @Param
-     * @return
-     * @Version 1.0
-     * @Description //TODO 查询该流程工资列表
-     **/
-    ApiResult selectSalaryByApplicationCode(String applicationCode, UserSessionVO userSessionVO);
 
     /*
      * @Author zwc   zwc_503@163.com

@@ -67,14 +67,18 @@ public class AgendaController {
      **/
     @ApiOperation(value = "查询工资单列表", httpMethod = "GET", notes = "根据单据编号，查询该单据对应的所有薪资列表")
     @GetMapping(value = "/getSalaryInfoByApplicationCode")
-    public ApiResult getSalaryInfoByApplicationCode(@RequestParam("applicationCode") String applicationCode) {
+    public ApiResult getSalaryInfoByApplicationCode(@RequestParam("applicationCode") String applicationCode, @RequestParam(value = "menuType", required = false)Integer menuType) {
         // 校验
         if (StringUtils.isBlank(applicationCode)) {
             return ApiResult.getFailedApiResponse("单据编号不能为空！");
         }
+        // 校验查询类型，默认为2
+        if (menuType == null) {
+            menuType = 2;
+        }
         try {
             // 业务操作
-            return agendaService.getSalaryInfoByApplicationCode(applicationCode);
+            return agendaService.getSalaryInfoByApplicationCode(applicationCode, menuType);
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("查询工资单列表出现错误异常：" + e);
@@ -129,29 +133,6 @@ public class AgendaController {
             e.printStackTrace();
             logger.error("查询个人发起的流程出现错误异常：" + e);
             return ApiResult.getFailedApiResponse("查询个人发起的流程出现错误异常！");
-        }
-    }
-
-    /*
-     * @Author zwc   zwc_503@163.com
-     * @Date 16:35 2020/10/13
-     * @Param
-     * @return
-     * @Version 1.0
-     * @Description //TODO 根据单据编号，查询该流程的工资列表
-     **/
-    @ApiOperation(value = "查询该流程工资列表", httpMethod = "GET", notes = "根据单据编号，查询该流程的工资列表")
-    @GetMapping(value = "/selectSalaryByApplicationCode")
-    public ApiResult selectSalaryByApplicationCode(@RequestParam("applicationCode") String applicationCode, HttpServletRequest request) {
-        // 获取session用户
-        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
-        try {
-            // 业务操作
-            return agendaService.selectSalaryByApplicationCode(applicationCode, userSessionVO);
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("查询该流程工资列表出现错误异常：" + e);
-            return ApiResult.getFailedApiResponse("查询该流程工资列表出现错误异常！");
         }
     }
 

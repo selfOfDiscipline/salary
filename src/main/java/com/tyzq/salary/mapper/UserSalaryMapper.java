@@ -52,7 +52,7 @@ public interface UserSalaryMapper extends BaseMapper<UserSalary> {
      * @Version 1.0
      * @Description //TODO  根据id集合，查询薪资表
      **/
-    List<UserComputeResultVO> selectUserListByIds(@Param("salaryIdList") List<Long> salaryIdList);
+    List<UserComputeResultVO> selectUserListByIds(@Param("userVO") UserComputeSalaryQueryVO userComputeSalaryQueryVO, @Param("salaryIdList") List<Long> salaryIdList);
 
     /*
      * @Author zwc   zwc_503@163.com

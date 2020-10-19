@@ -278,11 +278,24 @@
             user AS u
         LEFT JOIN user_salary AS s ON u.id = s.user_id
         <where>
-            u.admin_flag = 0
+            u.delete_flag = 0
+            And u.admin_flag = 0
             AND s.id in
             <foreach collection="salaryIdList" item="item" open="(" separator="," close=")">
                 #{item}
             </foreach>
+            /* 为2代表正常员工，我们即用员工实际转正日期小于上月1号*/
+            <if test="userVO.menuType == 2">
+                AND u.reality_change_formal_date <![CDATA[<]]> #{userVO.thisDateLastMonth}
+            </if>
+            /* 为0查询上月入职员工，我们即用入职日期大于上月1号 并且 小于本月1号*/
+            <if test="userVO.menuType == 0">
+                AND u.user_entry_date <![CDATA[>]]> #{userVO.thisDateLastMonth} AND u.user_entry_date <![CDATA[<]]> #{userVO.thisDateMonth}
+            </if>
+            /* 为1查询上月转正员工，我们即用实际转正日期大于上月1号 并且 小于本月1号*/
+            <if test="userVO.menuType == 1">
+                AND u.reality_change_formal_date <![CDATA[>]]> #{userVO.thisDateLastMonth} AND u.reality_change_formal_date <![CDATA[<]]> #{userVO.thisDateMonth}
+            </if>
         </where>
     </select>
 

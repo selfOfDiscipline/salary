@@ -15,11 +15,13 @@ import com.tyzq.salary.model.vo.flow.FlowHandleParamVO;
 import com.tyzq.salary.model.vo.flow.FlowRecordQueryVO;
 import com.tyzq.salary.model.vo.flow.SalaryBillQueryVO;
 import com.tyzq.salary.model.vo.salary.UserComputeResultVO;
+import com.tyzq.salary.model.vo.salary.UserComputeSalaryQueryVO;
 import com.tyzq.salary.service.config.BaseService;
 import com.tyzq.salary.service.flow.AgendaService;
 import com.tyzq.salary.utils.DateUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,7 +118,7 @@ public class AgendaServiceImpl implements AgendaService {
      * @Description //TODO 根据单据编号，查询该单据对应的所有薪资列表
      **/
     @Override
-    public ApiResult getSalaryInfoByApplicationCode(String applicationCode) {
+    public ApiResult getSalaryInfoByApplicationCode(String applicationCode, Integer menuType) {
         // 根据单据编号查询该薪资申请单对象
         SalaryFlowBill salaryFlowBill = new SalaryFlowBill();
         salaryFlowBill.setApplicationCode(applicationCode);
@@ -130,7 +132,13 @@ public class AgendaServiceImpl implements AgendaService {
         // 获取薪资单id集合
         List<Long> stringList = (List<Long>) JSONArray.parse(salaryFlowBill.getUserSalaryIds());
         // 查询薪资单列表
-        List<UserComputeResultVO> userComputeResultVOList = userSalaryMapper.selectUserListByIds(stringList);
+        UserComputeSalaryQueryVO userComputeSalaryQueryVO = new UserComputeSalaryQueryVO();
+        userComputeSalaryQueryVO.setMenuType(menuType);
+        // 获取当月日期
+        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateMonth());
+        // 获取上月日期
+        userComputeSalaryQueryVO.setThisDateLastMonth(DateUtils.getThisDateLastMonth());
+        List<UserComputeResultVO> userComputeResultVOList = userSalaryMapper.selectUserListByIds(userComputeSalaryQueryVO, stringList);
         return ApiResult.getSuccessApiResponse(userComputeResultVOList);
     }
 
@@ -374,36 +382,6 @@ public class AgendaServiceImpl implements AgendaService {
         tablePageVO.setPages(page.getPages());
         tablePageVO.setDataList(dataList);
         return ApiResult.getSuccessApiResponse(tablePageVO);
-    }
-
-    /*
-     * @Author zwc   zwc_503@163.com
-     * @Date 16:42 2020/10/13
-     * @Param
-     * @return
-     * @Version 1.0
-     * @Description //TODO 查询该流程工资列表
-     **/
-    @Override
-    public ApiResult selectSalaryByApplicationCode(String applicationCode, UserSessionVO userSessionVO) {
-        SalaryFlowBill salaryFlowBill = new SalaryFlowBill();
-        salaryFlowBill.setApplicationCode(applicationCode);
-        salaryFlowBill.setDeleteFlag(0);
-        // 查询
-        salaryFlowBill = salaryFlowBillMapper.selectOne(salaryFlowBill);
-        // 校验
-        if (null == salaryFlowBill) {
-            return ApiResult.getFailedApiResponse("未查询到该单据信息！");
-        }
-        // 获取薪资表id集合
-        String userSalaryIds = salaryFlowBill.getUserSalaryIds();
-        if (StringUtils.isBlank(userSalaryIds)) {
-            return ApiResult.getSuccessApiResponse("该单据未关联薪资数据！");
-        }
-        List<Long> salaryIdList = (List<Long>) JSONArray.parse(salaryFlowBill.getUserSalaryIds());
-        // 查询薪资表数据信息
-        List<UserComputeResultVO> userComputeResultVOList = userSalaryMapper.selectUserListByIds(salaryIdList);
-        return ApiResult.getSuccessApiResponse(userComputeResultVOList);
     }
 
     /*
