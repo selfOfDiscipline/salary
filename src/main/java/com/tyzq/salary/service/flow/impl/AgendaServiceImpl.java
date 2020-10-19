@@ -258,7 +258,8 @@ public class AgendaServiceImpl implements AgendaService {
         nextDetail.setDeleteFlag(0);
         // 自增查询下一个节点
         Integer sortNum = detail.getSortNum();
-        nextDetail.setSortNum(++sortNum);
+        int sortNumber = sortNum.intValue();
+        nextDetail.setSortNum(++sortNumber);
         // 查询
         nextDetail = baseFlowConfigDetailMapper.selectOne(nextDetail);
         // 校验
