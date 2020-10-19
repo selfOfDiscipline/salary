@@ -422,9 +422,17 @@ public class AgendaServiceImpl implements AgendaService {
             return ApiResult.getFailedApiResponse("您无权汇总待办流程数据！");
         }
         // 查询到各个流程单据数据
-        List<String> stringList = Arrays.asList(ids.split(","));
-        // 查询集合
-        List<SalaryFlowBill> flowBillList = salaryFlowBillMapper.selectBatchIds(stringList);
+        List<Long> collect = Arrays.asList(ids.split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
+        // 查询流程记录表id集合
+        List<BaseFlowRecord> baseFlowRecordList = baseFlowRecordMapper.selectBatchIds(collect);
+        // 校验
+        if (CollectionUtils.isEmpty(baseFlowRecordList)) {
+            return ApiResult.getFailedApiResponse("未查询到流程明细表数据！");
+        }
+        // 获取其中的单据code并
+        List<String> applicationCodeList = baseFlowRecordList.stream().map(BaseFlowRecord::getApplicationCode).collect(Collectors.toList());
+        // 查询单据表
+        List<SalaryFlowBill> flowBillList = salaryFlowBillMapper.selectList(Condition.create().in("application_code", applicationCodeList).eq("delete_flag", 0));
         // 校验
         if (CollectionUtils.isEmpty(flowBillList)) {
             return ApiResult.getFailedApiResponse("未查询到流程单数据！");
@@ -440,10 +448,10 @@ public class AgendaServiceImpl implements AgendaService {
         Integer salaryDeptCount = salaryDeptMapper.selectCount(Condition.create().eq("delete_flag", 0));
         // 拿薪资归属部门条数  +  1   （管理岗也是一条流程）
         int thisCount = salaryDeptCount.intValue() + 1;
-        // 校验
-        if (thisCount != flowBillList.size()) {
-            return ApiResult.getFailedApiResponse("请等待本月各部门所有单据一并汇总！");
-        }
+//        // 校验
+//        if (thisCount != flowBillList.size()) {
+//            return ApiResult.getFailedApiResponse("请等待本月各部门所有单据一并汇总！");
+//        }
         // 合并成一个新的
         // 定义一个存放薪资表id的集合
         List<Long> salaryIdList = Lists.newArrayList();

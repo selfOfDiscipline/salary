@@ -181,32 +181,12 @@ public class UserController {
         if (null == userSessionVO) {
             return ApiResult.getFailedApiResponse("您未登录！");
         }
-        // 校验权限是否为总经理/副总/薪资核算角色
-        List<Long> roleIdList = userSessionVO.getRoleIdList();
-        if (CollectionUtils.isEmpty(roleIdList) || (!roleIdList.contains(Constants.ADMIN_ROLE_ID) && !roleIdList.contains(Constants.OTHER_ROLE_ID) && !roleIdList.contains(Constants.SALARY_DEPT_ROLE_ID))) {
-            return ApiResult.getFailedApiResponse("您无权查看员工信息！");
-        }
         // 校验
         if (null == id) {
             return ApiResult.getFailedApiResponse("请至少传一条ID！");
         }
         // 查询用户基础表
         User user = userMapper.selectById(id);
-        // 校验登录人是否为总经理/副总
-        if (!roleIdList.contains(Constants.ADMIN_ROLE_ID) && !roleIdList.contains(Constants.OTHER_ROLE_ID)) {
-            // 查询登录人是否在薪资管理人员表中
-            List<UserSalaryDept> userSalaryDeptList = userSalaryDeptMapper.selectList(Condition.create().eq("user_id", userSessionVO.getId()).eq("delete_flag", 0));
-            // 校验
-            if (CollectionUtils.isEmpty(userSalaryDeptList)) {
-                return ApiResult.getFailedApiResponse("您无权操作员工信息！");
-            }
-            // 取出登录人所负责的部门id
-            List<Long> salaryDeptIdList = userSalaryDeptList.stream().map(UserSalaryDept::getSalaryDeptId).collect(Collectors.toList());
-            // 校验
-            if (!salaryDeptIdList.contains(user.getSalaryDeptId())) {
-                return ApiResult.getFailedApiResponse("您无权查看该员工信息！");
-            }
-        }
         // 查询用户明细表
         UserDetail userDetail = new UserDetail();
         userDetail.setUserId(id);
@@ -425,7 +405,7 @@ public class UserController {
                 }
             }
         } else {
-            userQueryVO.setUserPostType(null);
+            userQueryVO.setUserPostType(0);
         }
         try {
             // 业务操作
