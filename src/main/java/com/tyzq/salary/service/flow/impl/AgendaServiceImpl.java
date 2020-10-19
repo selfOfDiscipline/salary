@@ -489,6 +489,7 @@ public class AgendaServiceImpl implements AgendaService {
         salaryFlowBill.setCreateTime(new Date());
         salaryFlowBill.setEditTime(new Date());
         salaryFlowBill.setSalaryDeptId(888888L);// 人力资源总监这里声明薪资归属部门id为 888888L
+        salaryFlowBill.setSalaryDeptName("月度汇总流程");
         salaryFlowBill.setRoleId(Constants.FINANCE_ROLE_ID);
         salaryFlowBill.setRoleName("人力资源总监");
         // 单据状态：0--未提交，1--审批中，2--驳回，3--审批通过，4--作废

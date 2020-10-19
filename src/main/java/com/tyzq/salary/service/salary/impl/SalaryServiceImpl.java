@@ -185,7 +185,7 @@ public class SalaryServiceImpl implements SalaryService {
             return ApiResult.getSuccessApiResponse("未查询到您关联的员工信息！");
         }
         // 获取用户id集合
-        List<Long> userIdList = userDetailList.stream().map(UserDetailVO::getId).collect(Collectors.toList());
+        List<Long> userIdList = userDetailList.stream().map(UserDetailVO::getUserId).collect(Collectors.toList());
         // 查询以上人员的本月基础工资单是否被创建过
         List<UserSalary> userSalaryList = userSalaryMapper.selectList(Condition.create().eq("salary_date", DateUtils.getThisDateLastMonth()).in("user_id", userIdList).eq("delete_flag", 0));
         // 校验
@@ -1394,10 +1394,12 @@ public class SalaryServiceImpl implements SalaryService {
         // 校验
         if (adminFlag) {
             salaryFlowBill.setSalaryDeptId(999999L);// 副总这里声明薪资归属部门id为 999999L
+            salaryFlowBill.setSalaryDeptName("管理岗员工");
             salaryFlowBill.setRoleId(Constants.OTHER_ROLE_ID);
             salaryFlowBill.setRoleName("副总");
         } else {
             salaryFlowBill.setSalaryDeptId(salaryDeptId);
+            salaryFlowBill.setSalaryDeptName(baseFlowConfig.getFlowSalaryDeptName());
             salaryFlowBill.setRoleId(Constants.SALARY_DEPT_ROLE_ID);
             salaryFlowBill.setRoleName("薪资核算人员");
         }
