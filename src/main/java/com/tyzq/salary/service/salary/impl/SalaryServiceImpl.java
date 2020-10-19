@@ -117,9 +117,7 @@ public class SalaryServiceImpl implements SalaryService {
                 if (!salaryDeptIdList.contains(userComputeSalaryQueryVO.getUserSalaryDeptId())) {
                     return ApiResult.getFailedApiResponse("您无权查看该部门信息！");
                 }
-            }
-            // 校验是否传了部门
-            if (null == userComputeSalaryQueryVO.getUserSalaryDeptId()) {
+            } else {
                 // 赋值部门id
                 userComputeSalaryQueryVO.setUserSalaryDeptId(salaryDeptIdList.get(0));
             }
