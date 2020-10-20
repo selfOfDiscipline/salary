@@ -60,8 +60,8 @@ public class ComputeSalaryParamVO implements Serializable {
      */
     private BigDecimal monthRewordsMoney;
 
-    /* computeSocailSecurityFlag  本月是否计算社保标识，为0计算，为1则不计算，默认为0*/
-    private int computeSocailSecurityFlag = 0;
+    /* computeSocialSecurityFlag  本月是否计算社保标识，为0计算，为1则不计算，默认为0*/
+    private int computeSocialSecurityFlag = 0;
 
     public Long getId() {
         return id;
@@ -159,11 +159,11 @@ public class ComputeSalaryParamVO implements Serializable {
         this.monthRewordsMoney = monthRewordsMoney;
     }
 
-    public int getComputeSocailSecurityFlag() {
-        return computeSocailSecurityFlag;
+    public int getComputeSocialSecurityFlag() {
+        return computeSocialSecurityFlag;
     }
 
-    public void setComputeSocailSecurityFlag(int computeSocailSecurityFlag) {
-        this.computeSocailSecurityFlag = computeSocailSecurityFlag;
+    public void setComputeSocialSecurityFlag(int computeSocialSecurityFlag) {
+        this.computeSocialSecurityFlag = computeSocialSecurityFlag;
     }
 }

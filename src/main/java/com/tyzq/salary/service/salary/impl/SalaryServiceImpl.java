@@ -457,7 +457,7 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.getComputeSocailSecurityFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), user, userSalary, userDetail);
         // 计算
         // PS:上月入职员工无绩效
         // 本月出勤工资 = （员工标准薪资*薪资发放比例/21.75）*出勤天数
@@ -742,7 +742,7 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.getComputeSocailSecurityFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), user, userSalary, userDetail);
         // 计算
         // PS:上月转正员工，转正前无绩效，转正后有绩效
         // 计算后比例工资 = (员工标准薪资*转正前薪资发放比例/21.75)
@@ -1067,7 +1067,7 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.getComputeSocailSecurityFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), user, userSalary, userDetail);
         // 计算
         // PS:正常员工  有绩效/无绩效
         // 计算后比例工资 = (员工标准薪资*转正前薪资发放比例/21.75)
