@@ -357,28 +357,20 @@ public class SalaryController {
      * @Version 1.0
      * @Description //TODO 导出工资单，默认导出上月
      **/
-    @ApiOperation(value = "导出工资单", httpMethod = "GET", notes = "导出工资单，默认导出上月")
-    @GetMapping(value = "/exportSalaryBill")
-    public ApiResult exportSalaryBill(@RequestParam(value = "salaryDate", required = false) String salaryDate,
-                                      @RequestParam(value = "salaryDeptId", required = false) Long salaryDeptId,
-                                      @RequestParam(value = "userPostType", required = false) Integer userPostType,
-                                      @RequestParam(value = "userName", required = false) String userName, HttpServletRequest request, HttpServletResponse response) {
+    @ApiOperation(value = "导出工资单", httpMethod = "POST", notes = "导出工资单，默认导出上月")
+    @PostMapping(value = "/exportSalaryBill")
+    public ApiResult exportSalaryBill(SalaryHistoryQueryVO salaryHistoryQueryVO, HttpServletRequest request, HttpServletResponse response) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         try {
-            SalaryHistoryQueryVO salaryHistoryQueryVO = new SalaryHistoryQueryVO();
             // 校验 日期
-            if (StringUtils.isBlank(salaryDate)) {
+            if (StringUtils.isBlank(salaryHistoryQueryVO.getSalaryDate())) {
                 salaryHistoryQueryVO.setSalaryDate(DateUtils.getDateString(DateUtils.getThisDateLastMonth(), "yyyy-MM-dd HH:mm:ss"));
             } else {
-                salaryHistoryQueryVO.setSalaryDate(salaryDate + "-01 00:00:00");
+                salaryHistoryQueryVO.setSalaryDate(salaryHistoryQueryVO.getSalaryDate() + "-01 00:00:00");
             }
-            // 其他赋值
-            salaryHistoryQueryVO.setSalaryDeptId(salaryDeptId);
-            salaryHistoryQueryVO.setUserPostType(userPostType);
-            salaryHistoryQueryVO.setUserName(userName);
             // 业务操作
-            salaryService.exportSalaryBill(salaryHistoryQueryVO, userSessionVO, response);
+            salaryService.exportSalaryBill(salaryHistoryQueryVO, request, response);
             return null;
         } catch (Exception e) {
             e.printStackTrace();

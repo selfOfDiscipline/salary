@@ -6,6 +6,7 @@ import com.tyzq.salary.model.vo.salary.ComputeSalaryParamVO;
 import com.tyzq.salary.model.vo.salary.SalaryHistoryQueryVO;
 import com.tyzq.salary.model.vo.salary.UserComputeSalaryQueryVO;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Date;
 
@@ -105,7 +106,7 @@ public interface SalaryService {
      * @Version 1.0
      * @Description //TODO 导出工资单，默认导出上月
      **/
-    void exportSalaryBill(SalaryHistoryQueryVO salaryHistoryQueryVO, UserSessionVO userSessionVO, HttpServletResponse response);
+    void exportSalaryBill(SalaryHistoryQueryVO salaryHistoryQueryVO, HttpServletRequest request, HttpServletResponse response);
 
     /*
      * @Author zwc   zwc_503@163.com

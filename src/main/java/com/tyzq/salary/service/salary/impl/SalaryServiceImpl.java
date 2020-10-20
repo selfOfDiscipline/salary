@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.util.*;
@@ -347,6 +348,7 @@ public class SalaryServiceImpl implements SalaryService {
             // 养老  计算个人/公司  缴纳金额
             userSalary.setYanglPersonPayMoney(new BigDecimal("0.00"));
             userSalary.setYanglCompanyPayMoney(new BigDecimal("0.00"));
+            userSalary.setYilPersonPayMoney(new BigDecimal("0.00"));
             // 失业  计算个人/公司  缴纳金额
             // 失业 城镇户口缴费，农村户口个人不缴费      户口类型：0--城镇，1--农村
             userSalary.setShiyPersonPayMoney(new BigDecimal("0.00"));
@@ -1562,14 +1564,14 @@ public class SalaryServiceImpl implements SalaryService {
             // 获取集合
             List<SalaryHistoryResultVO> thisVOList = listMap.get(key);
             // 定义三个金额
-            BigDecimal thisDeptMoneyTotal = new BigDecimal("0.00");
+            BigDecimal thisDeptManageTotal = new BigDecimal("0.00");
             BigDecimal thisDeptCostTotal = new BigDecimal("0.00");
             BigDecimal thisDeptSkillTotal = new BigDecimal("0.00");
             // 遍历
             for (SalaryHistoryResultVO resultVO : thisVOList) {
                 // 校验
                 if (0 == resultVO.getUserPostType().intValue()) {
-                    thisDeptMoneyTotal = thisDeptMoneyTotal.add(resultVO.getMonthSalaryRealityTotal());
+                    thisDeptManageTotal = thisDeptManageTotal.add(resultVO.getMonthSalaryRealityTotal());
                 } else if (1 == resultVO.getUserPostType().intValue()) {
                     thisDeptCostTotal = thisDeptCostTotal.add(resultVO.getMonthSalaryRealityTotal());
                 } else if (2 == resultVO.getUserPostType().intValue()) {
@@ -1582,23 +1584,23 @@ public class SalaryServiceImpl implements SalaryService {
             collectResultVO.setSalaryDate(DateUtils.getDate(salaryDate, "yyyy-MM"));
             collectResultVO.setSalaryDeptId(key);
             collectResultVO.setSalaryDeptName(thisVOList.get(0).getSalaryDeptName());
-            collectResultVO.setSalaryDeptManageTotal(thisDeptMoneyTotal);
+            collectResultVO.setSalaryDeptManageTotal(thisDeptManageTotal);
             collectResultVO.setSalaryDeptCostTotal(thisDeptCostTotal);
             collectResultVO.setSalaryDeptSkillTotal(thisDeptSkillTotal);
-            collectResultVO.setSalaryDeptMoneyTotal(thisDeptMoneyTotal.add(thisDeptCostTotal).add(thisDeptSkillTotal));
+            collectResultVO.setSalaryDeptMoneyTotal(thisDeptManageTotal.add(thisDeptCostTotal).add(thisDeptSkillTotal));
             // 放入集合
             resultVOList.add(collectResultVO);
         }
         // 将本月份所有部门汇总
         // 定义三个金额
-        BigDecimal thisDeptMoneyTotal = new BigDecimal("0.00");
+        BigDecimal thisDeptManageTotal = new BigDecimal("0.00");
         BigDecimal thisDeptCostTotal = new BigDecimal("0.00");
         BigDecimal thisDeptSkillTotal = new BigDecimal("0.00");
         // 遍历
         for (SalaryCollectResultVO resultVO : resultVOList) {
-            thisDeptMoneyTotal = thisDeptMoneyTotal.add(resultVO.getSalaryDeptManageTotal());
-            thisDeptCostTotal = thisDeptMoneyTotal.add(resultVO.getSalaryDeptCostTotal());
-            thisDeptSkillTotal = thisDeptMoneyTotal.add(resultVO.getSalaryDeptSkillTotal());
+            thisDeptManageTotal = thisDeptManageTotal.add(resultVO.getSalaryDeptManageTotal());
+            thisDeptCostTotal = thisDeptCostTotal.add(resultVO.getSalaryDeptCostTotal());
+            thisDeptSkillTotal = thisDeptSkillTotal.add(resultVO.getSalaryDeptSkillTotal());
         }
         // 定义对象并赋值
         SalaryCollectResultVO collectResultVO = new SalaryCollectResultVO();
@@ -1606,10 +1608,10 @@ public class SalaryServiceImpl implements SalaryService {
         collectResultVO.setSalaryDate(DateUtils.getDate(salaryDate, "yyyy-MM"));
         collectResultVO.setSalaryDeptId(0l);
         collectResultVO.setSalaryDeptName("所有部门");
-        collectResultVO.setSalaryDeptManageTotal(thisDeptMoneyTotal);
+        collectResultVO.setSalaryDeptManageTotal(thisDeptManageTotal);
         collectResultVO.setSalaryDeptCostTotal(thisDeptCostTotal);
         collectResultVO.setSalaryDeptSkillTotal(thisDeptSkillTotal);
-        collectResultVO.setSalaryDeptMoneyTotal(thisDeptMoneyTotal.add(thisDeptCostTotal).add(thisDeptSkillTotal));
+        collectResultVO.setSalaryDeptMoneyTotal(thisDeptManageTotal.add(thisDeptCostTotal).add(thisDeptSkillTotal));
         // 放入集合
         resultVOList.add(collectResultVO);
         return ApiResult.getSuccessApiResponse(resultVOList);
@@ -1624,7 +1626,7 @@ public class SalaryServiceImpl implements SalaryService {
      * @Description //TODO 导出工资单，默认导出上月
      **/
     @Override
-    public void exportSalaryBill(SalaryHistoryQueryVO salaryHistoryQueryVO, UserSessionVO userSessionVO, HttpServletResponse response) {
+    public void exportSalaryBill(SalaryHistoryQueryVO salaryHistoryQueryVO, HttpServletRequest request, HttpServletResponse response) {
         List<SalaryHistoryResultVO> historyResultVOList = userSalaryMapper.selectHistorySalaryList(salaryHistoryQueryVO);
         // 校验
         if (CollectionUtils.isEmpty(historyResultVOList)) {
@@ -1652,7 +1654,7 @@ public class SalaryServiceImpl implements SalaryService {
         TemplateExportParams params = new TemplateExportParams("exportAllSalaryTemplate.xlsx",true);
         Workbook workbook = ExcelExportUtil.exportExcel(params, map);
         //导出
-        ExcelExpUtil.excelDownload(workbook, response, "本月薪资表");
+        ExcelExpUtil.excelDownloadRequest(workbook, request, response, "本月薪资表");
     }
 
     /*

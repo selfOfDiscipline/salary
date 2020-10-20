@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -67,6 +68,34 @@ public class ExcelExpUtil {
 		excelDownload(workbook, response, flieName);
 	}
 
+	public static void excelDownloadRequest(Workbook wirthExcelWB, HttpServletRequest request, HttpServletResponse response, String fileName) {
+		try {
+			// 重置响应对象
+//			response.reset();
+			// 当前日期，用于导出文件名称
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+			String dateStr = fileName + "-" + sdf.format(new Date());
+			String header = request.getHeader("Origin");
+			// 设置输出的格式
+			response.reset();
+			response.setContentType("application/vnd.ms-excel;charset=UTF-8");
+			response.addHeader("Access-Control-Allow-Origin", header);
+			response.addHeader("Access-Control-Allow-Credentials", "true");
+			response.addHeader("Access-Control-Allow-Headers", "*");
+			response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+			response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(dateStr + ".xlsx", "UTF-8"));
+			// 写出数据输出流到页面
+			OutputStream output = response.getOutputStream();
+			BufferedOutputStream bufferedOutPut = new BufferedOutputStream(output);
+			wirthExcelWB.write(bufferedOutPut);
+			bufferedOutPut.flush();
+			bufferedOutPut.close();
+			output.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public static void excelDownload(Workbook wirthExcelWB, HttpServletResponse response, String fileName) {
 		try {
 			// 重置响应对象
@@ -82,25 +111,6 @@ public class ExcelExpUtil {
 			response.addHeader("Access-Control-Allow-Headers", "*");
 			response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
 			response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(dateStr + ".xlsx", "UTF-8"));
-
-
-
-//			// 指定下载的文件名--设置响应头
-//			response.setContentType("application/vnd.ms-excel;charset=UTF-8");
-//			//response.setContentType("application/octet-stream");
-//			response.setHeader("Content-Disposition",
-//					"attachment;filename=" +
-//							new String(dateStr.getBytes("GBK"), "iso8859-1") + ".xlsx");
-//			// URLEncoder.encode(dateStr + ".xls", "UTF-8")
-//			response.setHeader("Pragma", "no-cache");
-//			response.setHeader("Cache-Control", "no-cache");
-//			response.setDateHeader("Expires", 0);
-			// response.setCharacterEncoding("UTF-8");
-			// response.setHeader("content-Type", "application/vnd.ms-excel");
-			// response.setHeader("Content-Disposition",
-			// "attachment;filename=" + URLEncoder.encode(fileName + ".xls",
-			// "UTF-8"));
-			// wirthExcelWB.write(response.getOutputStream());
 			// 写出数据输出流到页面
 			OutputStream output = response.getOutputStream();
 			BufferedOutputStream bufferedOutPut = new BufferedOutputStream(output);
