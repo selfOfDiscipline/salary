@@ -500,12 +500,12 @@ public class UserServiceImpl implements UserService {
      **/
     @Override
     public ApiResult updateUserPassword(UpdatePasswordVO updatePasswordVO, UserSessionVO userSessionVO) {
-// 校验
+        // 校验
         if (null == updatePasswordVO) {
             return ApiResult.getFailedApiResponse("参数对象为空！");
         }
         // 校验类别和账号
-        if (null == updatePasswordVO.getUpdateFlag() || StringUtils.isBlank(updatePasswordVO.getAccount())) {
+        if (StringUtils.isBlank(updatePasswordVO.getAccount())) {
             return ApiResult.getFailedApiResponse("账号为空！");
         }
         // 是否为总经理或副总
@@ -525,7 +525,7 @@ public class UserServiceImpl implements UserService {
         }
         // 类别处理
         // updateFlag == 1  （管理员权限）为重置密码，只需要 account 即可，将新生成密码放入返回结果对象
-        if (1 == updatePasswordVO.getUpdateFlag().intValue()) {
+        if (1 == updatePasswordVO.getUpdateFlag()) {
             // 校验当前登录用户权限
             if (!adminFlag) {
                 return ApiResult.getFailedApiResponse("您无权操作！");
@@ -546,7 +546,7 @@ public class UserServiceImpl implements UserService {
             return ApiResult.getSuccessApiResponse("tyzq-123456");
         }
         // updateFlag == 2  为修改密码，必传【account  oldPassword  newPassword confirmPassword】
-        if (2 == updatePasswordVO.getUpdateFlag().intValue()) {
+        if (2 == updatePasswordVO.getUpdateFlag()) {
             // 校验
             if (StringUtils.isBlank(updatePasswordVO.getOldPassword()) || StringUtils.isBlank(updatePasswordVO.getNewPassword()) || StringUtils.isBlank(updatePasswordVO.getConfirmPassword())) {
                 return ApiResult.getFailedApiResponse("原密码/新密码/确认密码必填！");
@@ -556,11 +556,15 @@ public class UserServiceImpl implements UserService {
             if (!user.getUserPassword().equals(PasswordUtil.getPasswordBySalt(updatePasswordVO.getAccount(), updatePasswordVO.getOldPassword(), user.getUserSalt()))) {
                 return ApiResult.getFailedApiResponse("原密码错误！");
             }
+            // 校验新密码与确认密码
+            if (!updatePasswordVO.getConfirmPassword().equals(updatePasswordVO.getNewPassword())) {
+                return ApiResult.getFailedApiResponse("新密码与确认密码不符！");
+            }
             // 生成新salt
             // 获取32位随机用户盐值
             String userSalt = PasswordUtil.randomGenerate(32);
             // 获取32位加密密码
-            String passwordBySalt = PasswordUtil.getPasswordBySalt(user.getUserAccount(), "tyzq-123456", userSalt);
+            String passwordBySalt = PasswordUtil.getPasswordBySalt(user.getUserAccount(), updatePasswordVO.getNewPassword(), userSalt);
             // 修改入库
             user.setUserSalt(userSalt);
             user.setUserPassword(passwordBySalt);
@@ -569,10 +573,10 @@ public class UserServiceImpl implements UserService {
             user.setEditTime(new Date());
             userMapper.updateById(user);
             // 密码返回
-            return ApiResult.getSuccessApiResponse("tyzq-123456");
+            return ApiResult.getSuccessApiResponse();
         }
         // updateFlag == 3  (管理员权限) 为修改账号并重置密码，必传【account  newAccount】将新生成密码放入返回结果对象
-        if (3 == updatePasswordVO.getUpdateFlag().intValue()) {
+        if (3 == updatePasswordVO.getUpdateFlag()) {
             // 校验当前登录用户权限
             if (!adminFlag) {
                 return ApiResult.getFailedApiResponse("您无权操作！");

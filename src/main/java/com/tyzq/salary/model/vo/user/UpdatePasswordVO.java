@@ -17,9 +17,9 @@ public class UpdatePasswordVO implements Serializable {
     * updateFlag == 1  （管理员权限）为重置密码，只需要 account 即可，将新生成密码放入返回结果对象
     * updateFlag == 2  为修改密码，必传【account  oldPassword  newPassword confirmPassword】
     * updateFlag == 3  (管理员权限) 为修改账号并重置密码，必传【account  newAccount】将新生成密码放入返回结果对象
-    *
+    *  默认为2
     * */
-    private Integer updateFlag;
+    private int updateFlag = 2;
 
     /* 用户账号*/
     private String account;
@@ -36,11 +36,11 @@ public class UpdatePasswordVO implements Serializable {
     /* 用户新账号*/
     private String newAccount;
 
-    public Integer getUpdateFlag() {
+    public int getUpdateFlag() {
         return updateFlag;
     }
 
-    public void setUpdateFlag(Integer updateFlag) {
+    public void setUpdateFlag(int updateFlag) {
         this.updateFlag = updateFlag;
     }
 
