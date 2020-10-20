@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-10-13
+ * @since 2020-10-20
  */
 public class UserSalary implements Serializable {
 
@@ -80,7 +80,7 @@ public class UserSalary implements Serializable {
      */
     private BigDecimal sickAdsenceDays;
     /**
-     * 病假缺勤天数
+     * 本月奖惩金额（可为正负）
      */
     private BigDecimal monthRewordsMoney;
     /**
@@ -252,9 +252,13 @@ public class UserSalary implements Serializable {
      */
     private Integer againComputeFlag;
     /**
-     * 是否允许再次计算：0--允许，1--不允许，3--已审批通过
+     * 本月是否计算过该数据：0--未计算过，1--已计算过
      */
     private Integer currentComputeFlag;
+    /**
+     * 本月是否计算社保标识：0--计算，1--不计算
+     */
+    private Integer computeSocialSecurityFlag;
     /**
      * 是否删除：0为正常，1为已删除
      */
@@ -403,6 +407,14 @@ public class UserSalary implements Serializable {
 
     public void setSickAdsenceDays(BigDecimal sickAdsenceDays) {
         this.sickAdsenceDays = sickAdsenceDays;
+    }
+
+    public BigDecimal getMonthRewordsMoney() {
+        return monthRewordsMoney;
+    }
+
+    public void setMonthRewordsMoney(BigDecimal monthRewordsMoney) {
+        this.monthRewordsMoney = monthRewordsMoney;
     }
 
     public BigDecimal getMonthPerformanceRatio() {
@@ -749,6 +761,14 @@ public class UserSalary implements Serializable {
         this.currentComputeFlag = currentComputeFlag;
     }
 
+    public Integer getComputeSocialSecurityFlag() {
+        return computeSocialSecurityFlag;
+    }
+
+    public void setComputeSocialSecurityFlag(Integer computeSocialSecurityFlag) {
+        this.computeSocialSecurityFlag = computeSocialSecurityFlag;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -803,14 +823,6 @@ public class UserSalary implements Serializable {
 
     public void setEditTime(Date editTime) {
         this.editTime = editTime;
-    }
-
-    public BigDecimal getMonthRewordsMoney() {
-        return monthRewordsMoney;
-    }
-
-    public void setMonthRewordsMoney(BigDecimal monthRewordsMoney) {
-        this.monthRewordsMoney = monthRewordsMoney;
     }
 
     @Override
@@ -875,6 +887,7 @@ public class UserSalary implements Serializable {
         ", salaryDeptId=" + salaryDeptId +
         ", againComputeFlag=" + againComputeFlag +
         ", currentComputeFlag=" + currentComputeFlag +
+        ", computeSocialSecurityFlag=" + computeSocialSecurityFlag +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +

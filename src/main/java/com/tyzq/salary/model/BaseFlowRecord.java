@@ -11,7 +11,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-09-27
+ * @since 2020-10-20
  */
 public class BaseFlowRecord implements Serializable {
 
@@ -62,6 +62,14 @@ public class BaseFlowRecord implements Serializable {
      * 审批意见
      */
     private String approverOpinion;
+    /**
+     * 薪资归属部门id
+     */
+    private Long salaryDeptId;
+    /**
+     * 薪资归属部门名称
+     */
+    private String salaryDeptName;
     /**
      * 是否删除：0--正常，1--已删除
      */
@@ -180,6 +188,22 @@ public class BaseFlowRecord implements Serializable {
         this.approverOpinion = approverOpinion;
     }
 
+    public Long getSalaryDeptId() {
+        return salaryDeptId;
+    }
+
+    public void setSalaryDeptId(Long salaryDeptId) {
+        this.salaryDeptId = salaryDeptId;
+    }
+
+    public String getSalaryDeptName() {
+        return salaryDeptName;
+    }
+
+    public void setSalaryDeptName(String salaryDeptName) {
+        this.salaryDeptName = salaryDeptName;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -250,6 +274,8 @@ public class BaseFlowRecord implements Serializable {
         ", applicationCode=" + applicationCode +
         ", approverStatus=" + approverStatus +
         ", approverOpinion=" + approverOpinion +
+        ", salaryDeptId=" + salaryDeptId +
+        ", salaryDeptName=" + salaryDeptName +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +

@@ -295,9 +295,9 @@ public class SalaryServiceImpl implements SalaryService {
      * @Version 1.0
      * @Description //TODO 计算社保公积金，根据标识来区分是否缴纳社保
      **/
-    public void computeSocialSecurity (boolean computeFlag, User user, UserSalary userSalary, UserDetail userDetail) {
+    public void computeSocialSecurity (int computeFlag, User user, UserSalary userSalary, UserDetail userDetail) {
         // 校验
-        if (computeFlag) {
+        if (0 == computeFlag) {
             // 计算社保公积金
             // 养老  计算个人/公司  缴纳金额
             userSalary.setYanglPersonPayMoney(userDetail.getYanglShiyBaseMoney().multiply(userDetail.getYanglPersonRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
@@ -342,13 +342,14 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setMonthCompanyPayTotal(userSalary.getSocailSecurityCompanyPayTotal().add(userSalary.getHousingFundCompanyPayTotal()));
             // 本月公司+个人的  社保公积金总计
             userSalary.setMonthPersonCompanyPayTotal(userSalary.getMonthPersonPayTotal().add(userSalary.getMonthCompanyPayTotal()));
+            // 赋值是否计算社保标识
+            userSalary.setComputeSocialSecurityFlag(0);
         } else {
             // 不计社保公积金
             // 将所有社保公积金赋值为0
             // 养老  计算个人/公司  缴纳金额
             userSalary.setYanglPersonPayMoney(new BigDecimal("0.00"));
             userSalary.setYanglCompanyPayMoney(new BigDecimal("0.00"));
-            userSalary.setYilPersonPayMoney(new BigDecimal("0.00"));
             // 失业  计算个人/公司  缴纳金额
             // 失业 城镇户口缴费，农村户口个人不缴费      户口类型：0--城镇，1--农村
             userSalary.setShiyPersonPayMoney(new BigDecimal("0.00"));
@@ -373,6 +374,8 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setMonthCompanyPayTotal(new BigDecimal("0.00"));
             // 本月公司+个人的  社保公积金总计
             userSalary.setMonthPersonCompanyPayTotal(new BigDecimal("0.00"));
+            // 赋值是否计算社保标识
+            userSalary.setComputeSocialSecurityFlag(1);
         }
     }
 
@@ -454,13 +457,13 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.isComputeSocialFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocailSecurityFlag(), user, userSalary, userDetail);
         // 计算
         // PS:上月入职员工无绩效
         // 本月出勤工资 = （员工标准薪资*薪资发放比例/21.75）*出勤天数
         // 本月平均一天工资为
         BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
-        BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP).add(computeSalaryParamVO.getMonthRewordsMoney());
+        BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).add(computeSalaryParamVO.getMonthRewordsMoney()).setScale(2, BigDecimal.ROUND_HALF_UP);
 
         // 赋值本月基本工资
         userSalary.setMonthBaseSalary(theMonthAttendanceSalary);
@@ -739,7 +742,7 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.isComputeSocialFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocailSecurityFlag(), user, userSalary, userDetail);
         // 计算
         // PS:上月转正员工，转正前无绩效，转正后有绩效
         // 计算后比例工资 = (员工标准薪资*转正前薪资发放比例/21.75)
@@ -1064,7 +1067,7 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.isComputeSocialFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocailSecurityFlag(), user, userSalary, userDetail);
         // 计算
         // PS:正常员工  有绩效/无绩效
         // 计算后比例工资 = (员工标准薪资*转正前薪资发放比例/21.75)

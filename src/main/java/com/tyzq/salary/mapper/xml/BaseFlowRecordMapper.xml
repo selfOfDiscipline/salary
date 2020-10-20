@@ -15,6 +15,8 @@
         <result column="application_code" property="applicationCode" />
         <result column="approver_status" property="approverStatus" />
         <result column="approver_opinion" property="approverOpinion" />
+        <result column="salary_dept_id" property="salaryDeptId" />
+        <result column="salary_dept_name" property="salaryDeptName" />
         <result column="delete_flag" property="deleteFlag" />
         <result column="create_id" property="createId" />
         <result column="create_name" property="createName" />
@@ -26,7 +28,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, base_flow_config_id, base_flow_config_detail_id, node_name, approver_id, approver_account, approver_name, flow_code, application_code, approver_status, approver_opinion, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, base_flow_config_id, base_flow_config_detail_id, node_name, approver_id, approver_account, approver_name, flow_code, application_code, approver_status, approver_opinion, salary_dept_id, salary_dept_name, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
 </mapper>
