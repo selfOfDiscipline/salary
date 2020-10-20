@@ -282,6 +282,8 @@ public class AgendaServiceImpl implements AgendaService {
             record.setApproverName(approverNameList.get(number));
             record.setApplicationCode(baseFlowRecord.getApplicationCode());
             record.setFlowCode(baseFlowRecord.getFlowCode());
+            record.setSalaryDeptId(baseFlowRecord.getSalaryDeptId());
+            record.setSalaryDeptName(baseFlowRecord.getSalaryDeptName());
             // 审批状态：0--待审，1--驳回，2--通过
             record.setApproverStatus(0);
             record.setDeleteFlag(0);
@@ -511,6 +513,8 @@ public class AgendaServiceImpl implements AgendaService {
             record.setApproverName(approverNameList.get(number));
             record.setApplicationCode(applicationCode);
             record.setFlowCode(flowCode);
+            record.setSalaryDeptId(888888L);
+            record.setSalaryDeptName("人力资源总监汇总");
             // 审批状态：0--待审，1--驳回，2--通过
             record.setApproverStatus(0);
             record.setDeleteFlag(0);

@@ -1482,6 +1482,13 @@ public class SalaryServiceImpl implements SalaryService {
             record.setApproverName(approverNameList.get(number));
             record.setApplicationCode(applicationCode);
             record.setFlowCode(flowCode);
+            if (adminFlag) {
+                record.setSalaryDeptId(999999L);
+                record.setSalaryDeptName("管理岗流程");
+            } else {
+                record.setSalaryDeptId(salaryDeptId);
+                record.setSalaryDeptName(baseFlowConfig.getFlowSalaryDeptName());
+            }
             // 审批状态：0--待审，1--驳回，2--通过
             record.setApproverStatus(0);
             record.setDeleteFlag(0);
