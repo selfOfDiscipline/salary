@@ -252,7 +252,7 @@ public class UserSalary implements Serializable {
      */
     private Integer againComputeFlag;
     /**
-     * 本月是否计算过该数据：0--未计算过，1--已计算过
+     * 是否允许再次计算：0--允许，1--不允许，3--已审批通过
      */
     private Integer currentComputeFlag;
     /**

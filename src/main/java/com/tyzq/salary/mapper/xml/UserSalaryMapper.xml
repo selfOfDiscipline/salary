@@ -414,6 +414,7 @@
         <where>
             s.delete_flag = 0
             AND u.admin_flag = 0
+            AND s.again_compute_flag = 3
             <if test="queryVO.salaryDate != null">
                 AND s.salary_date <![CDATA[=]]> #{queryVO.salaryDate}
             </if>
@@ -421,10 +422,7 @@
                 AND u.user_name like CONCAT('%', #{queryVO.userName}, '%')
             </if>
             <if test="queryVO.userPostType != null">
-                AND u.user_post_type = 0
-            </if>
-            <if test="queryVO.userPostType == null">
-                AND u.user_post_type != 0
+                AND u.user_post_type = #{queryVO.userPostType}
             </if>
             <if test="queryVO.salaryDeptId != null">
                 AND s.salary_dept_id = #{queryVO.salaryDeptId}

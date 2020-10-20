@@ -13,6 +13,7 @@ import com.tyzq.salary.service.salary.SalaryService;
 import com.tyzq.salary.utils.DateUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -335,13 +336,9 @@ public class SalaryController {
      **/
     @ApiOperation(value = "查询汇总列表", httpMethod = "GET", notes = "查询汇总列表")
     @GetMapping(value = "/selectCollectListBySalaryDate")
-    public ApiResult selectCollectListBySalaryDate(@RequestParam(value = "salaryDate", required = false) Date salaryDate, HttpServletRequest request) {
+    public ApiResult selectCollectListBySalaryDate(@RequestParam(value = "salaryDate", required = false) String salaryDate, HttpServletRequest request) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
-        // 校验
-        if (null == salaryDate) {
-            salaryDate = DateUtils.getThisDateLastMonth();
-        }
         try {
             // 业务操作
             return salaryService.selectCollectListBySalaryDate(salaryDate, userSessionVO);
@@ -362,16 +359,26 @@ public class SalaryController {
      **/
     @ApiOperation(value = "导出工资单", httpMethod = "GET", notes = "导出工资单，默认导出上月")
     @GetMapping(value = "/exportSalaryBill")
-    public ApiResult exportSalaryBill(@RequestParam(value = "salaryDate", required = false) Date salaryDate, HttpServletRequest request, HttpServletResponse response) {
+    public ApiResult exportSalaryBill(@RequestParam(value = "salaryDate", required = false) String salaryDate,
+                                      @RequestParam(value = "salaryDeptId", required = false) Long salaryDeptId,
+                                      @RequestParam(value = "userPostType", required = false) Integer userPostType,
+                                      @RequestParam(value = "userName", required = false) String userName, HttpServletRequest request, HttpServletResponse response) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
-        // 校验
-        if (null == salaryDate) {
-            salaryDate = DateUtils.getThisDateLastMonth();
-        }
         try {
+            SalaryHistoryQueryVO salaryHistoryQueryVO = new SalaryHistoryQueryVO();
+            // 校验 日期
+            if (StringUtils.isBlank(salaryDate)) {
+                salaryHistoryQueryVO.setSalaryDate(DateUtils.getDateString(DateUtils.getThisDateLastMonth(), "yyyy-MM-dd HH:mm:ss"));
+            } else {
+                salaryHistoryQueryVO.setSalaryDate(salaryDate + "-01 00:00:00");
+            }
+            // 其他赋值
+            salaryHistoryQueryVO.setSalaryDeptId(salaryDeptId);
+            salaryHistoryQueryVO.setUserPostType(userPostType);
+            salaryHistoryQueryVO.setUserName(userName);
             // 业务操作
-            salaryService.exportSalaryBill(salaryDate, userSessionVO, response);
+            salaryService.exportSalaryBill(salaryHistoryQueryVO, userSessionVO, response);
             return null;
         } catch (Exception e) {
             e.printStackTrace();

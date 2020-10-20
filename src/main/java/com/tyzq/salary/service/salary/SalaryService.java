@@ -95,7 +95,7 @@ public interface SalaryService {
      * @Version 1.0
      * @Description //TODO 查询汇总列表
      **/
-    ApiResult selectCollectListBySalaryDate(Date salaryDate, UserSessionVO userSessionVO);
+    ApiResult selectCollectListBySalaryDate(String salaryDate, UserSessionVO userSessionVO);
 
     /*
      * @Author zwc   zwc_503@163.com
@@ -105,7 +105,7 @@ public interface SalaryService {
      * @Version 1.0
      * @Description //TODO 导出工资单，默认导出上月
      **/
-    void exportSalaryBill(Date salaryDate, UserSessionVO userSessionVO, HttpServletResponse response);
+    void exportSalaryBill(SalaryHistoryQueryVO salaryHistoryQueryVO, UserSessionVO userSessionVO, HttpServletResponse response);
 
     /*
      * @Author zwc   zwc_503@163.com

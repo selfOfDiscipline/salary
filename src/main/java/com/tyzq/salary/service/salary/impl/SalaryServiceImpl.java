@@ -20,6 +20,7 @@ import com.tyzq.salary.service.salary.SalaryService;
 import com.tyzq.salary.utils.DateUtils;
 import com.tyzq.salary.utils.ExcelExpUtil;
 import com.tyzq.salary.utils.RedisUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1503,9 +1504,12 @@ public class SalaryServiceImpl implements SalaryService {
     @Override
     public ApiResult selectHistorySalaryList(SalaryHistoryQueryVO salaryHistoryQueryVO, UserSessionVO userSessionVO) {
         // 校验日期
-        if (null == salaryHistoryQueryVO.getSalaryDate()) {
+        if (StringUtils.isBlank(salaryHistoryQueryVO.getSalaryDate())) {
             // 查询上个月
-            salaryHistoryQueryVO.setSalaryDate(DateUtils.getThisDateLastMonth());
+            Date thisDateLastMonth = DateUtils.getThisDateLastMonth();
+            salaryHistoryQueryVO.setSalaryDate(DateUtils.getDateString(thisDateLastMonth, "yyyy-MM-dd HH:mm:ss"));
+        } else {
+            salaryHistoryQueryVO.setSalaryDate(salaryHistoryQueryVO.getSalaryDate() + "-01 00:00:00");
         }
         // 查询
         // 查询计薪列表
@@ -1528,9 +1532,16 @@ public class SalaryServiceImpl implements SalaryService {
      * @Description //TODO 查询汇总列表
      **/
     @Override
-    public ApiResult selectCollectListBySalaryDate(Date salaryDate, UserSessionVO userSessionVO) {
-
+    public ApiResult selectCollectListBySalaryDate(String salaryDate, UserSessionVO userSessionVO) {
         SalaryHistoryQueryVO salaryHistoryQueryVO = new SalaryHistoryQueryVO();
+        // 校验
+        if (StringUtils.isBlank(salaryDate)) {
+            Date thisSalaryDate = DateUtils.getThisDateLastMonth();
+            salaryDate = DateUtils.getDateString(thisSalaryDate, "yyyy-MM-dd HH:mm:ss");
+        } else {
+            // 转换   将 "2020-05"  -->  "2020-05-01 00:00:00"
+            salaryDate = salaryDate + "-01 00:00:00";
+        }
         salaryHistoryQueryVO.setSalaryDate(salaryDate);
         List<SalaryHistoryResultVO> historyResultVOList = userSalaryMapper.selectHistorySalaryList(salaryHistoryQueryVO);
         // 校验
@@ -1568,7 +1579,7 @@ public class SalaryServiceImpl implements SalaryService {
             // 定义对象并赋值
             SalaryCollectResultVO collectResultVO = new SalaryCollectResultVO();
             collectResultVO.setThisNumber(thisNumber);
-            collectResultVO.setSalaryDate(salaryDate);
+            collectResultVO.setSalaryDate(DateUtils.getDate(salaryDate, "yyyy-MM"));
             collectResultVO.setSalaryDeptId(key);
             collectResultVO.setSalaryDeptName(thisVOList.get(0).getSalaryDeptName());
             collectResultVO.setSalaryDeptManageTotal(thisDeptMoneyTotal);
@@ -1591,8 +1602,8 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 定义对象并赋值
         SalaryCollectResultVO collectResultVO = new SalaryCollectResultVO();
-        collectResultVO.setThisNumber(thisNumber++);
-        collectResultVO.setSalaryDate(salaryDate);
+        collectResultVO.setThisNumber(++thisNumber);
+        collectResultVO.setSalaryDate(DateUtils.getDate(salaryDate, "yyyy-MM"));
         collectResultVO.setSalaryDeptId(0l);
         collectResultVO.setSalaryDeptName("所有部门");
         collectResultVO.setSalaryDeptManageTotal(thisDeptMoneyTotal);
@@ -1613,9 +1624,7 @@ public class SalaryServiceImpl implements SalaryService {
      * @Description //TODO 导出工资单，默认导出上月
      **/
     @Override
-    public void exportSalaryBill(Date salaryDate, UserSessionVO userSessionVO, HttpServletResponse response) {
-        SalaryHistoryQueryVO salaryHistoryQueryVO = new SalaryHistoryQueryVO();
-        salaryHistoryQueryVO.setSalaryDate(salaryDate);
+    public void exportSalaryBill(SalaryHistoryQueryVO salaryHistoryQueryVO, UserSessionVO userSessionVO, HttpServletResponse response) {
         List<SalaryHistoryResultVO> historyResultVOList = userSalaryMapper.selectHistorySalaryList(salaryHistoryQueryVO);
         // 校验
         if (CollectionUtils.isEmpty(historyResultVOList)) {

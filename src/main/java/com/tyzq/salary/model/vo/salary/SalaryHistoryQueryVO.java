@@ -16,7 +16,7 @@ public class SalaryHistoryQueryVO extends PageUtilVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /* 薪资归属日期，默认查上个月*/
-    private Date salaryDate;
+    private String salaryDate;
 
     /* 薪资归属部门id*/
     private Long salaryDeptId;
@@ -27,11 +27,11 @@ public class SalaryHistoryQueryVO extends PageUtilVO implements Serializable {
     /* 员工名称*/
     private String userName;
 
-    public Date getSalaryDate() {
+    public String getSalaryDate() {
         return salaryDate;
     }
 
-    public void setSalaryDate(Date salaryDate) {
+    public void setSalaryDate(String salaryDate) {
         this.salaryDate = salaryDate;
     }
 

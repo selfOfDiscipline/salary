@@ -306,8 +306,12 @@ public class AgendaServiceImpl implements AgendaService {
      * @Description //TODO 私有方法----员工的年度金额累加
      **/
     private void annualMoneyAccumulation(SalaryFlowBill salaryFlowBill, UserSessionVO userSessionVO) {
-        // 获取该单据关联的工资数据
-        List<String> userSalaryIdList = Arrays.asList(salaryFlowBill.getUserSalaryIds());
+        // 将所有的薪资的  是否允许再次结算  改为允许    是否允许再次计算：0--允许，1--不允许,3--已审批通过 （20201020追加该点，用以查询工资单）
+        List<Long> userSalaryIdList = (List<Long>) JSONArray.parse(salaryFlowBill.getUserSalaryIds());
+        // 批量修改
+        userSalaryMapper.update(new UserSalary() {{
+            setAgainComputeFlag(3);
+        }}, Condition.create().in("id", userSalaryIdList));
         if (CollectionUtils.isNotEmpty(userSalaryIdList)) {
             List<UserSalary> userSalaryList = userSalaryMapper.selectBatchIds(userSalaryIdList);
             // 循环

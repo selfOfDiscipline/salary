@@ -387,7 +387,7 @@ public class UserController {
             if (null != userQueryVO.getUserPostType() && 0 == userQueryVO.getUserPostType()) {
                 return ApiResult.getFailedApiResponse("您无权查看管理岗员工信息！");
             } else {
-                userQueryVO.setUserPostType(2);
+                userQueryVO.setUserPostType(null);
             }
             // 查询登录人是否在薪资管理人员表中
             List<UserSalaryDept> userSalaryDeptList = userSalaryDeptMapper.selectList(Condition.create().eq("user_id", userSessionVO.getId()).eq("delete_flag", 0));
