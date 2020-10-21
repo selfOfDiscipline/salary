@@ -467,4 +467,33 @@ public class UserController {
             return ApiResult.getFailedApiResponse("修改密码出现错误异常！");
         }
     }
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:17 2020/10/21
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 批量更改管理员基础密码
+     **/
+    @ApiOperation(value = "批量更改管理员基础密码", httpMethod = "GET", notes = "批量更改管理员基础密码")
+    @GetMapping(value = "/updateAdminPassword")
+    public ApiResult updateAdminPassword(@RequestParam("checkFlag") String checkFlag, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        if (null == userSessionVO) {
+            return ApiResult.getFailedApiResponse("请登录！");
+        }
+        if (!"updateCCCCCC".equals(checkFlag)) {
+            return ApiResult.getFailedApiResponse("参数有误！");
+        }
+        try {
+            // 业务操作
+            return userService.updateAdminPassword(userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("修改密码错误异常：" + e);
+            return ApiResult.getFailedApiResponse("修改密码出现错误异常！");
+        }
+    }
 }

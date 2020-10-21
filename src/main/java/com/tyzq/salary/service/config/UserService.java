@@ -104,4 +104,14 @@ public interface UserService {
      * @Description //TODO 校验登录人权限
      **/
     Boolean checkUserSessionAuthrity(UserSessionVO userSessionVO);
+
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:20 2020/10/21
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO 修改管理员密码
+     **/
+    ApiResult updateAdminPassword(UserSessionVO userSessionVO);
 }

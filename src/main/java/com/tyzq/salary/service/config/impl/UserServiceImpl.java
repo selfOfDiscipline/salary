@@ -619,6 +619,25 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
+    /*
+     * @Author zwc   zwc_503@163.com
+     * @Date 14:21 2020/10/21
+     * @Param
+     * @return
+     * @Version 1.0
+     * @Description //TODO
+     **/
+    @Override
+    public ApiResult updateAdminPassword(UserSessionVO userSessionVO) {
+        List<User> list = userMapper.selectList(Condition.create().eq("admin_flag", 1).eq("allow_flag", 1).eq("delete_flag", 0));
+        for (User user : list) {
+            String passwordBySalt = PasswordUtil.getPasswordBySalt(user.getUserAccount(), "tyzq-123456", user.getUserSalt());
+            user.setUserPassword(passwordBySalt);
+            userMapper.updateById(user);
+        }
+        return ApiResult.getSuccessApiResponse("批量修改密码共：" + list.size() + "条！");
+    }
+
     public ApiResult checkUserRoleConfig(UserSessionVO userSessionVO) {
         // 校验是否登录
         if (null == userSessionVO) {
