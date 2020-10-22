@@ -479,6 +479,10 @@ public class UserServiceImpl implements UserService {
      **/
     @Override
     public ApiResult selectAllUserList(UserQueryVO userQueryVO, UserSessionVO userSessionVO) {
+        // 校验
+        if (StringUtils.isNotBlank(userQueryVO.getUserName())) {
+            userQueryVO.setUserName("%" + userQueryVO.getUserName() + "%");
+        }
         // 查询数据库
         PageHelper.startPage(userQueryVO.getPageNum(), userQueryVO.getPageSize());
         List<UserBaseResultVO> dataList = userMapper.selectAllUserList(userQueryVO);

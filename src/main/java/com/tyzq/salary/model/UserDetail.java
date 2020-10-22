@@ -80,11 +80,11 @@ public class UserDetail implements Serializable {
      */
     private BigDecimal postSalary;
     /**
-     * 岗位补贴
+     * 岗位津贴
      */
     private BigDecimal postSubsidy;
     /**
-     * 其他补贴
+     * 基本工资（这里是导出工资表需要）
      */
     private BigDecimal otherSubsidy;
     /**
