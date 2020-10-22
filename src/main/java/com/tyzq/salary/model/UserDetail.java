@@ -236,7 +236,7 @@ public class UserDetail implements Serializable {
      */
     private BigDecimal deductSick;
     /**
-     * 扣款项：事假
+     * 社保代缴手续费
      */
     private BigDecimal deductThing;
     /**

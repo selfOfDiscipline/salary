@@ -177,13 +177,27 @@ public class UserServiceImpl implements UserService {
         userDetail = userDetailMapper.selectOne(userDetail);
         // 判断员工本次修改类型是离职还是转正
         if (1 == userRankParamVO.getUserRankType().intValue()) {
-            // 员工薪资发放比例
+            // 员工试用期的发放比例
+            BigDecimal probationRatio = userDetail.getSalaryGrantRatio();
+            // 员工转正后薪资发放比例
             BigDecimal salaryGrantRatio = userRankParamVO.getSalaryGrantRatio() == null ? new BigDecimal("0.00") : userRankParamVO.getSalaryGrantRatio();
             // 赋值 转正后的员工计薪工资
             BigDecimal computeStandardSalary = userDetail.getStandardSalary().multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
             userDetail.setComputeStandardSalary(computeStandardSalary);
+            // 赋值  转正后 预设银行代发工资
+            BigDecimal afterBankSalary = userDetail.getBankSalary().divide(probationRatio).multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+            userDetail.setBankSalary(afterBankSalary);
             // 赋值  预设他行代发工资金额=计算后的员工计薪工资 - 预设银行代发工资金额
             userDetail.setOtherBankSalary(computeStandardSalary.subtract(userDetail.getBankSalary()));
+            // 基本工资（用于导出工资表）   按金额按薪资发放比例计算后赋值
+            BigDecimal otherSubsidy = userDetail.getOtherSubsidy().divide(probationRatio).multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+            userDetail.setOtherSubsidy(otherSubsidy);
+            // 岗位工资   按金额按薪资发放比例计算后赋值
+            BigDecimal postSalary = userDetail.getPostSalary().divide(probationRatio).multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+            userDetail.setPostSalary(postSalary);
+            // 岗位津贴   按金额按薪资发放比例计算后赋值
+            BigDecimal postSubsidy = userDetail.getPostSubsidy().divide(probationRatio).multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+            userDetail.setPostSubsidy(postSubsidy);
             // 绩效占工资比例
             BigDecimal performanceRatio = userDetail.getPerformanceRatio() == null ? new BigDecimal("0.00") : userDetail.getPerformanceRatio();
             // 赋值基本工资
@@ -314,18 +328,49 @@ public class UserServiceImpl implements UserService {
             BigDecimal standardSalary = userDetail.getStandardSalary() == null ? new BigDecimal("0.00") : userDetail.getStandardSalary();
             // 员工薪资发放比例
             BigDecimal salaryGrantRatio = userDetail.getSalaryGrantRatio() == null ? new BigDecimal("0.00") : userDetail.getSalaryGrantRatio();
-            // 赋值 计算后的员工计薪工资
+            // 预设银行代发工资
+            BigDecimal bankSalary = userDetail.getBankSalary() == null ? new BigDecimal("0.00") : userDetail.getBankSalary();
+            userDetail.setBankSalary(bankSalary);
+            // 计算比例后的员工计薪工资
             BigDecimal computeStandardSalary = standardSalary.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+            // 赋值 员工计算比例后工资
             userDetail.setComputeStandardSalary(computeStandardSalary);
+            // 赋值 员工计算比例后试用期部分工资
             userDetail.setComputeProbationSalary(computeStandardSalary);
-            // 赋值银行代发工资标准，这里校验用户的  标准薪资*薪资发放比例    是否小于预设银行代发工资
-            if (computeStandardSalary.compareTo(userDetail.getBankSalary()) == -1) {
-                // 小于
-                userDetail.setBankSalary(computeStandardSalary);
+            // 判断员工是试用期还是正式
+            if (0 == user.getUserRankType().intValue()) {
+                // 试用期员工
+                // 赋值 预设银行代发工资 * 薪资发放比例
+                userDetail.setBankSalary(bankSalary.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP));
+                // 赋值银行代发工资标准，这里校验用户的  标准薪资*薪资发放比例    是否小于预设银行代发工资
+                if (computeStandardSalary.compareTo(userDetail.getBankSalary()) == -1) {
+                    // 小于
+                    userDetail.setBankSalary(computeStandardSalary);
+                }
+                // 赋值  预设他行代发工资金额=计算后的员工计薪工资 - 预设银行代发工资金额
+                userDetail.setOtherBankSalary(computeStandardSalary.subtract(userDetail.getBankSalary()));
+                // 基本工资（用于导出工资表）   按金额按薪资发放比例计算后赋值
+                BigDecimal otherSubsidy = userDetail.getOtherSubsidy() == null ? new BigDecimal("0.00") : userDetail.getOtherSubsidy();
+                otherSubsidy = otherSubsidy.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+                userDetail.setOtherSubsidy(otherSubsidy);
+                // 岗位工资   按金额按薪资发放比例计算后赋值
+                BigDecimal postSalary = userDetail.getPostSalary() == null ? new BigDecimal("0.00") : userDetail.getPostSalary();
+                postSalary = postSalary.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+                userDetail.setPostSalary(postSalary);
+                // 岗位津贴   按金额按薪资发放比例计算后赋值
+                BigDecimal postSubsidy = userDetail.getPostSubsidy() == null ? new BigDecimal("0.00") : userDetail.getPostSubsidy();
+                postSubsidy = postSubsidy.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+                userDetail.setPostSubsidy(postSubsidy);
+            } else {
+                // 正式员工或离职员工
+                // 赋值银行代发工资标准，这里校验用户的  标准薪资*薪资发放比例    是否小于预设银行代发工资
+                if (computeStandardSalary.compareTo(userDetail.getBankSalary()) == -1) {
+                    // 小于
+                    userDetail.setBankSalary(computeStandardSalary);
+                }
+                // 赋值  预设他行代发工资金额=计算后的员工计薪工资 - 预设银行代发工资金额
+                userDetail.setOtherBankSalary(computeStandardSalary.subtract(userDetail.getBankSalary()));
             }
-            // 赋值  预设他行代发工资金额=计算后的员工计薪工资 - 预设银行代发工资金额
-            userDetail.setOtherBankSalary(computeStandardSalary.subtract(userDetail.getBankSalary()));
-
             // 绩效占工资比例
             BigDecimal performanceRatio = userDetail.getPerformanceRatio() == null ? new BigDecimal("0.00") : userDetail.getPerformanceRatio();
             // 赋值基本工资
@@ -392,18 +437,49 @@ public class UserServiceImpl implements UserService {
             BigDecimal standardSalary = userDetail.getStandardSalary() == null ? new BigDecimal("0.00") : userDetail.getStandardSalary();
             // 员工薪资发放比例
             BigDecimal salaryGrantRatio = userDetail.getSalaryGrantRatio() == null ? new BigDecimal("0.00") : userDetail.getSalaryGrantRatio();
-            // 赋值 计算后的员工计薪工资
+            // 预设银行代发工资
+            BigDecimal bankSalary = userDetail.getBankSalary() == null ? new BigDecimal("0.00") : userDetail.getBankSalary();
+            userDetail.setBankSalary(bankSalary);
+            // 计算比例后的员工计薪工资
             BigDecimal computeStandardSalary = standardSalary.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+            // 赋值 员工计算比例后工资
             userDetail.setComputeStandardSalary(computeStandardSalary);
+            // 赋值 员工计算比例后试用期部分工资
             userDetail.setComputeProbationSalary(computeStandardSalary);
-            // 赋值银行代发工资标准，这里校验用户的  标准薪资*薪资发放比例    是否小于预设银行代发工资
-            if (computeStandardSalary.compareTo(userDetail.getBankSalary()) == -1) {
-                // 小于
-                userDetail.setBankSalary(computeStandardSalary);
+            // 判断员工是试用期还是正式
+            if (0 == user.getUserRankType().intValue()) {
+                // 试用期员工
+                // 赋值 预设银行代发工资 * 薪资发放比例
+                userDetail.setBankSalary(bankSalary.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP));
+                // 赋值银行代发工资标准，这里校验用户的  标准薪资*薪资发放比例    是否小于预设银行代发工资
+                if (computeStandardSalary.compareTo(userDetail.getBankSalary()) == -1) {
+                    // 小于
+                    userDetail.setBankSalary(computeStandardSalary);
+                }
+                // 赋值  预设他行代发工资金额=计算后的员工计薪工资 - 预设银行代发工资金额
+                userDetail.setOtherBankSalary(computeStandardSalary.subtract(userDetail.getBankSalary()));
+                // 基本工资（用于导出工资表）   按金额按薪资发放比例计算后赋值
+                BigDecimal otherSubsidy = userDetail.getOtherSubsidy() == null ? new BigDecimal("0.00") : userDetail.getOtherSubsidy();
+                otherSubsidy = otherSubsidy.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+                userDetail.setOtherSubsidy(otherSubsidy);
+                // 岗位工资   按金额按薪资发放比例计算后赋值
+                BigDecimal postSalary = userDetail.getPostSalary() == null ? new BigDecimal("0.00") : userDetail.getPostSalary();
+                postSalary = postSalary.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+                userDetail.setPostSalary(postSalary);
+                // 岗位津贴   按金额按薪资发放比例计算后赋值
+                BigDecimal postSubsidy = userDetail.getPostSubsidy() == null ? new BigDecimal("0.00") : userDetail.getPostSubsidy();
+                postSubsidy = postSubsidy.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
+                userDetail.setPostSubsidy(postSubsidy);
+            } else {
+                // 正式员工或离职员工
+                // 赋值银行代发工资标准，这里校验用户的  标准薪资*薪资发放比例    是否小于预设银行代发工资
+                if (computeStandardSalary.compareTo(userDetail.getBankSalary()) == -1) {
+                    // 小于
+                    userDetail.setBankSalary(computeStandardSalary);
+                }
+                // 赋值  预设他行代发工资金额=计算后的员工计薪工资 - 预设银行代发工资金额
+                userDetail.setOtherBankSalary(computeStandardSalary.subtract(userDetail.getBankSalary()));
             }
-
-            // 赋值  预设他行代发工资金额=计算后的员工计薪工资 - 预设银行代发工资金额
-            userDetail.setOtherBankSalary(computeStandardSalary.subtract(userDetail.getBankSalary()));
             // 绩效占工资比例
             BigDecimal performanceRatio = userDetail.getPerformanceRatio() == null ? new BigDecimal("0.00") : userDetail.getPerformanceRatio();
             // 赋值基本工资
