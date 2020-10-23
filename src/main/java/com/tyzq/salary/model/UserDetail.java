@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-09-27
+ * @since 2020-10-23
  */
 public class UserDetail implements Serializable {
 
@@ -116,9 +116,9 @@ public class UserDetail implements Serializable {
      */
     private BigDecimal specialDeductTotal;
     /**
-     * 养老失业基数
+     * 养老基数
      */
-    private BigDecimal yanglShiyBaseMoney;
+    private BigDecimal yanglBaseMoney;
     /**
      * 养老个人缴纳比例
      */
@@ -128,6 +128,10 @@ public class UserDetail implements Serializable {
      */
     private BigDecimal yanglCompanyRatio;
     /**
+     * 失业基数
+     */
+    private BigDecimal shiyBaseMoney;
+    /**
      * 失业个人缴纳比例
      */
     private BigDecimal shiyPersonRatio;
@@ -136,9 +140,9 @@ public class UserDetail implements Serializable {
      */
     private BigDecimal shiyCompanyRatio;
     /**
-     * 医疗工伤生育基数
+     * 工伤基数
      */
-    private BigDecimal yilGongsShengyBaseMoney;
+    private BigDecimal gongsBaseMoney;
     /**
      * 工伤个人缴纳比例
      */
@@ -148,6 +152,10 @@ public class UserDetail implements Serializable {
      */
     private BigDecimal gongsCompanyRatio;
     /**
+     * 生育基数
+     */
+    private BigDecimal shengyBaseMoney;
+    /**
      * 生育个人缴纳比例
      */
     private BigDecimal shengyPersonRatio;
@@ -155,6 +163,10 @@ public class UserDetail implements Serializable {
      * 生育公司缴纳比例
      */
     private BigDecimal shengyCompanyRatio;
+    /**
+     * 医疗基数
+     */
+    private BigDecimal yilBaseMoney;
     /**
      * 医疗个人缴纳比例
      */
@@ -167,6 +179,22 @@ public class UserDetail implements Serializable {
      * 医疗公司缴纳比例
      */
     private BigDecimal yilCompanyRatio;
+    /**
+     * 医疗公司另缴金额
+     */
+    private BigDecimal yilCompanyAddMoney;
+    /**
+     * 其他险基数
+     */
+    private BigDecimal otherBaseMoney;
+    /**
+     * 其他险个人缴纳比例
+     */
+    private BigDecimal otherPersonRatio;
+    /**
+     * 其他险公司缴纳比例
+     */
+    private BigDecimal otherCompanyRatio;
     /**
      * 公积金基数
      */
@@ -465,12 +493,12 @@ public class UserDetail implements Serializable {
         this.specialDeductTotal = specialDeductTotal;
     }
 
-    public BigDecimal getYanglShiyBaseMoney() {
-        return yanglShiyBaseMoney;
+    public BigDecimal getYanglBaseMoney() {
+        return yanglBaseMoney;
     }
 
-    public void setYanglShiyBaseMoney(BigDecimal yanglShiyBaseMoney) {
-        this.yanglShiyBaseMoney = yanglShiyBaseMoney;
+    public void setYanglBaseMoney(BigDecimal yanglBaseMoney) {
+        this.yanglBaseMoney = yanglBaseMoney;
     }
 
     public BigDecimal getYanglPersonRatio() {
@@ -489,6 +517,14 @@ public class UserDetail implements Serializable {
         this.yanglCompanyRatio = yanglCompanyRatio;
     }
 
+    public BigDecimal getShiyBaseMoney() {
+        return shiyBaseMoney;
+    }
+
+    public void setShiyBaseMoney(BigDecimal shiyBaseMoney) {
+        this.shiyBaseMoney = shiyBaseMoney;
+    }
+
     public BigDecimal getShiyPersonRatio() {
         return shiyPersonRatio;
     }
@@ -505,12 +541,12 @@ public class UserDetail implements Serializable {
         this.shiyCompanyRatio = shiyCompanyRatio;
     }
 
-    public BigDecimal getYilGongsShengyBaseMoney() {
-        return yilGongsShengyBaseMoney;
+    public BigDecimal getGongsBaseMoney() {
+        return gongsBaseMoney;
     }
 
-    public void setYilGongsShengyBaseMoney(BigDecimal yilGongsShengyBaseMoney) {
-        this.yilGongsShengyBaseMoney = yilGongsShengyBaseMoney;
+    public void setGongsBaseMoney(BigDecimal gongsBaseMoney) {
+        this.gongsBaseMoney = gongsBaseMoney;
     }
 
     public BigDecimal getGongsPersonRatio() {
@@ -529,6 +565,14 @@ public class UserDetail implements Serializable {
         this.gongsCompanyRatio = gongsCompanyRatio;
     }
 
+    public BigDecimal getShengyBaseMoney() {
+        return shengyBaseMoney;
+    }
+
+    public void setShengyBaseMoney(BigDecimal shengyBaseMoney) {
+        this.shengyBaseMoney = shengyBaseMoney;
+    }
+
     public BigDecimal getShengyPersonRatio() {
         return shengyPersonRatio;
     }
@@ -543,6 +587,14 @@ public class UserDetail implements Serializable {
 
     public void setShengyCompanyRatio(BigDecimal shengyCompanyRatio) {
         this.shengyCompanyRatio = shengyCompanyRatio;
+    }
+
+    public BigDecimal getYilBaseMoney() {
+        return yilBaseMoney;
+    }
+
+    public void setYilBaseMoney(BigDecimal yilBaseMoney) {
+        this.yilBaseMoney = yilBaseMoney;
     }
 
     public BigDecimal getYilPersonRatio() {
@@ -567,6 +619,38 @@ public class UserDetail implements Serializable {
 
     public void setYilCompanyRatio(BigDecimal yilCompanyRatio) {
         this.yilCompanyRatio = yilCompanyRatio;
+    }
+
+    public BigDecimal getYilCompanyAddMoney() {
+        return yilCompanyAddMoney;
+    }
+
+    public void setYilCompanyAddMoney(BigDecimal yilCompanyAddMoney) {
+        this.yilCompanyAddMoney = yilCompanyAddMoney;
+    }
+
+    public BigDecimal getOtherBaseMoney() {
+        return otherBaseMoney;
+    }
+
+    public void setOtherBaseMoney(BigDecimal otherBaseMoney) {
+        this.otherBaseMoney = otherBaseMoney;
+    }
+
+    public BigDecimal getOtherPersonRatio() {
+        return otherPersonRatio;
+    }
+
+    public void setOtherPersonRatio(BigDecimal otherPersonRatio) {
+        this.otherPersonRatio = otherPersonRatio;
+    }
+
+    public BigDecimal getOtherCompanyRatio() {
+        return otherCompanyRatio;
+    }
+
+    public void setOtherCompanyRatio(BigDecimal otherCompanyRatio) {
+        this.otherCompanyRatio = otherCompanyRatio;
     }
 
     public BigDecimal getHousingFundBaseMoney() {
@@ -804,19 +888,26 @@ public class UserDetail implements Serializable {
         ", supportParents=" + supportParents +
         ", otherDeduct=" + otherDeduct +
         ", specialDeductTotal=" + specialDeductTotal +
-        ", yanglShiyBaseMoney=" + yanglShiyBaseMoney +
+        ", yanglBaseMoney=" + yanglBaseMoney +
         ", yanglPersonRatio=" + yanglPersonRatio +
         ", yanglCompanyRatio=" + yanglCompanyRatio +
+        ", shiyBaseMoney=" + shiyBaseMoney +
         ", shiyPersonRatio=" + shiyPersonRatio +
         ", shiyCompanyRatio=" + shiyCompanyRatio +
-        ", yilGongsShengyBaseMoney=" + yilGongsShengyBaseMoney +
+        ", gongsBaseMoney=" + gongsBaseMoney +
         ", gongsPersonRatio=" + gongsPersonRatio +
         ", gongsCompanyRatio=" + gongsCompanyRatio +
+        ", shengyBaseMoney=" + shengyBaseMoney +
         ", shengyPersonRatio=" + shengyPersonRatio +
         ", shengyCompanyRatio=" + shengyCompanyRatio +
+        ", yilBaseMoney=" + yilBaseMoney +
         ", yilPersonRatio=" + yilPersonRatio +
         ", yilPersonAddMoney=" + yilPersonAddMoney +
         ", yilCompanyRatio=" + yilCompanyRatio +
+        ", yilCompanyAddMoney=" + yilCompanyAddMoney +
+        ", otherBaseMoney=" + otherBaseMoney +
+        ", otherPersonRatio=" + otherPersonRatio +
+        ", otherCompanyRatio=" + otherCompanyRatio +
         ", housingFundBaseMoney=" + housingFundBaseMoney +
         ", housingFundPersonRatio=" + housingFundPersonRatio +
         ", housingFundCompanyRatio=" + housingFundCompanyRatio +

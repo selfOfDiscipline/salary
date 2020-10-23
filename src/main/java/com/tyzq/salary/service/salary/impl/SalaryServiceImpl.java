@@ -241,7 +241,8 @@ public class SalaryServiceImpl implements SalaryService {
                             userSalary.setMonthPerformanceSalary(user.getPerformanceSalary());// 本月绩效工资
                             userSalary.setMonthPostSalary(user.getPostSalary());// 本月岗位工资
                             userSalary.setMonthPostSubsidy(user.getPostSubsidy());// 本月岗位津贴
-                            userSalary.setMonthOtherSubsidy(user.getOtherSubsidy());// 本月其他补贴
+                            userSalary.setMonthOtherSubsidy(user.getOtherSubsidy());// 本月基本工资（用于导出工资表）
+                            userSalary.setDeductServiceFee(user.getDeductThing());// 本月社保代缴手续费
                             // 新增入库
                             userSalaryMapper.insert(userSalary);
                         }
@@ -280,7 +281,8 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setMonthPerformanceSalary(user.getPerformanceSalary());// 本月绩效工资
             userSalary.setMonthPostSalary(user.getPostSalary());// 本月岗位工资
             userSalary.setMonthPostSubsidy(user.getPostSubsidy());// 本月岗位津贴
-            userSalary.setMonthOtherSubsidy(user.getOtherSubsidy());// 本月其他补贴
+            userSalary.setMonthOtherSubsidy(user.getOtherSubsidy());// 本月基本工资（用于导出工资表）
+            userSalary.setDeductServiceFee(user.getDeductThing());// 本月社保代缴手续费
             // 新增入库
             userSalaryMapper.insert(userSalary);
         }
@@ -295,33 +297,36 @@ public class SalaryServiceImpl implements SalaryService {
      * @Version 1.0
      * @Description //TODO 计算社保公积金，根据标识来区分是否缴纳社保
      **/
-    public void computeSocialSecurity (int computeFlag, User user, UserSalary userSalary, UserDetail userDetail) {
+    public void computeSocialSecurity(int computeFlag, User user, UserSalary userSalary, UserDetail userDetail) {
         // 校验
         if (0 == computeFlag) {
             // 计算社保公积金
             // 养老  计算个人/公司  缴纳金额
-            userSalary.setYanglPersonPayMoney(userDetail.getYanglShiyBaseMoney().multiply(userDetail.getYanglPersonRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
-            userSalary.setYanglCompanyPayMoney(userDetail.getYanglShiyBaseMoney().multiply(userDetail.getYanglCompanyRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+            userSalary.setYanglPersonPayMoney(userDetail.getYanglBaseMoney().multiply(userDetail.getYanglPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setYanglCompanyPayMoney(userDetail.getYanglBaseMoney().multiply(userDetail.getYanglCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
             // 失业  计算个人/公司  缴纳金额
             // 失业 城镇户口缴费，农村户口个人不缴费      户口类型：0--城镇，1--农村
             if (0 == user.getHouseholdType().intValue()) {
-                userSalary.setShiyPersonPayMoney(userDetail.getYanglShiyBaseMoney().multiply(userDetail.getShiyPersonRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+                userSalary.setShiyPersonPayMoney(userDetail.getShiyBaseMoney().multiply(userDetail.getShiyPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
             } else {
                 userSalary.setShiyPersonPayMoney(new BigDecimal("0.00"));
             }
-            userSalary.setShiyCompanyPayMoney(userDetail.getYanglShiyBaseMoney().multiply(userDetail.getShiyCompanyRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+            userSalary.setShiyCompanyPayMoney(userDetail.getShiyBaseMoney().multiply(userDetail.getShiyCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
             // 工伤  计算个人/公司  缴纳金额
-            userSalary.setGongsPersonPayMoney(userDetail.getYilGongsShengyBaseMoney().multiply(userDetail.getGongsPersonRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
-            userSalary.setGongsCompanyPayMoney(userDetail.getYilGongsShengyBaseMoney().multiply(userDetail.getGongsCompanyRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+            userSalary.setGongsPersonPayMoney(userDetail.getGongsBaseMoney().multiply(userDetail.getGongsPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setGongsCompanyPayMoney(userDetail.getGongsBaseMoney().multiply(userDetail.getGongsCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
             // 生育  计算个人/公司  缴纳金额
-            userSalary.setShengyPersonPayMoney(userDetail.getYilGongsShengyBaseMoney().multiply(userDetail.getShengyPersonRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
-            userSalary.setShengyCompanyPayMoney(userDetail.getYilGongsShengyBaseMoney().multiply(userDetail.getShengyCompanyRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+            userSalary.setShengyPersonPayMoney(userDetail.getShengyBaseMoney().multiply(userDetail.getShengyPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setShengyCompanyPayMoney(userDetail.getShengyBaseMoney().multiply(userDetail.getShengyCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            // 其他险  计算个人/公司  缴纳金额
+            userSalary.setOtherPersonPayMoney(userDetail.getOtherBaseMoney().multiply(userDetail.getOtherPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setOtherCompanyPayMoney(userDetail.getOtherBaseMoney().multiply(userDetail.getOtherCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
             // 医疗  计算个人/公司  缴纳金额
-            userSalary.setYilPersonPayMoney(userDetail.getYilGongsShengyBaseMoney().multiply(userDetail.getYilPersonRatio()).setScale(2, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilPersonAddMoney()));
-            userSalary.setYilCompanyPayMoney(userDetail.getYilGongsShengyBaseMoney().multiply(userDetail.getYilCompanyRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+            userSalary.setYilPersonPayMoney(userDetail.getYilBaseMoney().multiply(userDetail.getYilPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilPersonAddMoney()));
+            userSalary.setYilCompanyPayMoney(userDetail.getYilBaseMoney().multiply(userDetail.getYilCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilCompanyAddMoney()));
             // 公积金  计算个人/公司  缴纳金额
-            userSalary.setHousingFundPersonPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundPersonRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
-            userSalary.setHousingFundCompanyPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundCompanyRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+            userSalary.setHousingFundPersonPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setHousingFundCompanyPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
             // 社保  计算个人/公司承担总计
             userSalary.setSocialSecurityPersonPayTotal(
                     userSalary.getYanglPersonPayMoney()
@@ -329,6 +334,7 @@ public class SalaryServiceImpl implements SalaryService {
                             .add(userSalary.getGongsPersonPayMoney())
                             .add(userSalary.getShengyPersonPayMoney())
                             .add(userSalary.getYilPersonPayMoney())
+                            .add(userSalary.getOtherPersonPayMoney())
             );
             userSalary.setSocailSecurityCompanyPayTotal(
                     userSalary.getYanglCompanyPayMoney()
@@ -336,6 +342,7 @@ public class SalaryServiceImpl implements SalaryService {
                             .add(userSalary.getGongsCompanyPayMoney())
                             .add(userSalary.getShengyCompanyPayMoney())
                             .add(userSalary.getYilCompanyPayMoney())
+                            .add(userSalary.getOtherCompanyPayMoney())
             );
             // 社保+公积金   计算个人/公司承担总计
             userSalary.setMonthPersonPayTotal(userSalary.getSocialSecurityPersonPayTotal().add(userSalary.getHousingFundPersonPayTotal()));
@@ -363,6 +370,9 @@ public class SalaryServiceImpl implements SalaryService {
             // 医疗  计算个人/公司  缴纳金额
             userSalary.setYilPersonPayMoney(new BigDecimal("0.00"));
             userSalary.setYilCompanyPayMoney(new BigDecimal("0.00"));
+            // 其他险  计算个人/公司  缴纳金额
+            userSalary.setOtherPersonPayMoney(new BigDecimal("0.00"));
+            userSalary.setOtherCompanyPayMoney(new BigDecimal("0.00"));
             // 公积金  计算个人/公司  缴纳金额
             userSalary.setHousingFundPersonPayTotal(new BigDecimal("0.00"));
             userSalary.setHousingFundCompanyPayTotal(new BigDecimal("0.00"));
@@ -387,7 +397,7 @@ public class SalaryServiceImpl implements SalaryService {
      * @Version 1.0
      * @Description //TODO 根据所传社保开始缴纳日期与上月日期比较，来判断上月工资是否需要缴纳社保
      **/
-    private boolean checkSocialFlag (Date startSocialDate) {
+    private boolean checkSocialFlag(Date startSocialDate) {
         String socialDate = DateUtils.getDateString(startSocialDate, "yyyy-MM");
         String dateLastMonth = DateUtils.getDateString(DateUtils.getThisDateLastMonth(), "yyyy-MM");
         // 校验

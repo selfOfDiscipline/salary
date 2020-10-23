@@ -28,19 +28,26 @@
         <result column="support_parents" property="supportParents" />
         <result column="other_deduct" property="otherDeduct" />
         <result column="special_deduct_total" property="specialDeductTotal" />
-        <result column="yangl_shiy_base_money" property="yanglShiyBaseMoney" />
+        <result column="yangl_base_money" property="yanglBaseMoney" />
         <result column="yangl_person_ratio" property="yanglPersonRatio" />
         <result column="yangl_company_ratio" property="yanglCompanyRatio" />
+        <result column="shiy_base_money" property="shiyBaseMoney" />
         <result column="shiy_person_ratio" property="shiyPersonRatio" />
         <result column="shiy_company_ratio" property="shiyCompanyRatio" />
-        <result column="yil_gongs_shengy_base_money" property="yilGongsShengyBaseMoney" />
+        <result column="gongs_base_money" property="gongsBaseMoney" />
         <result column="gongs_person_ratio" property="gongsPersonRatio" />
         <result column="gongs_company_ratio" property="gongsCompanyRatio" />
+        <result column="shengy_base_money" property="shengyBaseMoney" />
         <result column="shengy_person_ratio" property="shengyPersonRatio" />
         <result column="shengy_company_ratio" property="shengyCompanyRatio" />
+        <result column="yil_base_money" property="yilBaseMoney" />
         <result column="yil_person_ratio" property="yilPersonRatio" />
         <result column="yil_person_add_money" property="yilPersonAddMoney" />
         <result column="yil_company_ratio" property="yilCompanyRatio" />
+        <result column="yil_company_add_money" property="yilCompanyAddMoney" />
+        <result column="other_base_money" property="otherBaseMoney" />
+        <result column="other_person_ratio" property="otherPersonRatio" />
+        <result column="other_company_ratio" property="otherCompanyRatio" />
         <result column="housing_fund_base_money" property="housingFundBaseMoney" />
         <result column="housing_fund_person_ratio" property="housingFundPersonRatio" />
         <result column="housing_fund_company_ratio" property="housingFundCompanyRatio" />
@@ -71,7 +78,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, user_id, user_account, standard_salary, salary_grant_ratio, compute_standard_salary, compute_probation_salary, person_sick_standard, performance_ratio, base_salary, performance_salary, bank_salary, other_bank_salary, stipulation_start_tax_money, post_salary, post_subsidy, other_subsidy, child_education, continue_education, home_loan_interest, home_rents, support_parents, other_deduct, special_deduct_total, yangl_shiy_base_money, yangl_person_ratio, yangl_company_ratio, shiy_person_ratio, shiy_company_ratio, yil_gongs_shengy_base_money, gongs_person_ratio, gongs_company_ratio, shengy_person_ratio, shengy_company_ratio, yil_person_ratio, yil_person_add_money, yil_company_ratio, housing_fund_base_money, housing_fund_person_ratio, housing_fund_company_ratio, total_income_money, total_taxable_self_money, total_already_taxable_money, total_deduct_money, total_special_deduct_money, total_child_education, total_continue_education, total_home_loan_interest, total_home_rents, total_support_parents, total_other_deduct, add_computer_subsidy, add_other_subsidy, deduct_sick, deduct_thing, deduct_other, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, user_id, user_account, standard_salary, salary_grant_ratio, compute_standard_salary, compute_probation_salary, person_sick_standard, performance_ratio, base_salary, performance_salary, bank_salary, other_bank_salary, stipulation_start_tax_money, post_salary, post_subsidy, other_subsidy, child_education, continue_education, home_loan_interest, home_rents, support_parents, other_deduct, special_deduct_total, yangl_base_money, yangl_person_ratio, yangl_company_ratio, shiy_base_money, shiy_person_ratio, shiy_company_ratio, gongs_base_money, gongs_person_ratio, gongs_company_ratio, shengy_base_money, shengy_person_ratio, shengy_company_ratio, yil_base_money, yil_person_ratio, yil_person_add_money, yil_company_ratio, yil_company_add_money, other_base_money, other_person_ratio, other_company_ratio, housing_fund_base_money, housing_fund_person_ratio, housing_fund_company_ratio, total_income_money, total_taxable_self_money, total_already_taxable_money, total_deduct_money, total_special_deduct_money, total_child_education, total_continue_education, total_home_loan_interest, total_home_rents, total_support_parents, total_other_deduct, add_computer_subsidy, add_other_subsidy, deduct_sick, deduct_thing, deduct_other, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
 </mapper>

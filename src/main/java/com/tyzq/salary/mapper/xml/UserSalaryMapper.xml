@@ -39,6 +39,8 @@
         <result column="shengy_company_pay_money" property="shengyCompanyPayMoney" />
         <result column="yil_person_pay_money" property="yilPersonPayMoney" />
         <result column="yil_company_pay_money" property="yilCompanyPayMoney" />
+        <result column="other_person_pay_money" property="otherPersonPayMoney" />
+        <result column="other_company_pay_money" property="otherCompanyPayMoney" />
         <result column="social_security_person_pay_total" property="socialSecurityPersonPayTotal" />
         <result column="socail_security_company_pay_total" property="socailSecurityCompanyPayTotal" />
         <result column="housing_fund_person_pay_total" property="housingFundPersonPayTotal" />
@@ -60,10 +62,11 @@
         <result column="deduct_sick" property="deductSick" />
         <result column="deduct_thing" property="deductThing" />
         <result column="deduct_other" property="deductOther" />
+        <result column="deduct_service_fee" property="deductServiceFee" />
         <result column="salary_dept_id" property="salaryDeptId" />
         <result column="again_compute_flag" property="againComputeFlag" />
         <result column="current_compute_flag" property="currentComputeFlag" />
-        <result column="compute_social_security_flag" property="computeSocialSecuritySlag" />
+        <result column="compute_social_security_flag" property="computeSocialSecurityFlag" />
         <result column="delete_flag" property="deleteFlag" />
         <result column="create_id" property="createId" />
         <result column="create_name" property="createName" />
@@ -75,7 +78,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, user_id, user_account, user_role_name, salary_dept_name, salary_date, new_entry_attendance_days, positive_before_attendance_days, positive_after_attendance_days, positive_after_other_attendance_days, positive_after_sick_attendance_days, positive_before_other_attendance_days, positive_before_sick_attendance_days, other_absence_days, sick_adsence_days, month_rewords_money, month_performance_ratio, month_bank_salary, month_other_bank_salary, month_base_salary, month_performance_salary, month_post_salary, month_post_subsidy, month_other_subsidy, tax_before_base_salary_total, yangl_person_pay_money, yangl_company_pay_money, shiy_person_pay_money, shiy_company_pay_money, gongs_person_pay_money, gongs_company_pay_money, shengy_person_pay_money, shengy_company_pay_money, yil_person_pay_money, yil_company_pay_money, social_security_person_pay_total, socail_security_company_pay_total, housing_fund_person_pay_total, housing_fund_company_pay_total, month_person_pay_total, month_company_pay_total, month_person_company_pay_total, bank_tax_before_should_salary, bank_taxable_self_money, bank_tax_ratio, bank_plan_should_tax_money, bank_reality_should_tax_money, bank_reality_salary, other_bank_should_tax_money, other_bank_reality_salary, month_salary_reality_total, add_computer_subsidy, add_other_subsidy, deduct_sick, deduct_thing, deduct_other, salary_dept_id, again_compute_flag, current_compute_flag, compute_social_security_flag, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, user_id, user_account, user_role_name, salary_dept_name, salary_date, new_entry_attendance_days, positive_before_attendance_days, positive_after_attendance_days, positive_after_other_attendance_days, positive_after_sick_attendance_days, positive_before_other_attendance_days, positive_before_sick_attendance_days, other_absence_days, sick_adsence_days, month_rewords_money, month_performance_ratio, month_bank_salary, month_other_bank_salary, month_base_salary, month_performance_salary, month_post_salary, month_post_subsidy, month_other_subsidy, tax_before_base_salary_total, yangl_person_pay_money, yangl_company_pay_money, shiy_person_pay_money, shiy_company_pay_money, gongs_person_pay_money, gongs_company_pay_money, shengy_person_pay_money, shengy_company_pay_money, yil_person_pay_money, yil_company_pay_money, other_person_pay_money, other_company_pay_money, social_security_person_pay_total, socail_security_company_pay_total, housing_fund_person_pay_total, housing_fund_company_pay_total, month_person_pay_total, month_company_pay_total, month_person_company_pay_total, bank_tax_before_should_salary, bank_taxable_self_money, bank_tax_ratio, bank_plan_should_tax_money, bank_reality_should_tax_money, bank_reality_salary, other_bank_should_tax_money, other_bank_reality_salary, month_salary_reality_total, add_computer_subsidy, add_other_subsidy, deduct_sick, deduct_thing, deduct_other, deduct_service_fee, salary_dept_id, again_compute_flag, current_compute_flag, compute_social_security_flag, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
     <!-- 查询用户计薪列表-->
@@ -121,6 +124,8 @@
             s.shengy_company_pay_money AS shengyCompanyPayMoney,
             s.yil_person_pay_money AS yilPersonPayMoney,
             s.yil_company_pay_money AS yilCompanyPayMoney,
+            s.other_person_pay_money AS otherPersonPayMoney,
+            s.other_company_pay_money AS otherCompanyPayMoney,
             s.social_security_person_pay_total AS socialSecurityPersonPayTotal,
             s.socail_security_company_pay_total AS socailSecurityCompanyPayTotal,
             s.housing_fund_person_pay_total AS housingFundPersonPayTotal,
@@ -144,6 +149,7 @@
             s.deduct_sick AS deductSick,
             s.deduct_thing AS deductThing,
             s.deduct_other AS deductOther,
+            s.deduct_service_fee AS deductServiceFee,
             s.month_salary_reality_total AS monthSalaryRealityTotal
         FROM
             user AS u
@@ -213,70 +219,73 @@
     <!-- 根据薪资表id集合，查询薪资表集合-->
     <select id="selectUserListByIds" resultType="com.tyzq.salary.model.vo.salary.UserComputeResultVO">
         SELECT
-        u.user_name AS userName,
-        u.user_entry_date AS userEntryDate,
-        u.reality_change_formal_date AS realityChangeFormalDate,
-        u.household_type AS householdType,
-        s.id AS id,
-        s.user_id AS userId,
-        s.user_account AS userAccount,
-        s.salary_dept_id AS salaryDeptId,
-        s.salary_dept_name AS salaryDeptName,
-        s.user_role_name AS userRoleName,
-        s.salary_date AS salaryDate,
-        s.new_entry_attendance_days AS newEntryAttendanceDays,
-        s.positive_before_attendance_days AS positiveBeforeAttendanceDays,
-        s.positive_before_other_attendance_days AS positiveBeforeOtherAttendanceDays,
-        s.positive_before_sick_attendance_days AS positiveBeforeSickAttendanceDays,
-        s.positive_after_attendance_days AS positiveAfterAttendanceDays,
-        s.positive_after_other_attendance_days AS positiveAfterOtherAttendanceDays,
-        s.positive_after_sick_attendance_days AS positiveAfterSickAttendanceDays,
-        s.other_absence_days AS otherAbsenceDays,
-        s.sick_adsence_days AS sickAdsenceDays,
-        s.month_rewords_money AS monthRewordsMoney,
-        s.month_performance_ratio AS monthPerformanceRatio,
-        s.month_bank_salary AS monthBankSalary,
-        s.month_other_bank_salary AS monthOtherBankSalary,
-        s.month_base_salary AS monthBaseSalary,
-        s.month_performance_salary AS monthPerformanceSalary,
-        s.month_post_salary AS monthPostSalary,
-        s.month_post_subsidy AS monthPostSubsidy,
-        s.month_other_subsidy AS monthOtherSubsidy,
-        s.tax_before_base_salary_total AS taxBeforeBaseSalaryTotal,
-        s.yangl_person_pay_money AS yanglPersonPayMoney,
-        s.yangl_company_pay_money AS yanglCompanyPayMoney,
-        s.shiy_person_pay_money AS shiyPersonPayMoney,
-        s.shiy_company_pay_money AS shiyCompanyPayMoney,
-        s.gongs_person_pay_money AS gongsPersonPayMoney,
-        s.gongs_company_pay_money AS gongsCompanyPayMoney,
-        s.shengy_person_pay_money AS shengyPersonPayMoney,
-        s.shengy_company_pay_money AS shengyCompanyPayMoney,
-        s.yil_person_pay_money AS yilPersonPayMoney,
-        s.yil_company_pay_money AS yilCompanyPayMoney,
-        s.social_security_person_pay_total AS socialSecurityPersonPayTotal,
-        s.socail_security_company_pay_total AS socailSecurityCompanyPayTotal,
-        s.housing_fund_person_pay_total AS housingFundPersonPayTotal,
-        s.housing_fund_company_pay_total AS housingFundCompanyPayTotal,
-        s.month_person_pay_total AS monthPersonPayTotal,
-        s.month_company_pay_total AS monthCompanyPayTotal,
-        s.month_person_company_pay_total AS monthPersonCompanyPayTotal,
-        s.bank_tax_before_should_salary AS bankTaxBeforeShouldSalary,
-        s.bank_taxable_self_money AS bankTaxableSelfMoney,
-        s.bank_tax_ratio AS bankTaxRatio,
-        s.bank_plan_should_tax_money AS bankPlanShouldTaxMoney,
-        s.bank_reality_should_tax_money AS bankRealityShouldTaxMoney,
-        s.bank_reality_salary AS bankRealitySalary,
-        s.other_bank_should_tax_money AS otherBankShouldTaxMoney,
-        s.other_bank_reality_salary AS otherBankRealitySalary,
-        s.again_compute_flag AS againComputeFlag,
-        s.current_compute_flag AS currentComputeFlag,
-        s.compute_social_security_flag AS computeSocialSecurityFlag,
-        s.add_computer_subsidy AS addComputerSubsidy,
-        s.add_other_subsidy AS addOtherSubsidy,
-        s.deduct_sick AS deductSick,
-        s.deduct_thing AS deductThing,
-        s.deduct_other AS deductOther,
-        s.month_salary_reality_total AS monthSalaryRealityTotal
+            u.user_name AS userName,
+            u.user_entry_date AS userEntryDate,
+            u.reality_change_formal_date AS realityChangeFormalDate,
+            u.household_type AS householdType,
+            s.id AS id,
+            s.user_id AS userId,
+            s.user_account AS userAccount,
+            s.salary_dept_id AS salaryDeptId,
+            s.salary_dept_name AS salaryDeptName,
+            s.user_role_name AS userRoleName,
+            s.salary_date AS salaryDate,
+            s.new_entry_attendance_days AS newEntryAttendanceDays,
+            s.positive_before_attendance_days AS positiveBeforeAttendanceDays,
+            s.positive_before_other_attendance_days AS positiveBeforeOtherAttendanceDays,
+            s.positive_before_sick_attendance_days AS positiveBeforeSickAttendanceDays,
+            s.positive_after_attendance_days AS positiveAfterAttendanceDays,
+            s.positive_after_other_attendance_days AS positiveAfterOtherAttendanceDays,
+            s.positive_after_sick_attendance_days AS positiveAfterSickAttendanceDays,
+            s.other_absence_days AS otherAbsenceDays,
+            s.sick_adsence_days AS sickAdsenceDays,
+            s.month_rewords_money AS monthRewordsMoney,
+            s.month_performance_ratio AS monthPerformanceRatio,
+            s.month_bank_salary AS monthBankSalary,
+            s.month_other_bank_salary AS monthOtherBankSalary,
+            s.month_base_salary AS monthBaseSalary,
+            s.month_performance_salary AS monthPerformanceSalary,
+            s.month_post_salary AS monthPostSalary,
+            s.month_post_subsidy AS monthPostSubsidy,
+            s.month_other_subsidy AS monthOtherSubsidy,
+            s.tax_before_base_salary_total AS taxBeforeBaseSalaryTotal,
+            s.yangl_person_pay_money AS yanglPersonPayMoney,
+            s.yangl_company_pay_money AS yanglCompanyPayMoney,
+            s.shiy_person_pay_money AS shiyPersonPayMoney,
+            s.shiy_company_pay_money AS shiyCompanyPayMoney,
+            s.gongs_person_pay_money AS gongsPersonPayMoney,
+            s.gongs_company_pay_money AS gongsCompanyPayMoney,
+            s.shengy_person_pay_money AS shengyPersonPayMoney,
+            s.shengy_company_pay_money AS shengyCompanyPayMoney,
+            s.yil_person_pay_money AS yilPersonPayMoney,
+            s.yil_company_pay_money AS yilCompanyPayMoney,
+            s.other_person_pay_money AS otherPersonPayMoney,
+            s.other_company_pay_money AS otherCompanyPayMoney,
+            s.social_security_person_pay_total AS socialSecurityPersonPayTotal,
+            s.socail_security_company_pay_total AS socailSecurityCompanyPayTotal,
+            s.housing_fund_person_pay_total AS housingFundPersonPayTotal,
+            s.housing_fund_company_pay_total AS housingFundCompanyPayTotal,
+            s.month_person_pay_total AS monthPersonPayTotal,
+            s.month_company_pay_total AS monthCompanyPayTotal,
+            s.month_person_company_pay_total AS monthPersonCompanyPayTotal,
+            s.bank_tax_before_should_salary AS bankTaxBeforeShouldSalary,
+            s.bank_taxable_self_money AS bankTaxableSelfMoney,
+            s.bank_tax_ratio AS bankTaxRatio,
+            s.bank_plan_should_tax_money AS bankPlanShouldTaxMoney,
+            s.bank_reality_should_tax_money AS bankRealityShouldTaxMoney,
+            s.bank_reality_salary AS bankRealitySalary,
+            s.other_bank_should_tax_money AS otherBankShouldTaxMoney,
+            s.other_bank_reality_salary AS otherBankRealitySalary,
+            s.again_compute_flag AS againComputeFlag,
+            s.current_compute_flag AS currentComputeFlag,
+            s.compute_social_security_flag AS computeSocialSecurityFlag,
+            s.add_computer_subsidy AS addComputerSubsidy,
+            s.add_other_subsidy AS addOtherSubsidy,
+            s.deduct_sick AS deductSick,
+            s.deduct_thing AS deductThing,
+            s.deduct_other AS deductOther,
+            s.deduct_service_fee AS deductServiceFee,
+            s.month_salary_reality_total AS monthSalaryRealityTotal
         FROM
             user AS u
         LEFT JOIN user_salary AS s ON u.id = s.user_id
@@ -387,6 +396,8 @@
             s.shengy_company_pay_money AS shengyCompanyPayMoney,
             s.yil_person_pay_money AS yilPersonPayMoney,
             s.yil_company_pay_money AS yilCompanyPayMoney,
+            s.other_person_pay_money AS otherPersonPayMoney,
+            s.other_company_pay_money AS otherCompanyPayMoney,
             s.social_security_person_pay_total AS socialSecurityPersonPayTotal,
             s.socail_security_company_pay_total AS socailSecurityCompanyPayTotal,
             s.housing_fund_person_pay_total AS housingFundPersonPayTotal,
@@ -410,6 +421,7 @@
             s.deduct_sick AS deductSick,
             s.deduct_thing AS deductThing,
             s.deduct_other AS deductOther,
+            s.deduct_service_fee AS deductServiceFee,
             s.month_salary_reality_total AS monthSalaryRealityTotal
         FROM
             user AS u

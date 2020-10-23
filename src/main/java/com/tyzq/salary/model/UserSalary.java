@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-10-20
+ * @since 2020-10-23
  */
 public class UserSalary implements Serializable {
 
@@ -112,7 +112,7 @@ public class UserSalary implements Serializable {
      */
     private BigDecimal monthPostSubsidy;
     /**
-     * 本月其他补贴
+     * 本月基本工资（用于工资表导出）
      */
     private BigDecimal monthOtherSubsidy;
     /**
@@ -159,6 +159,14 @@ public class UserSalary implements Serializable {
      * 医疗公司缴纳金额
      */
     private BigDecimal yilCompanyPayMoney;
+    /**
+     * 其他险个人缴纳金额
+     */
+    private BigDecimal otherPersonPayMoney;
+    /**
+     * 其他险公司缴纳金额
+     */
+    private BigDecimal otherCompanyPayMoney;
     /**
      * 社保个人承担合计
      */
@@ -243,6 +251,10 @@ public class UserSalary implements Serializable {
      * 扣款项：其他
      */
     private BigDecimal deductOther;
+    /**
+     * 扣款项：代缴手续费
+     */
+    private BigDecimal deductServiceFee;
     /**
      * 薪资归属部门id
      */
@@ -569,6 +581,22 @@ public class UserSalary implements Serializable {
         this.yilCompanyPayMoney = yilCompanyPayMoney;
     }
 
+    public BigDecimal getOtherPersonPayMoney() {
+        return otherPersonPayMoney;
+    }
+
+    public void setOtherPersonPayMoney(BigDecimal otherPersonPayMoney) {
+        this.otherPersonPayMoney = otherPersonPayMoney;
+    }
+
+    public BigDecimal getOtherCompanyPayMoney() {
+        return otherCompanyPayMoney;
+    }
+
+    public void setOtherCompanyPayMoney(BigDecimal otherCompanyPayMoney) {
+        this.otherCompanyPayMoney = otherCompanyPayMoney;
+    }
+
     public BigDecimal getSocialSecurityPersonPayTotal() {
         return socialSecurityPersonPayTotal;
     }
@@ -737,6 +765,14 @@ public class UserSalary implements Serializable {
         this.deductOther = deductOther;
     }
 
+    public BigDecimal getDeductServiceFee() {
+        return deductServiceFee;
+    }
+
+    public void setDeductServiceFee(BigDecimal deductServiceFee) {
+        this.deductServiceFee = deductServiceFee;
+    }
+
     public Long getSalaryDeptId() {
         return salaryDeptId;
     }
@@ -863,6 +899,8 @@ public class UserSalary implements Serializable {
         ", shengyCompanyPayMoney=" + shengyCompanyPayMoney +
         ", yilPersonPayMoney=" + yilPersonPayMoney +
         ", yilCompanyPayMoney=" + yilCompanyPayMoney +
+        ", otherPersonPayMoney=" + otherPersonPayMoney +
+        ", otherCompanyPayMoney=" + otherCompanyPayMoney +
         ", socialSecurityPersonPayTotal=" + socialSecurityPersonPayTotal +
         ", socailSecurityCompanyPayTotal=" + socailSecurityCompanyPayTotal +
         ", housingFundPersonPayTotal=" + housingFundPersonPayTotal +
@@ -884,6 +922,7 @@ public class UserSalary implements Serializable {
         ", deductSick=" + deductSick +
         ", deductThing=" + deductThing +
         ", deductOther=" + deductOther +
+        ", deductServiceFee=" + deductServiceFee +
         ", salaryDeptId=" + salaryDeptId +
         ", againComputeFlag=" + againComputeFlag +
         ", currentComputeFlag=" + currentComputeFlag +
