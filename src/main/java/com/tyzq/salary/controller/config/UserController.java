@@ -41,7 +41,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Autowired
+    @Resource
     private UserMapper userMapper;
 
     @Resource
