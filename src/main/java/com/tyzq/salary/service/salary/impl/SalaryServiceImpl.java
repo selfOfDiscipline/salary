@@ -295,38 +295,35 @@ public class SalaryServiceImpl implements SalaryService {
      * @Param
      * @return
      * @Version 1.0
-     * @Description //TODO 计算社保公积金，根据标识来区分是否缴纳社保
+     * @Description //TODO 计算社保公积金，根据标识来区分是否缴纳社保，公积金的钱数，四舍五入 不保留小数
      **/
-    public void computeSocialSecurity(int computeFlag, User user, UserSalary userSalary, UserDetail userDetail) {
+    public void computeSocialSecurity(int computeFlag, UserSalary userSalary, UserDetail userDetail) {
         // 校验
         if (0 == computeFlag) {
             // 计算社保公积金
             // 养老  计算个人/公司  缴纳金额
-            userSalary.setYanglPersonPayMoney(userDetail.getYanglBaseMoney().multiply(userDetail.getYanglPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
-            userSalary.setYanglCompanyPayMoney(userDetail.getYanglBaseMoney().multiply(userDetail.getYanglCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setYanglPersonPayMoney(userDetail.getYanglBaseMoney().multiply(userDetail.getYanglPersonRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
+            userSalary.setYanglCompanyPayMoney(userDetail.getYanglBaseMoney().multiply(userDetail.getYanglCompanyRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
             // 失业  计算个人/公司  缴纳金额
             // 失业 城镇户口缴费，农村户口个人不缴费      户口类型：0--城镇，1--农村
-            if (0 == user.getHouseholdType().intValue()) {
-                userSalary.setShiyPersonPayMoney(userDetail.getShiyBaseMoney().multiply(userDetail.getShiyPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
-            } else {
-                userSalary.setShiyPersonPayMoney(new BigDecimal("0.00"));
-            }
-            userSalary.setShiyCompanyPayMoney(userDetail.getShiyBaseMoney().multiply(userDetail.getShiyCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            // 【不按户口计算】
+            userSalary.setShiyPersonPayMoney(userDetail.getShiyBaseMoney().multiply(userDetail.getShiyPersonRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
+            userSalary.setShiyCompanyPayMoney(userDetail.getShiyBaseMoney().multiply(userDetail.getShiyCompanyRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
             // 工伤  计算个人/公司  缴纳金额
-            userSalary.setGongsPersonPayMoney(userDetail.getGongsBaseMoney().multiply(userDetail.getGongsPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
-            userSalary.setGongsCompanyPayMoney(userDetail.getGongsBaseMoney().multiply(userDetail.getGongsCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setGongsPersonPayMoney(userDetail.getGongsBaseMoney().multiply(userDetail.getGongsPersonRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
+            userSalary.setGongsCompanyPayMoney(userDetail.getGongsBaseMoney().multiply(userDetail.getGongsCompanyRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
             // 生育  计算个人/公司  缴纳金额
-            userSalary.setShengyPersonPayMoney(userDetail.getShengyBaseMoney().multiply(userDetail.getShengyPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
-            userSalary.setShengyCompanyPayMoney(userDetail.getShengyBaseMoney().multiply(userDetail.getShengyCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setShengyPersonPayMoney(userDetail.getShengyBaseMoney().multiply(userDetail.getShengyPersonRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
+            userSalary.setShengyCompanyPayMoney(userDetail.getShengyBaseMoney().multiply(userDetail.getShengyCompanyRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
             // 其他险  计算个人/公司  缴纳金额
-            userSalary.setOtherPersonPayMoney(userDetail.getOtherBaseMoney().multiply(userDetail.getOtherPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
-            userSalary.setOtherCompanyPayMoney(userDetail.getOtherBaseMoney().multiply(userDetail.getOtherCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setOtherPersonPayMoney(userDetail.getOtherBaseMoney().multiply(userDetail.getOtherPersonRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
+            userSalary.setOtherCompanyPayMoney(userDetail.getOtherBaseMoney().multiply(userDetail.getOtherCompanyRatio()).setScale(4, BigDecimal.ROUND_HALF_UP));
             // 医疗  计算个人/公司  缴纳金额
-            userSalary.setYilPersonPayMoney(userDetail.getYilBaseMoney().multiply(userDetail.getYilPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilPersonAddMoney()));
-            userSalary.setYilCompanyPayMoney(userDetail.getYilBaseMoney().multiply(userDetail.getYilCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilCompanyAddMoney()));
+            userSalary.setYilPersonPayMoney(userDetail.getYilBaseMoney().multiply(userDetail.getYilPersonRatio()).setScale(4, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilPersonAddMoney()));
+            userSalary.setYilCompanyPayMoney(userDetail.getYilBaseMoney().multiply(userDetail.getYilCompanyRatio()).setScale(4, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilCompanyAddMoney()));
             // 公积金  计算个人/公司  缴纳金额
-            userSalary.setHousingFundPersonPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundPersonRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
-            userSalary.setHousingFundCompanyPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundCompanyRatio()).setScale(3, BigDecimal.ROUND_HALF_UP));
+            userSalary.setHousingFundPersonPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundPersonRatio()).setScale(0, BigDecimal.ROUND_HALF_UP));
+            userSalary.setHousingFundCompanyPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundCompanyRatio()).setScale(0, BigDecimal.ROUND_HALF_UP));
             // 社保  计算个人/公司承担总计
             userSalary.setSocialSecurityPersonPayTotal(
                     userSalary.getYanglPersonPayMoney()
@@ -467,7 +464,7 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
         // 计算
         // PS:上月入职员工无绩效
         // 本月出勤工资 = （员工标准薪资*薪资发放比例/21.75）*出勤天数
@@ -752,7 +749,7 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
         // 计算
         // PS:上月转正员工，转正前无绩效，转正后有绩效
         // 计算后比例工资 = (员工标准薪资*转正前薪资发放比例/21.75)
@@ -1077,7 +1074,7 @@ public class SalaryServiceImpl implements SalaryService {
             convertProduct(userSalary, userDetail);
         }
         // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), user, userSalary, userDetail);
+        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
         // 计算
         // PS:正常员工  有绩效/无绩效
         // 计算后比例工资 = (员工标准薪资*转正前薪资发放比例/21.75)
