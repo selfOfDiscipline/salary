@@ -114,4 +114,13 @@ public interface UserService {
      * @Description //TODO 修改管理员密码
      **/
     ApiResult updateAdminPassword(UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 16:31 2020/11/24
+     * @Param:
+     * @return:
+     * @Description: //TODO 将所以试用期的员工的基础金额刷新
+     **/
+    ApiResult updateUserRato(UserSessionVO userSessionVO);
 }

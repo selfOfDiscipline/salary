@@ -496,4 +496,32 @@ public class UserController {
             return ApiResult.getFailedApiResponse("修改密码出现错误异常！");
         }
     }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 16:29 2020/11/24
+     * @Param:
+     * @return:
+     * @Description: //TODO 将所以试用期的员工的基础金额刷新
+     **/
+    @ApiOperation(value = "将所以试用期的员工的基础金额刷新", httpMethod = "GET", notes = "将所以试用期的员工的基础金额刷新")
+    @GetMapping(value = "/updateUserRato")
+    public ApiResult updateUserRato(@RequestParam("checkFlag") String checkFlag, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        if (null == userSessionVO) {
+            return ApiResult.getFailedApiResponse("请登录！");
+        }
+        if (!"updateCCCCCC".equals(checkFlag)) {
+            return ApiResult.getFailedApiResponse("参数有误！");
+        }
+        try {
+            // 业务操作
+            return userService.updateUserRato(userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("将所以试用期的员工的基础金额刷新出现异常：" + e);
+            return ApiResult.getFailedApiResponse("将所以试用期的员工的基础金额刷新出现错误异常！");
+        }
+    }
 }
