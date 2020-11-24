@@ -180,9 +180,6 @@ public class UserServiceImpl implements UserService {
             // 赋值 转正后的员工计薪工资
             BigDecimal computeStandardSalary = userDetail.getStandardSalary().multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
             userDetail.setComputeStandardSalary(computeStandardSalary);
-            // 赋值  转正后 预设银行代发工资
-            BigDecimal afterBankSalary = userDetail.getBankSalary().divide(probationRatio).multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
-            userDetail.setBankSalary(afterBankSalary);
             // 赋值  预设他行代发工资金额=计算后的员工计薪工资 - 预设银行代发工资金额
             userDetail.setOtherBankSalary(computeStandardSalary.subtract(userDetail.getBankSalary()));
             // 绩效占工资比例
@@ -327,8 +324,6 @@ public class UserServiceImpl implements UserService {
             // 判断员工是试用期还是正式
             if (0 == user.getUserRankType().intValue()) {
                 // 试用期员工
-                // 赋值 预设银行代发工资 * 薪资发放比例
-                userDetail.setBankSalary(bankSalary.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP));
                 // 赋值银行代发工资标准，这里校验用户的  标准薪资*薪资发放比例    是否小于预设银行代发工资
                 if (computeStandardSalary.compareTo(userDetail.getBankSalary()) == -1) {
                     // 小于
@@ -424,8 +419,6 @@ public class UserServiceImpl implements UserService {
             // 判断员工是试用期还是正式
             if (0 == user.getUserRankType().intValue()) {
                 // 试用期员工
-                // 赋值 预设银行代发工资 * 薪资发放比例
-                userDetail.setBankSalary(bankSalary.multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP));
                 // 赋值银行代发工资标准，这里校验用户的  标准薪资*薪资发放比例    是否小于预设银行代发工资
                 if (computeStandardSalary.compareTo(userDetail.getBankSalary()) == -1) {
                     // 小于
