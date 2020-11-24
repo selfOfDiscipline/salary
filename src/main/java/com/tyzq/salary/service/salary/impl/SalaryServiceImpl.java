@@ -450,8 +450,6 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 查询到基础薪资数据
         UserSalary userSalary = userSalaryMapper.selectById(computeSalaryParamVO.getId());
-        // 查询用户数据
-        User user = userMapper.selectById(userSalary.getUserId());
         // 查询用户详情数据
         UserDetail userDetail = new UserDetail();
         userDetail.setDeleteFlag(0);
@@ -471,212 +469,30 @@ public class SalaryServiceImpl implements SalaryService {
         // 本月平均一天工资为
         BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
         BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).add(computeSalaryParamVO.getMonthRewordsMoney()).setScale(2, BigDecimal.ROUND_HALF_UP);
-
+        // 校验是否 减去 社保代缴手续费
+        if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+            theMonthAttendanceSalary = theMonthAttendanceSalary.subtract(userDetail.getDeductThing());
+            // 赋值本月代缴手续费
+            userSalary.setDeductServiceFee(userDetail.getDeductThing());
+        }
         // 赋值本月基本工资
         userSalary.setMonthBaseSalary(theMonthAttendanceSalary);
-
-        // 计算个税  这里要先判断  【本月出勤工资 >= 预设银行代发工资】
-        // 接上：大于等于的话，1.拿 【预设银行代发工资】去计算银行代发工资个税，2.拿本月出勤工资 - 去计算他行代发工资个税
-        // 接上：小于的话，不计算个税
-        if (theMonthAttendanceSalary.compareTo(userDetail.getBankSalary()) > -1) {
-            // 本月出勤工资 >= 预设银行代发工资
-            // 第一：拿 【预设银行代发工资】去计算银行代发工资个税
-            // 公式：本月银行代发工资个税 = （（预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
-            // 本月应纳税所得额 = 预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
-            BigDecimal theNeedMoney = userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
-            // 校验是否大于0元，大于0元才需要计税
-            if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
-                // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
-                BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
-                // 判断所在区间并计算
-                for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
-                    // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                    // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                    // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
-                        // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    } else {
-                        // 是：只判断当前钱数是否大于开始钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
-                            // 大于
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // 小于等于0元，不需要计税
-                // 赋值
-                // 本月薪资表赋值
-                // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金
-                userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-//                // 用户详情表赋值
-//                // 赋值 年度累计收入金额 = 年度累计收入金额 + 预设银行代发工资金额
-//                userDetail.setTotalIncomeMoney(userDetail.getTotalIncomeMoney().add(userDetail.getBankSalary()));
-//                // 赋值 年度累计减除费用金额 = 年度累计减除费用金额 + 国家纳税起步金额
-//                userDetail.setTotalDeductMoney(userDetail.getTotalDeductMoney().add(userDetail.getStipulationStartTaxMoney()));
-//                // 赋值 年度累计专项扣除金额 = 年度累计专项扣除金额 + 本月专项扣除的总金额
-//                userDetail.setTotalSpecialDeductMoney(userDetail.getTotalSpecialDeductMoney().add(userDetail.getSpecialDeductTotal()));
-//                // 赋值 年度累计子女教育扣除金额 = 年度累计子女教育扣除金额 + 本月子女教育扣除金额
-//                userDetail.setTotalChildEducation(userDetail.getTotalChildEducation().add(userDetail.getChildEducation()));
-//                // 赋值 年度累计继续教育扣除金额 = 年度累计继续教育扣除金额 + 本月继续教育扣除金额
-//                userDetail.setTotalContinueEducation(userDetail.getTotalContinueEducation().add(userDetail.getContinueEducation()));
-//                // 赋值 年度累计住房贷款利息扣除金额 = 年度累计住房贷款利息扣除金额 + 本月住房贷款利息扣除金额
-//                userDetail.setTotalHomeLoanInterest(userDetail.getTotalHomeLoanInterest().add(userDetail.getHomeLoanInterest()));
-//                // 赋值 年度累计住房公积金扣除金额 = 年度累计住房公积金扣除金额 + 本月住房公积金扣除金额
-//                userDetail.setTotalHomeRents(userDetail.getTotalHomeRents().add(userDetail.getHomeRents()));
-//                // 赋值 年度累计赡养老人扣除金额 = 年度累计赡养老人扣除金额 + 本月赡养老人扣除金额
-//                userDetail.setTotalSupportParents(userDetail.getTotalSupportParents().add(userDetail.getSupportParents()));
-//                // 赋值 年度累计其他款项扣除金额 = 年度累计其他款项扣除金额 + 本月其他款项扣除金额
-//                userDetail.setTotalOtherDeduct(userDetail.getTotalOtherDeduct().add(userDetail.getOtherDeduct()));
-            }
-            // 第二：本月他行代发工资计算
-            // 公式：他行个人需缴纳税额 = （（本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额） * 所在非工资类区间税率 - 该区间国家减免税额 - 银行代发部分本月缴纳税额）/2
-            // 本月他行代发工资税前金额 = 本月出勤工资 - 预设银行代发工资金额
-            BigDecimal monthOtherBankSalary = theMonthAttendanceSalary.subtract(userDetail.getBankSalary());
-            // 他行代发工资应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额
-            BigDecimal theMonthOtherBankSelfMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getSpecialDeductTotal()).subtract(userDetail.getStipulationStartTaxMoney());
-            // 判断所在区间并计算
-            for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
-                // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
-                    // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
-                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                        BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                        BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                        BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                        // 赋值 他行代发部分个税
-                        userSalary.setOtherBankShouldTaxMoney(divide);
-                        // 赋值 他行实发小计
-                        userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
-                        // 赋值 本月总工资实发总计
-                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                        // 跳出循环
-                        break;
-                    }
-                } else {
-                    // 是：只判断当前钱数是否大于开始钱数
-                    if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
-                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                        BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                        BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                        BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                        // 赋值 他行代发部分个税
-                        userSalary.setOtherBankShouldTaxMoney(divide);
-                        // 赋值 他行实发小计
-                        userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
-                        // 赋值 本月总工资实发总计
-                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                        // 跳出循环
-                        break;
-                    }
-                }
-            }
+        // 本月奖惩金额
+        userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
+        // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，相等代表该员工全部以工资类发放，否则要拆分两部分发放工资
+        // 预设银行代发工资
+        BigDecimal bankSalary = userDetail.getBankSalary();
+        if (userDetail.getStandardSalary().compareTo(bankSalary) == 0) {
+            // 相等  该员工所有工资由同一个银行发放
+            lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
         } else {
-            // 本月出勤工资 < 预设银行代发工资
-            // 第一：拿 【本月出勤工资】去计算银行代发工资个税
-            // 公式：本月银行代发工资个税 = （（本月出勤工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
-            // 本月应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
-            BigDecimal theNeedMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
-            // 校验是否大于0元，大于0元才需要计税
-            if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
-                // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
-                BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
-                // 判断所在区间并计算
-                for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
-                    // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                    // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                    // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
-                        // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    } else {
-                        // 是：只判断当前钱数是否大于开始钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
-                            // 大于
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    }
-                }
+            // 不相等，这里判断员工工资是由两部分发放还是一部分发放
+            if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
+                // 【本月出勤工资 >= 预设银行代发工资】 两个银行发放
+                moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
             } else {
-                // 小于等于0元，不需要计税
-                // 赋值
-                // 本月薪资表赋值
-                // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金
-                userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+                // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
+                lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
             }
         }
         // 操作数据库
@@ -735,8 +551,6 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 查询到基础薪资数据
         UserSalary userSalary = userSalaryMapper.selectById(computeSalaryParamVO.getId());
-        // 查询用户数据
-        User user = userMapper.selectById(userSalary.getUserId());
         // 查询用户详情数据
         UserDetail userDetail = new UserDetail();
         userDetail.setDeleteFlag(0);
@@ -792,13 +606,20 @@ public class SalaryServiceImpl implements SalaryService {
         // 转正后其他假扣款
         BigDecimal afterOther = oneDayMoney.multiply(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 转正后工资
-        BigDecimal afterSalary = allSalary.subtract(afterSick)
+        BigDecimal afterSalary = allSalary
+                .subtract(afterSick)
                 .subtract(afterOther)
                 .add(oneDayMoney.multiply(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
         // 本月出勤工资
         BigDecimal theMonthAttendanceSalary = beforeSalary.add(afterSalary);
         // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额
         theMonthAttendanceSalary = theMonthAttendanceSalary.add(userDetail.getAddComputerSubsidy()).add(computeSalaryParamVO.getMonthRewordsMoney());
+        // 校验是否 减去 社保代缴手续费
+        if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+            theMonthAttendanceSalary = theMonthAttendanceSalary.subtract(userDetail.getDeductThing());
+            // 赋值本月代缴手续费
+            userSalary.setDeductServiceFee(userDetail.getDeductThing());
+        }
         // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款、本月奖惩金额
         userSalary.setAddComputerSubsidy(userDetail.getAddComputerSubsidy());
         userSalary.setAddOtherSubsidy(userDetail.getAddOtherSubsidy());
@@ -806,196 +627,25 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setDeductSick(beforeSick.add(afterSick));
         userSalary.setDeductThing(beforeOther.add(afterOther));
         userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
-
-
-        // 赋值本月基本工资 = 转正后工资*(1 - 绩效占工资比例)
-        userSalary.setMonthBaseSalary(afterSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP));
+        // 赋值本月基本工资 = 转正前工资 + 转正后工资*(1 - 绩效占工资比例)
+        userSalary.setMonthBaseSalary(afterSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP).add(beforeSalary));
         // 赋值本月绩效工资 = 转正前工资 + 转正后工资*绩效占工资比例
-        userSalary.setMonthPerformanceSalary(beforeSalary.add(afterSalary.multiply(userDetail.getPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP)));
+        userSalary.setMonthPerformanceSalary(afterSalary.multiply(userDetail.getPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
 
-        // 计算个税  这里要先判断  【本月出勤工资 >= 预设银行代发工资】
-        // 接上：大于等于的话，1.拿 【预设银行代发工资】去计算银行代发工资个税，2.拿本月出勤工资 - 去计算他行代发工资个税
-        // 接上：小于的话，不计算个税
-        if (theMonthAttendanceSalary.compareTo(userDetail.getBankSalary()) > -1) {
-            // 本月出勤工资 >= 预设银行代发工资
-            // 第一：拿 【预设银行代发工资】去计算银行代发工资个税
-            // 公式：本月银行代发工资个税 = （（预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
-            // 本月应纳税所得额 = 预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
-            BigDecimal theNeedMoney = userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
-            // 校验是否大于0元，大于0元才需要计税
-            if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
-                // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
-                BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
-                // 判断所在区间并计算
-                for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
-                    // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                    // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                    // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
-                        // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    } else {
-                        // 是：只判断当前钱数是否大于开始钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
-                            // 大于
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // 小于等于0元，不需要计税
-                // 赋值
-                // 本月薪资表赋值
-                // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金
-                userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-            }
-            // 第二：本月他行代发工资计算
-            // 公式：他行个人需缴纳税额 = （（本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额） * 所在非工资类区间税率 - 该区间国家减免税额 - 银行代发部分本月缴纳税额）/2
-            // 本月他行代发工资税前金额 = 本月出勤工资 - 预设银行代发工资金额
-            BigDecimal monthOtherBankSalary = theMonthAttendanceSalary.subtract(userDetail.getBankSalary());
-            // 他行代发工资应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额
-            BigDecimal theMonthOtherBankSelfMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getSpecialDeductTotal()).subtract(userDetail.getStipulationStartTaxMoney());
-            // 判断所在区间并计算
-            for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
-                // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
-                    // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
-                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                        BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                        BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                        BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                        // 赋值 他行代发部分个税
-                        userSalary.setOtherBankShouldTaxMoney(divide);
-                        // 赋值 他行实发小计
-                        userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
-                        // 赋值 本月总工资实发总计
-                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                        // 跳出循环
-                        break;
-                    }
-                } else {
-                    // 是：只判断当前钱数是否大于开始钱数
-                    if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
-                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                        BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                        BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                        BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                        // 赋值 他行代发部分个税
-                        userSalary.setOtherBankShouldTaxMoney(divide);
-                        // 赋值 他行实发小计
-                        userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
-                        // 赋值 本月总工资实发总计
-                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                        // 跳出循环
-                        break;
-                    }
-                }
-            }
+        // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，相等代表该员工全部以工资类发放，否则要拆分两部分发放工资
+        // 预设银行代发工资
+        BigDecimal bankSalary = userDetail.getBankSalary();
+        if (userDetail.getStandardSalary().compareTo(bankSalary) == 0) {
+            // 相等  该员工所有工资由同一个银行发放
+            lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
         } else {
-            // 本月出勤工资 < 预设银行代发工资
-            // 第一：拿 【本月出勤工资】去计算银行代发工资个税
-            // 公式：本月银行代发工资个税 = （（本月出勤工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
-            // 本月应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
-            BigDecimal theNeedMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
-            // 校验是否大于0元，大于0元才需要计税
-            if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
-                // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
-                BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
-                // 判断所在区间并计算
-                for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
-                    // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                    // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                    // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
-                        // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    } else {
-                        // 是：只判断当前钱数是否大于开始钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
-                            // 大于
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    }
-                }
+            // 不相等，这里判断员工工资是由两部分发放还是一部分发放
+            if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
+                // 【本月出勤工资 >= 预设银行代发工资】 两个银行发放
+                moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
             } else {
-                // 小于等于0元，不需要计税
-                // 赋值
-                // 本月薪资表赋值
-                // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金
-                userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+                // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
+                lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
             }
         }
         // 操作数据库
@@ -1060,8 +710,6 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 查询到基础薪资数据
         UserSalary userSalary = userSalaryMapper.selectById(computeSalaryParamVO.getId());
-        // 查询用户数据
-        User user = userMapper.selectById(userSalary.getUserId());
         // 查询用户详情数据
         UserDetail userDetail = new UserDetail();
         userDetail.setDeleteFlag(0);
@@ -1097,9 +745,15 @@ public class SalaryServiceImpl implements SalaryService {
                 .subtract(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
                 .add(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
 
-        // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额(可为正负)
+        // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额(可为正负) - 社保代缴手续费
         theMonthAttendanceSalary = theMonthAttendanceSalary.add(userDetail.getAddComputerSubsidy()).add(computeSalaryParamVO.getMonthRewordsMoney());
-        // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款、本月奖惩金额(可为正负)
+        // 校验是否 减去 社保代缴手续费
+        if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+            theMonthAttendanceSalary = theMonthAttendanceSalary.subtract(userDetail.getDeductThing());
+            // 赋值本月代缴手续费
+            userSalary.setDeductServiceFee(userDetail.getDeductThing());
+        }
+        // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款、本月奖惩金额(可为正负)、代缴手续费
         userSalary.setAddComputerSubsidy(userDetail.getAddComputerSubsidy());
         userSalary.setAddOtherSubsidy(userDetail.getAddOtherSubsidy());
         userSalary.setDeductOther(userDetail.getDeductOther());
@@ -1108,193 +762,24 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
 
         // 赋值本月基本工资 = 本月出勤工资*(1 - 绩效占工资比例)
-        userSalary.setMonthBaseSalary(theMonthAttendanceSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP));
+        userSalary.setMonthBaseSalary(baseSalary);
         // 赋值本月绩效工资 = 本月出勤工资*绩效占工资比例
-        userSalary.setMonthPerformanceSalary(theMonthAttendanceSalary.multiply(userDetail.getPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
+        userSalary.setMonthPerformanceSalary(allPerformaneSalary);
 
-        // 计算个税  这里要先判断  【本月出勤工资 >= 预设银行代发工资】
-        // 接上：大于等于的话，1.拿 【预设银行代发工资】去计算银行代发工资个税，2.拿本月出勤工资 - 去计算他行代发工资个税
-        // 接上：小于的话，不计算个税
-        if (theMonthAttendanceSalary.compareTo(userDetail.getBankSalary()) > -1) {
-            // 本月出勤工资 >= 预设银行代发工资
-            // 第一：拿 【预设银行代发工资】去计算银行代发工资个税
-            // 公式：本月银行代发工资个税 = （（预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
-            // 本月应纳税所得额 = 预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
-            BigDecimal theNeedMoney = userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
-            // 校验是否大于0元，大于0元才需要计税
-            if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
-                // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
-                BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
-                // 判断所在区间并计算
-                for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
-                    // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                    // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                    // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
-                        // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    } else {
-                        // 是：只判断当前钱数是否大于开始钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
-                            // 大于
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // 小于等于0元，不需要计税
-                // 赋值
-                // 本月薪资表赋值
-                // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
-                userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-                // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金
-                userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
-            }
-            // 第二：本月他行代发工资计算
-            // 公式：他行个人需缴纳税额 = （（本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额） * 所在非工资类区间税率 - 该区间国家减免税额 - 银行代发部分本月缴纳税额）/2
-            // 本月他行代发工资税前金额 = 本月出勤工资 - 预设银行代发工资金额
-            BigDecimal monthOtherBankSalary = theMonthAttendanceSalary.subtract(userDetail.getBankSalary());
-            // TODO 他行代发工资应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额
-            BigDecimal theMonthOtherBankSelfMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getSpecialDeductTotal()).subtract(userDetail.getStipulationStartTaxMoney());
-            // 判断所在区间并计算
-            for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
-                // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
-                    // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
-                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                        BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                        BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                        BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                        // 赋值 他行代发部分个税
-                        userSalary.setOtherBankShouldTaxMoney(divide);
-                        // 赋值 他行实发小计
-                        userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
-                        // 赋值 本月总工资实发总计
-                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                        // 跳出循环
-                        break;
-                    }
-                } else {
-                    // 是：只判断当前钱数是否大于开始钱数
-                    if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
-                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                        BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                        BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                        BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                        // 赋值 他行代发部分个税
-                        userSalary.setOtherBankShouldTaxMoney(divide);
-                        // 赋值 他行实发小计
-                        userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
-                        // 赋值 本月总工资实发总计
-                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                        // 跳出循环
-                        break;
-                    }
-                }
-            }
+        // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，相等代表该员工全部以工资类发放，否则要拆分两部分发放工资
+        // 预设银行代发工资
+        BigDecimal bankSalary = userDetail.getBankSalary();
+        if (userDetail.getStandardSalary().compareTo(bankSalary) == 0) {
+            // 相等  该员工所有工资由同一个银行发放
+            lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
         } else {
-            // 本月出勤工资 < 预设银行代发工资
-            // 第一：拿 【本月出勤工资】去计算银行代发工资个税
-            // 公式：本月银行代发工资个税 = （（本月出勤工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
-            // 本月应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
-            BigDecimal theNeedMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
-            // 校验是否大于0元，大于0元才需要计税
-            if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
-                // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
-                BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
-                // 判断所在区间并计算
-                for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
-                    // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                    // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                    // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
-                        // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    } else {
-                        // 是：只判断当前钱数是否大于开始钱数
-                        if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
-                            // 大于
-                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                            BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                            // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
-                            BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
-                            // 本月薪资表赋值
-                            // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                            userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                            // 赋值 银行代发工资的税率
-                            userSalary.setBankTaxRatio(salaryPersonTax.getTax());
-                            // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
-                            userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
-                            userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
-                            // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
-                            userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
-                            // 跳出循环
-                            break;
-                        }
-                    }
-                }
+            // 不相等，这里判断员工工资是由两部分发放还是一部分发放
+            if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
+                // 【本月出勤工资 >= 预设银行代发工资】 两个银行发放
+                moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
             } else {
-                // 小于等于0元，不需要计税
-                // 赋值
-                // 本月薪资表赋值
-                // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
-                userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
-                // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金
-                userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+                // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
+                lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
             }
         }
         // 操作数据库
@@ -1307,6 +792,329 @@ public class SalaryServiceImpl implements SalaryService {
         // 将用户本月薪资表更新
         userSalaryMapper.updateById(userSalary);
         return ApiResult.getSuccessApiResponse(userSalary);
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 15:05 2020/11/24
+     * @Param: 
+     * @return: 
+     * @Description: //TODO 本月出勤工资 >= 预设银行代发工资
+     **/
+    public void moreThanBankSalary(UserSalary userSalary, UserDetail userDetail, BigDecimal theMonthAttendanceSalary,
+                                   List<SalaryPersonTax> salaryPersonTaxList, List<SalaryNonPersonTax> salaryNonPersonTaxList) {
+        // 本月出勤工资 >= 预设银行代发工资
+        // 第一：拿 【预设银行代发工资】去计算银行代发工资个税
+        // 公式：本月银行代发工资个税 = （（预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
+        // 本月应纳税所得额 = 预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
+        BigDecimal theNeedMoney = userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
+        // 校验是否大于0元，大于0元才需要计税
+        if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
+            // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
+            BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
+            // 判断所在区间并计算
+            for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
+                // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
+                // 接上：是的时候，只判断当前钱数是否大于开始钱数
+                // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
+                if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
+                    // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
+                    if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
+                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                        BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
+                        BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
+                        // 本月薪资表赋值
+                        // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
+                        userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
+                        // 赋值 银行代发工资的税率
+                        userSalary.setBankTaxRatio(salaryPersonTax.getTax());
+                        // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
+                        userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
+                        userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
+                        // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
+                        userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
+                        // 跳出循环
+                        break;
+                    }
+                } else {
+                    // 是：只判断当前钱数是否大于开始钱数
+                    if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
+                        // 大于
+                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                        BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
+                        BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
+                        // 本月薪资表赋值
+                        // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
+                        userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
+                        // 赋值 银行代发工资的税率
+                        userSalary.setBankTaxRatio(salaryPersonTax.getTax());
+                        // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
+                        userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
+                        userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
+                        // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
+                        userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
+                        // 跳出循环
+                        break;
+                    }
+                }
+            }
+        } else {
+            // 小于等于0元，不需要计税
+            // 赋值
+            // 本月薪资表赋值
+            // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
+            userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
+            // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金
+            userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
+        }
+        // 第二：本月他行代发工资计算
+        // 公式：他行个人需缴纳税额 = （（本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额） * 所在非工资类区间税率 - 该区间国家减免税额 - 银行代发部分本月缴纳税额）/2
+        // 本月他行代发工资税前金额 = 本月出勤工资 - 预设银行代发工资金额
+        BigDecimal monthOtherBankSalary = theMonthAttendanceSalary.subtract(userDetail.getBankSalary());
+        // TODO 他行代发工资应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额
+        BigDecimal theMonthOtherBankSelfMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getSpecialDeductTotal()).subtract(userDetail.getStipulationStartTaxMoney());
+        // 判断所在区间并计算
+        for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
+            // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
+            // 接上：是的时候，只判断当前钱数是否大于开始钱数
+            // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
+            if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
+                // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
+                if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
+                    // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                    BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                    // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
+                    BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
+                    BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
+                    // 赋值 他行代发部分个税
+                    userSalary.setOtherBankShouldTaxMoney(divide);
+                    // 赋值 他行实发小计
+                    userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
+                    // 赋值 本月总工资实发总计
+                    userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+                    // 跳出循环
+                    break;
+                }
+            } else {
+                // 是：只判断当前钱数是否大于开始钱数
+                if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
+                    // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                    BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                    // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
+                    BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
+                    BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
+                    // 赋值 他行代发部分个税
+                    userSalary.setOtherBankShouldTaxMoney(divide);
+                    // 赋值 他行实发小计
+                    userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
+                    // 赋值 本月总工资实发总计
+                    userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+                    // 跳出循环
+                    break;
+                }
+            }
+        }
+    }
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 15:05 2020/11/24
+     * @Param:
+     * @return:
+     * @Description: //TODO 本月出勤工资 >= 预设银行代发工资
+     **/
+    public void moreThanBankSalary2222222222222222222(UserSalary userSalary, UserDetail userDetail, BigDecimal theMonthAttendanceSalary,
+                                   List<SalaryPersonTax> salaryPersonTaxList, List<SalaryNonPersonTax> salaryNonPersonTaxList) {
+        // 本月出勤工资 >= 预设银行代发工资
+        // 第一：拿 【预设银行代发工资】去计算银行代发工资个税
+        // 公式：本月银行代发工资个税 = （（预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
+        // 本月应纳税所得额 = 预设银行代发工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
+        BigDecimal theNeedMoney = userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
+        // 校验是否大于0元，大于0元才需要计税
+        if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
+            // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
+            BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
+            // 判断所在区间并计算
+            for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
+                // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
+                // 接上：是的时候，只判断当前钱数是否大于开始钱数
+                // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
+                if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
+                    // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
+                    if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
+                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                        BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
+                        BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
+                        // 本月薪资表赋值
+                        // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
+                        userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
+                        // 赋值 银行代发工资的税率
+                        userSalary.setBankTaxRatio(salaryPersonTax.getTax());
+                        // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
+                        userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
+                        userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
+                        // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
+                        userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
+                        // 跳出循环
+                        break;
+                    }
+                } else {
+                    // 是：只判断当前钱数是否大于开始钱数
+                    if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
+                        // 大于
+                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                        BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
+                        BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
+                        // 本月薪资表赋值
+                        // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
+                        userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
+                        // 赋值 银行代发工资的税率
+                        userSalary.setBankTaxRatio(salaryPersonTax.getTax());
+                        // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
+                        userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
+                        userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
+                        // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金 - 个税应缴税额
+                        userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
+                        // 跳出循环
+                        break;
+                    }
+                }
+            }
+        } else {
+            // 小于等于0元，不需要计税
+            // 赋值
+            // 本月薪资表赋值
+            // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
+            userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
+            // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金
+            userSalary.setBankRealitySalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
+        }
+        // 第二：本月他行代发工资计算
+        // 公式：他行个人需缴纳税额 = （（本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额） * 所在非工资类区间税率 - 该区间国家减免税额 - 银行代发部分本月缴纳税额）/2
+        // 本月他行代发工资税前金额 = 本月出勤工资 - 预设银行代发工资金额
+        BigDecimal monthOtherBankSalary = theMonthAttendanceSalary.subtract(userDetail.getBankSalary());
+        // TODO 他行代发工资应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额
+        BigDecimal theMonthOtherBankSelfMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getSpecialDeductTotal()).subtract(userDetail.getStipulationStartTaxMoney());
+        // 判断所在区间并计算
+        for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
+            // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
+            // 接上：是的时候，只判断当前钱数是否大于开始钱数
+            // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
+            if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
+                // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
+                if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
+                    // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                    BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                    // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
+                    BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
+                    BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
+                    // 赋值 他行代发部分个税
+                    userSalary.setOtherBankShouldTaxMoney(divide);
+                    // 赋值 他行实发小计
+                    userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
+                    // 赋值 本月总工资实发总计
+                    userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+                    // 跳出循环
+                    break;
+                }
+            } else {
+                // 是：只判断当前钱数是否大于开始钱数
+                if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
+                    // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                    BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                    // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
+                    BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
+                    BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
+                    // 赋值 他行代发部分个税
+                    userSalary.setOtherBankShouldTaxMoney(divide);
+                    // 赋值 他行实发小计
+                    userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
+                    // 赋值 本月总工资实发总计
+                    userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+                    // 跳出循环
+                    break;
+                }
+            }
+        }
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 15:08 2020/11/24
+     * @Param:
+     * @return:
+     * @Description: //TODO 本月出勤工资 < 预设银行代发工资  同一个银行发放
+     **/
+    public void lessThanBankSalary(UserSalary userSalary, UserDetail userDetail, BigDecimal theMonthAttendanceSalary,
+                                   List<SalaryPersonTax> salaryPersonTaxList) {
+        // 第一：拿 【本月出勤工资】去计算银行代发工资个税
+        // 公式：本月银行代发工资个税 = （（本月出勤工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额） + 本年度累计应纳税所得额）* 所在工资类区间税率 - 该区间国家减免税额 - 本年度累计已纳税额
+        // 本月应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 个税缴纳起步基数 - 五项专扣总额
+        BigDecimal theNeedMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getStipulationStartTaxMoney()).subtract(userDetail.getSpecialDeductTotal());
+        // 校验是否大于0元，大于0元才需要计税
+        if (theNeedMoney.compareTo(new BigDecimal("0.00")) == 1) {
+            // 本月待计算应纳税所得额 = 本月应纳税所得额 + 本年度累计应纳税所得额
+            BigDecimal theMonthSelfMoney = theNeedMoney.add(userDetail.getTotalTaxableSelfMoney());
+            // 判断所在区间并计算
+            for (SalaryPersonTax salaryPersonTax : salaryPersonTaxList) {
+                // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
+                // 接上：是的时候，只判断当前钱数是否大于开始钱数
+                // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
+                if (0 == salaryPersonTax.getMaxTaxFlag().intValue()) {
+                    // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
+                    if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1 && theMonthSelfMoney.compareTo(salaryPersonTax.getEndMoney()) < 1) {
+                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                        BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
+                        BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
+                        // 本月薪资表赋值
+                        // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
+                        userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+                        // 赋值 银行代发工资的税率
+                        userSalary.setBankTaxRatio(salaryPersonTax.getTax());
+                        // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
+                        userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
+                        userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
+                        // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
+                        userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
+                        // 跳出循环
+                        break;
+                    }
+                } else {
+                    // 是：只判断当前钱数是否大于开始钱数
+                    if (theMonthSelfMoney.compareTo(salaryPersonTax.getStartMoney()) == 1) {
+                        // 大于
+                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                        BigDecimal theMultiplyMoney = theMonthSelfMoney.multiply(salaryPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                        // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
+                        BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
+                        // 本月薪资表赋值
+                        // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
+                        userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+                        // 赋值 银行代发工资的税率
+                        userSalary.setBankTaxRatio(salaryPersonTax.getTax());
+                        // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
+                        userSalary.setBankPlanShouldTaxMoney(theMonthTaxMoney);
+                        userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
+                        // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
+                        userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
+                        // 跳出循环
+                        break;
+                    }
+                }
+            }
+        } else {
+            // 小于等于0元，不需要计税
+            // 赋值
+            // 本月薪资表赋值
+            // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
+            userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+            // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金
+            userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+        }
     }
 
     /*
