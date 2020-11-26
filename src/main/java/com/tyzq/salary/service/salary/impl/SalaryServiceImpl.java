@@ -1080,6 +1080,12 @@ public class SalaryServiceImpl implements SalaryService {
                         userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
                         // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
                         userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
+                        // 赋值 他行代发部分个税
+                        userSalary.setOtherBankShouldTaxMoney(BigDecimal.ZERO);
+                        // 赋值 他行实发小计
+                        userSalary.setOtherBankRealitySalary(BigDecimal.ZERO);
+                        // 赋值 本月总工资实发总计
+                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
                         // 跳出循环
                         break;
                     }
@@ -1101,6 +1107,12 @@ public class SalaryServiceImpl implements SalaryService {
                         userSalary.setBankRealityShouldTaxMoney(theMonthTaxMoney);
                         // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金 - 个税应缴税额
                         userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(theMonthTaxMoney));
+                        // 赋值 他行代发部分个税
+                        userSalary.setOtherBankShouldTaxMoney(BigDecimal.ZERO);
+                        // 赋值 他行实发小计
+                        userSalary.setOtherBankRealitySalary(BigDecimal.ZERO);
+                        // 赋值 本月总工资实发总计
+                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
                         // 跳出循环
                         break;
                     }
@@ -1114,6 +1126,13 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
             // 赋值 银行代发工资实发总计 = 本月出勤工资 - 个人社保公积金
             userSalary.setBankRealitySalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+            // 赋值 他行代发部分个税
+            userSalary.setOtherBankShouldTaxMoney(BigDecimal.ZERO);
+            // 赋值 他行实发小计
+            userSalary.setOtherBankRealitySalary(BigDecimal.ZERO);
+            // 赋值 本月总工资实发总计
+            userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+            // 跳出循环
         }
     }
 
