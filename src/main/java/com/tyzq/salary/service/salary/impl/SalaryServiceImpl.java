@@ -233,7 +233,6 @@ public class SalaryServiceImpl implements SalaryService {
                             userSalary.setSalaryDeptName(user.getSalaryDeptName());
                             userSalary.setUserRoleName(user.getRoleName());
                             // 薪资部分 赋值
-                            userSalary.setAddComputerSubsidy(user.getAddComputerSubsidy());// 增加项：电脑补
                             userSalary.setMonthPerformanceRatio(new BigDecimal("1.00"));// 本月绩效比例
                             userSalary.setMonthBankSalary(user.getBankSalary());// 本月银行代发工资
                             userSalary.setMonthOtherBankSalary(user.getOtherBankSalary());// 本月他行代发工资
@@ -273,7 +272,6 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setSalaryDeptName(user.getSalaryDeptName());
             userSalary.setUserRoleName(user.getRoleName());
             // 薪资部分 赋值
-            userSalary.setAddComputerSubsidy(user.getAddComputerSubsidy());// 增加项：电脑补
             userSalary.setMonthPerformanceRatio(new BigDecimal("1.00"));// 本月绩效比例
             userSalary.setMonthBankSalary(user.getBankSalary());// 本月银行代发工资
             userSalary.setMonthOtherBankSalary(user.getOtherBankSalary());// 本月他行代发工资
