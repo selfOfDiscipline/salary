@@ -117,4 +117,13 @@ public interface SalaryService {
      * @Description //TODO  驳回后再次发起流程，根据薪资流程记录表id
      **/
     ApiResult updateSalaryFlowById(Long salaryFlowId, UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:34 2021/1/8
+     * @Param:
+     * @return:
+     * @Description: //TODO 一键清空所有员工的 年度各个累计金额
+     **/
+    ApiResult eliminateAllUserTotalMoney(UserSessionVO userSessionVO);
 }

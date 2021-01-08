@@ -65,4 +65,7 @@ public class Constants implements Serializable {
 
     /* 标准计薪规则比例*/
     public static final BigDecimal STANDARD_SALARY_RATIO = new BigDecimal("21.75");
+
+    /* 管理员key*/
+    public static final String ADMIN_KEY = "JF8s3H&5-9G483HTh9e8yh-HF*wh-98H";
 }

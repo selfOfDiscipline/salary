@@ -1741,4 +1741,56 @@ public class SalaryServiceImpl implements SalaryService {
         return ApiResult.getSuccessApiResponse();
     }
 
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:34 2021/1/8
+     * @Param:
+     * @return:
+     * @Description: //TODO 一键清空所有员工的 年度各个累计金额
+     **/
+    @Override
+    public ApiResult eliminateAllUserTotalMoney(UserSessionVO userSessionVO) {
+        // 查询所有员工信息
+        List<User> userList = userMapper.selectList(Condition.create().eq("admin_flag", 0).eq("delete_flag", 0));
+        if (CollectionUtils.isEmpty(userList)) {
+            return ApiResult.getSuccessApiResponse("本次共成功将：0 人的年度各个累计金额归零！");
+        }
+        // 获取到所有的员工账号
+        List<String> accountList = userList.stream().map(User::getUserAccount).collect(Collectors.toList());
+        // 查询所有明细
+        List<UserDetail> detailList = userDetailMapper.selectList(Condition.create().in("user_account", accountList).eq("delete_flag", 0));
+        // 获取id集合
+        List<Long> detailIdList = detailList.stream().map(UserDetail::getId).collect(Collectors.toList());
+        // 定义批量修改条件
+        UserDetail userDetail = new UserDetail();
+        // 累计收入金额
+        userDetail.setTotalIncomeMoney(new BigDecimal("0.00"));
+        // 累计应纳税所得额
+        userDetail.setTotalTaxableSelfMoney(new BigDecimal("0.00"));
+        // 累计已纳税额
+        userDetail.setTotalAlreadyTaxableMoney(new BigDecimal("0.00"));
+        // 累计减除费用金额
+        userDetail.setTotalDeductMoney(new BigDecimal("0.00"));
+        // 累计专项附加扣除金额
+        userDetail.setTotalSpecialDeductMoney(new BigDecimal("0.00"));
+        // 累计子女教育扣除
+        userDetail.setTotalChildEducation(new BigDecimal("0.00"));
+        // 累计继续教育扣除
+        userDetail.setTotalContinueEducation(new BigDecimal("0.00"));
+        // 累计住房贷款利息扣除
+        userDetail.setTotalHomeLoanInterest(new BigDecimal("0.00"));
+        // 累计住房租金扣除
+        userDetail.setTotalHomeRents(new BigDecimal("0.00"));
+        // 累计赡养老人扣除
+        userDetail.setTotalSupportParents(new BigDecimal("0.00"));
+        // 累计专项扣除（个人年度社保+公积金）
+        userDetail.setTotalOtherDeduct(new BigDecimal("0.00"));
+        userDetail.setEditId(userSessionVO.getUserAccount());
+        userDetail.setEditName(userSessionVO.getUserName());
+        userDetail.setEditTime(new Date());
+        // 批量修改入库
+        Integer id = userDetailMapper.update(userDetail, Condition.create().in("id", detailIdList));
+        return ApiResult.getSuccessApiResponse("本次共成功将：" + id.intValue() + " 人的年度各个累计金额归零！");
+    }
+
 }

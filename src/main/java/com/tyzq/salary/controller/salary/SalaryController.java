@@ -306,8 +306,8 @@ public class SalaryController {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 9:54 2020/9/28
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
      * @Description //TODO 查询历史工资单列表
      **/
@@ -376,6 +376,41 @@ public class SalaryController {
             e.printStackTrace();
             logger.error("导出工资单错误异常：" + e);
             return ApiResult.getFailedApiResponse("导出工资单出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:27 2021/1/8
+     * @Param:
+     * @return:
+     * @Description: //TODO 一键清空所有员工的 年度各个累计金额
+     **/
+    @ApiOperation(value = "一键清空所有员工的 年度各个累计金额", httpMethod = "GET", notes = "一键清空所有员工的 年度各个累计金额")
+    @GetMapping(value = "/eliminateAllUserTotalMoney")
+    public ApiResult eliminateAllUserTotalMoney(@RequestParam(value = "adminKey") String adminKey, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        // 校验是否登录
+        if (null == userSessionVO) {
+            return ApiResult.getFailedApiResponse("您未登录！");
+        }
+        // 校验权限是否为总经理/副总/薪资核算角色
+        List<Long> roleIdList = userSessionVO.getRoleIdList();
+        if (CollectionUtils.isEmpty(roleIdList) || (!roleIdList.contains(Constants.ADMIN_ROLE_ID) && !roleIdList.contains(Constants.OTHER_ROLE_ID) && !roleIdList.contains(Constants.SALARY_DEPT_ROLE_ID))) {
+            return ApiResult.getFailedApiResponse("您无权生成数据！");
+        }
+        // 校验Key
+        if (!Constants.ADMIN_KEY.equals(adminKey)) {
+            return ApiResult.getFailedApiResponse("管理员key有误！！");
+        }
+        try {
+            // 业务操作
+            return salaryService.eliminateAllUserTotalMoney(userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("一键清空所有员工的 年度各个累计金额接口出现异常：" + e);
+            return ApiResult.getFailedApiResponse("一键清空所有员工的 年度各个累计金额出现错误异常！");
         }
     }
 }
