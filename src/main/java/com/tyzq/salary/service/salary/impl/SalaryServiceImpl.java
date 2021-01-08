@@ -653,7 +653,7 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setDeductOther(userDetail.getDeductOther());
         // 赋值 病假扣款
         BigDecimal allSick = beforeSick.add(afterSick);
-        allSick = allSick.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+        allSick = allSick.multiply(new BigDecimal("1.00").subtract(userDetail.getPersonSickStandard())).setScale(2, BigDecimal.ROUND_HALF_UP);
         userSalary.setDeductSick(allSick);
         userSalary.setDeductThing(beforeOther.add(afterOther));
         userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
