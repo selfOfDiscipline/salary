@@ -495,8 +495,15 @@ public class SalaryServiceImpl implements SalaryService {
         } else {
             // 不相等，这里判断员工工资是由两部分发放还是一部分发放
             if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
-                // 【本月出勤工资 >= 预设银行代发工资】 两个银行发放
-                moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                // 【本月出勤工资 >= 预设银行代发工资】
+                // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
+                if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                    // 计算社保  走两个银行发放
+                    moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                } else {
+                    // 不计算社保  走现金类
+                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                }
             } else {
                 // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
                 // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
@@ -626,8 +633,16 @@ public class SalaryServiceImpl implements SalaryService {
                 .add(oneDayMoney.multiply(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
         // 本月出勤工资
         BigDecimal theMonthAttendanceSalary = beforeSalary.add(afterSalary);
-        // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额
-        theMonthAttendanceSalary = theMonthAttendanceSalary.add(userDetail.getAddComputerSubsidy()).add(computeSalaryParamVO.getMonthRewordsMoney());
+
+        // 本月电脑补助 = 本月电脑补助 - 本月电脑补助 * (转正前事假天数 + 转正前病假天数 + 转正后事假天数 + 转正后病假天数)/21.75
+        BigDecimal addComputerSubsidy = userDetail.getAddComputerSubsidy();
+        addComputerSubsidy = addComputerSubsidy.subtract(addComputerSubsidy.multiply((
+                computeSalaryParamVO.getPositiveBeforeSickAttendanceDays().add(computeSalaryParamVO.getPositiveBeforeOtherAttendanceDays())
+                .add(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).add(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays())
+        ).divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP)));
+
+        // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额(可为正负) - 社保代缴手续费
+        theMonthAttendanceSalary = theMonthAttendanceSalary.add(addComputerSubsidy).add(computeSalaryParamVO.getMonthRewordsMoney());
         // 校验是否 减去 社保代缴手续费
         if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
             theMonthAttendanceSalary = theMonthAttendanceSalary.subtract(userDetail.getDeductThing());
@@ -635,15 +650,18 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setDeductServiceFee(userDetail.getDeductThing());
         }
         // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款、本月奖惩金额
-        userSalary.setAddComputerSubsidy(userDetail.getAddComputerSubsidy());
+        userSalary.setAddComputerSubsidy(addComputerSubsidy);
         userSalary.setAddOtherSubsidy(userDetail.getAddOtherSubsidy());
         userSalary.setDeductOther(userDetail.getDeductOther());
-        userSalary.setDeductSick(beforeSick.add(afterSick));
+        // 赋值 病假扣款
+        BigDecimal allSick = beforeSick.add(afterSick);
+        allSick = allSick.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+        userSalary.setDeductSick(allSick);
         userSalary.setDeductThing(beforeOther.add(afterOther));
         userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
         // 赋值本月基本工资 = 转正前工资 + 转正后工资*(1 - 绩效占工资比例)
         userSalary.setMonthBaseSalary(afterSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP).add(beforeSalary));
-        // 赋值本月绩效工资 = 转正前工资 + 转正后工资*绩效占工资比例
+        // 赋值本月绩效工资 = 转正后工资*绩效占工资比例
         userSalary.setMonthPerformanceSalary(afterSalary.multiply(userDetail.getPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
 
         // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，相等代表该员工全部以工资类发放，否则要拆分两部分发放工资
@@ -662,8 +680,15 @@ public class SalaryServiceImpl implements SalaryService {
         } else {
             // 不相等，这里判断员工工资是由两部分发放还是一部分发放
             if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
-                // 【本月出勤工资 >= 预设银行代发工资】 两个银行发放
-                moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                // 【本月出勤工资 >= 预设银行代发工资】
+                // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
+                if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                    // 计算社保  走两个银行发放
+                    moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                } else {
+                    // 不计算社保  走现金类
+                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                }
             } else {
                 // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
                 // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
