@@ -14,7 +14,7 @@ import java.util.GregorianCalendar;
 
 /**
  * 日期工具类
- * 
+ *
  * @author admin
  *
  */
@@ -22,7 +22,7 @@ public class DateUtils {
 
 	/**
 	 * 格式化日期
-	 * 
+	 *
 	 * @param date
 	 *            日期字符串
 	 * @param pattern
@@ -39,7 +39,7 @@ public class DateUtils {
 
 	/**
 	 * 获得日期间的月份数
-	 * 
+	 *
 	 * @param startDate
 	 *            开始日期
 	 * @param endDate
@@ -57,7 +57,7 @@ public class DateUtils {
 
 	/**
 	 * 获得日期间的天数
-	 * 
+	 *
 	 * @param startDate
 	 *            开始日期
 	 * @param endDate
@@ -75,7 +75,7 @@ public class DateUtils {
 
 	/**
 	 * 得到时间字符串
-	 * 
+	 *
 	 * @param startDate
 	 *            时间
 	 * @param pattern
@@ -95,7 +95,7 @@ public class DateUtils {
 
 	/**
 	 * 得到当前时间字符串
-	 * 
+	 *
 	 * @return
 	 */
 	public static String getNowDateString() {
@@ -109,7 +109,7 @@ public class DateUtils {
 
 	/**
 	 * 得到时间
-	 * 
+	 *
 	 * @param dateStr
 	 *            时间字符串
 	 * @param pattern
@@ -207,7 +207,7 @@ public class DateUtils {
 		calendar.set(Calendar.MILLISECOND, 999);
 		return new Timestamp(calendar.getTimeInMillis());
 	}
-	
+
 
 	public static String getFirstDayOfMonth(int year,int month){
         Calendar cal = Calendar.getInstance();
@@ -224,7 +224,7 @@ public class DateUtils {
         String firstDayOfMonth = sdf.format(cal.getTime());
         return firstDayOfMonth;
     }
- 
+
 	/**
 	* 获得该月最后一天
 	* @param year
@@ -245,7 +245,7 @@ public class DateUtils {
 	        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 	        String lastDayOfMonth = sdf.format(cal.getTime());
 	        return lastDayOfMonth;
-	
+
 	}
 
 	/*
@@ -290,5 +290,18 @@ public class DateUtils {
 		return date;
 	}
 
-
+	/*
+	 * @Author: 郑稳超先生 zwc_503@163.com
+	 * @Date: 11:01 2021/1/8
+	 * @Param:
+	 * @return:
+	 * @Description: //TODO 给日期追加number个月
+	 **/
+	public static Date stepMonthWithDate(Date date, int number) {
+		// 定义 格式
+		Calendar c = Calendar.getInstance();
+		c.setTime(date);
+		c.add(Calendar.MONTH, number);
+		return c.getTime();
+	}
 }

@@ -86,8 +86,8 @@ public class SalaryServiceImpl implements SalaryService {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 16:29 2020/9/14
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
      * @Description //TODO 计薪列表查询
      **/
@@ -773,8 +773,12 @@ public class SalaryServiceImpl implements SalaryService {
                 .subtract(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
                 .add(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
 
+        // 本月电脑补助 = 本月电脑补助 - 本月电脑补助 * (事假天数 + 病假天数)/21.75
+        BigDecimal addComputerSubsidy = userDetail.getAddComputerSubsidy();
+        addComputerSubsidy = addComputerSubsidy.subtract(addComputerSubsidy.multiply((computeSalaryParamVO.getOtherAbsenceDays().add(computeSalaryParamVO.getSickAbsenceDays())).divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP)));
+
         // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额(可为正负) - 社保代缴手续费
-        theMonthAttendanceSalary = theMonthAttendanceSalary.add(userDetail.getAddComputerSubsidy()).add(computeSalaryParamVO.getMonthRewordsMoney());
+        theMonthAttendanceSalary = theMonthAttendanceSalary.add(addComputerSubsidy).add(computeSalaryParamVO.getMonthRewordsMoney());
         // 校验是否 减去 社保代缴手续费
         if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
             theMonthAttendanceSalary = theMonthAttendanceSalary.subtract(userDetail.getDeductThing());
@@ -782,7 +786,7 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setDeductServiceFee(userDetail.getDeductThing());
         }
         // 赋值本月  电脑补、其他补、其他扣款、病假扣款、事假扣款、本月奖惩金额(可为正负)、代缴手续费
-        userSalary.setAddComputerSubsidy(userDetail.getAddComputerSubsidy());
+        userSalary.setAddComputerSubsidy(addComputerSubsidy);
         userSalary.setAddOtherSubsidy(userDetail.getAddOtherSubsidy());
         userSalary.setDeductOther(userDetail.getDeductOther());
         userSalary.setDeductSick(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).multiply(new BigDecimal("1.00").subtract(userDetail.getPersonSickStandard())).setScale(2, BigDecimal.ROUND_HALF_UP));
@@ -810,8 +814,15 @@ public class SalaryServiceImpl implements SalaryService {
         } else {
             // 不相等，这里判断员工工资是由两部分发放还是一部分发放
             if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
-                // 【本月出勤工资 >= 预设银行代发工资】 两个银行发放
-                moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                // 【本月出勤工资 >= 预设银行代发工资】
+                // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
+                if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                    // 计算社保  走两个银行发放
+                    moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                } else {
+                    // 不计算社保  走现金类
+                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                }
             } else {
                 // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
                 // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
@@ -839,8 +850,8 @@ public class SalaryServiceImpl implements SalaryService {
     /*
      * @Author: 郑稳超先生 zwc_503@163.com
      * @Date: 15:05 2020/11/24
-     * @Param: 
-     * @return: 
+     * @Param:
+     * @return:
      * @Description: //TODO 本月出勤工资 >= 预设银行代发工资
      **/
     public void moreThanBankSalary(UserSalary userSalary, UserDetail userDetail, BigDecimal theMonthAttendanceSalary,
@@ -1221,7 +1232,7 @@ public class SalaryServiceImpl implements SalaryService {
                     // 赋值 他行代发部分个税
                     userSalary.setOtherBankShouldTaxMoney(divide);
                     // 赋值 他行实发小计
-                    userSalary.setOtherBankRealitySalary(theMonthOtherBankSelfMoney.subtract(divide));
+                    userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(divide));
                     // 赋值 本月总工资实发总计
                     userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
                     // 跳出循环
@@ -1238,7 +1249,7 @@ public class SalaryServiceImpl implements SalaryService {
                     // 赋值 他行代发部分个税
                     userSalary.setOtherBankShouldTaxMoney(divide);
                     // 赋值 他行实发小计
-                    userSalary.setOtherBankRealitySalary(theMonthOtherBankSelfMoney.subtract(divide));
+                    userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(divide));
                     // 赋值 本月总工资实发总计
                     userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
                     // 跳出循环

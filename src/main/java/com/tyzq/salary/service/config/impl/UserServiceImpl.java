@@ -140,6 +140,10 @@ public class UserServiceImpl implements UserService {
         user.setUserSalt(null);
         user.setSalaryDeptId(null);
         user.setUserPostType(null);
+        // 判断 实际转正日期是否存在，不存在的话拿入职日期往后累加三个月
+        if (null == user.getRealityChangeFormalDate()) {
+            user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getRealityChangeFormalDate(), 3));
+        }
         // 入库
         userMapper.updateById(user);
         // 修改用户明细
@@ -216,10 +220,10 @@ public class UserServiceImpl implements UserService {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 15:58 2020/9/14
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
-     * @Description //TODO 
+     * @Description //TODO
      **/
     @Override
     public String deleteUserByIds(String ids, HttpServletRequest request) {
@@ -281,7 +285,10 @@ public class UserServiceImpl implements UserService {
             user.setCreateName(userSessionVO.getUserName());
             user.setCreateTime(new Date());
             user.setEditTime(new Date());
-            // 入库
+            // 判断 实际转正日期是否存在，不存在的话拿入职日期往后累加三个月
+            if (null == user.getRealityChangeFormalDate()) {
+                user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getRealityChangeFormalDate(), 3));
+            }
             userMapper.insert(user);
             // 校验是否选择了角色 （单用户会存在多角色）
             if (StringUtils.isNotBlank(userSaveVO.getRoleIds())) {
@@ -402,6 +409,10 @@ public class UserServiceImpl implements UserService {
             userDetail.setEditId(userSessionVO.getUserAccount());
             userDetail.setEditName(userSessionVO.getUserName());
             userDetail.setEditTime(new Date());
+            // 判断 实际转正日期是否存在，不存在的话拿入职日期往后累加三个月
+            if (null == user.getRealityChangeFormalDate()) {
+                user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getRealityChangeFormalDate(), 3));
+            }
             // 需要计算录入部分
             // 员工标准薪资
             BigDecimal standardSalary = userDetail.getStandardSalary() == null ? new BigDecimal("0.00") : userDetail.getStandardSalary();
@@ -468,8 +479,8 @@ public class UserServiceImpl implements UserService {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 15:48 2020/9/16
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
      * @Description //TODO 查询当前薪资核算负责人关联的员工列表
      **/
@@ -504,8 +515,8 @@ public class UserServiceImpl implements UserService {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 20:45 2020/9/27
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
      * @Description //TODO 查询全量人员基础信息列表
      **/
