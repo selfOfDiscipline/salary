@@ -461,11 +461,19 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // ========先计算社保部分======
         computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
+        // todo 校验本月出勤天数  如果大于21.75天，按所传天数计算，如果小于21.75天，按21.75天计算
+        BigDecimal standardDay = Constants.STANDARD_SALARY_RATIO;
+
+        BigDecimal addDay = computeSalaryParamVO.getPositiveBeforeAttendanceDays().add(computeSalaryParamVO.getPositiveAfterAttendanceDays());
+        if (addDay.compareTo(standardDay) == 1) {
+            // 所传出勤天数 > 21.75
+            standardDay = addDay;
+        }
         // 计算
         // PS:上月入职员工无绩效
         // 本月出勤工资 = （员工标准薪资*薪资发放比例/21.75）*出勤天数
         // 本月平均一天工资为
-        BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).add(computeSalaryParamVO.getMonthRewordsMoney()).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 校验是否 减去 社保代缴手续费
         if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
@@ -583,6 +591,16 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // ========先计算社保部分======
         computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
+
+        // todo 校验本月出勤天数  如果大于21.75天，按所传天数计算，如果小于21.75天，按21.75天计算
+        BigDecimal standardDay = Constants.STANDARD_SALARY_RATIO;
+
+        BigDecimal addDay = computeSalaryParamVO.getPositiveBeforeAttendanceDays().add(computeSalaryParamVO.getPositiveAfterAttendanceDays());
+        if (addDay.compareTo(standardDay) == 1) {
+            // 所传出勤天数 > 21.75
+            standardDay = addDay;
+        }
+
         // 计算
         // PS:上月转正员工，转正前无绩效，转正后有绩效
         // 计算后比例工资 = (员工标准薪资*转正前薪资发放比例/21.75)
@@ -597,7 +615,7 @@ public class SalaryServiceImpl implements SalaryService {
 
         // 计算 转正前部分
         // 转正前 本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
-        BigDecimal theBeforeDecimal = userDetail.getComputeProbationSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal theBeforeDecimal = userDetail.getComputeProbationSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         // todo 计算
         // 转正前病假扣款
         BigDecimal beforeSick = theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeSickAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
@@ -609,7 +627,7 @@ public class SalaryServiceImpl implements SalaryService {
                 .subtract(beforeOther)
                 .add(theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeSickAttendanceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
         // 转正后  本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
-        BigDecimal theAfterDecimal = userDetail.getComputeStandardSalary().divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal theAfterDecimal = userDetail.getComputeStandardSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         // 转正后预估基本工资
         BigDecimal afterBaseSalary = theAfterDecimal.multiply(computeSalaryParamVO.getPositiveAfterAttendanceDays()).multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 转正后本月绩效工资
@@ -619,7 +637,7 @@ public class SalaryServiceImpl implements SalaryService {
         BigDecimal allSalary = afterBaseSalary.add(allPerformaneSalary);
         //TODO 这里转正后缺勤和病假，目前按照的  转正后绩效1/21.75得到的钱数来算的，是否需要累加再除以21.75
         // 转正后且计算绩效后，一天平均工资为
-        BigDecimal oneDayMoney = allSalary.divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal oneDayMoney = allSalary.divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         // 转正后病假扣款
         BigDecimal afterSick = oneDayMoney.multiply(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 转正后其他假扣款
@@ -637,7 +655,7 @@ public class SalaryServiceImpl implements SalaryService {
         addComputerSubsidy = addComputerSubsidy.subtract(addComputerSubsidy.multiply((
                 computeSalaryParamVO.getPositiveBeforeSickAttendanceDays().add(computeSalaryParamVO.getPositiveBeforeOtherAttendanceDays())
                 .add(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).add(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays())
-        ).divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP)));
+        ).divide(standardDay, 2, BigDecimal.ROUND_HALF_UP)));
 
         // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额(可为正负) - 社保代缴手续费
         theMonthAttendanceSalary = theMonthAttendanceSalary.add(addComputerSubsidy).add(computeSalaryParamVO.getMonthRewordsMoney());
