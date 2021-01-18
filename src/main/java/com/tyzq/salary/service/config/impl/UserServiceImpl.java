@@ -142,7 +142,7 @@ public class UserServiceImpl implements UserService {
         user.setUserPostType(null);
         // 判断 实际转正日期是否存在，不存在的话拿入职日期往后累加三个月
         if (null == user.getRealityChangeFormalDate()) {
-            user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getRealityChangeFormalDate(), 3));
+            user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getUserEntryDate(), 3));
         }
         // 入库
         userMapper.updateById(user);
@@ -287,7 +287,7 @@ public class UserServiceImpl implements UserService {
             user.setEditTime(new Date());
             // 判断 实际转正日期是否存在，不存在的话拿入职日期往后累加三个月
             if (null == user.getRealityChangeFormalDate()) {
-                user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getRealityChangeFormalDate(), 3));
+                user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getUserEntryDate(), 3));
             }
             userMapper.insert(user);
             // 校验是否选择了角色 （单用户会存在多角色）
@@ -411,7 +411,7 @@ public class UserServiceImpl implements UserService {
             userDetail.setEditTime(new Date());
             // 判断 实际转正日期是否存在，不存在的话拿入职日期往后累加三个月
             if (null == user.getRealityChangeFormalDate()) {
-                user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getRealityChangeFormalDate(), 3));
+                user.setRealityChangeFormalDate(DateUtils.stepMonthWithDate(user.getUserEntryDate(), 3));
             }
             // 需要计算录入部分
             // 员工标准薪资
