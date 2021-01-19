@@ -123,4 +123,13 @@ public interface UserService {
      * @Description: //TODO 将所以试用期的员工的基础金额刷新
      **/
     ApiResult updateUserRato(UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 11:47 2021/1/19
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询全量系统账号 用于配置流程
+     **/
+    ApiResult selectAllAdminList(UserQueryVO userQueryVO, UserSessionVO userSessionVO);
 }

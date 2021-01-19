@@ -50,4 +50,13 @@ public interface UserMapper extends BaseMapper<User> {
      * @Description //TODO 查询全量用户列表
      **/
     List<UserBaseResultVO> selectAllUserList(@Param("userQueryVO") UserQueryVO userQueryVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 11:48 2021/1/19
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询全量系统账号 用于配置流程
+     **/
+    List<UserBaseResultVO> selectAllAdminList(@Param("userQueryVO") UserQueryVO userQueryVO);
 }

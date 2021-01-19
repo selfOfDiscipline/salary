@@ -728,6 +728,30 @@ public class UserServiceImpl implements UserService {
         return ApiResult.getSuccessApiResponse("本次共成功刷新：" + userList.size() + "条数据！");
     }
 
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 11:47 2021/1/19
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询全量系统账号 用于配置流程
+     **/
+    @Override
+    public ApiResult selectAllAdminList(UserQueryVO userQueryVO, UserSessionVO userSessionVO) {
+        // 校验
+        if (StringUtils.isNotBlank(userQueryVO.getUserName())) {
+            userQueryVO.setUserName("%" + userQueryVO.getUserName() + "%");
+        }
+        // 查询数据库
+        PageHelper.startPage(userQueryVO.getPageNum(), userQueryVO.getPageSize());
+        List<UserBaseResultVO> dataList = userMapper.selectAllAdminList(userQueryVO);
+        PageInfo<UserBaseResultVO> info = new PageInfo<>(dataList);
+        // 定义分页工具类并赋值   总条数 & 总页数 & 返回数据
+        BootstrapTablePageVO<UserBaseResultVO> tablePageVO = new BootstrapTablePageVO<>();
+        tablePageVO.setTotal(info.getTotal());
+        tablePageVO.setDataList(info.getList());
+        return ApiResult.getSuccessApiResponse(tablePageVO);
+    }
+
     public ApiResult checkUserRoleConfig(UserSessionVO userSessionVO) {
         // 校验是否登录
         if (null == userSessionVO) {

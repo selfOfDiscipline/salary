@@ -167,6 +167,56 @@
         </where>
     </select>
 
+    <!-- 查询全量系统账号列表-->
+    <select id="selectAllAdminList" resultType="com.tyzq.salary.model.vo.user.UserBaseResultVO">
+        SELECT
+        u.id AS id,
+        u.user_name AS userName,
+        u.user_account AS userAccount,
+        u.user_card AS userCard,
+        u.user_tel AS userTel,
+        u.user_email AS userEmail,
+        u.user_sex AS userSex,
+        u.user_entry_date AS userEntryDate,
+        u.plan_change_formal_date AS planChangeFormalDate,
+        u.work_city AS workCity,
+        u.household_type AS householdType,
+        u.user_post_type AS userPostType,
+        u.user_rank_type AS userRankType,
+        ud.standard_salary AS standardSalary,
+        ud.salary_grant_ratio AS salaryGrantRatio,
+        ud.compute_standard_salary AS computeStandardSalary,
+        ud.performance_ratio AS performanceRatio,
+        d.dept_name AS userDeptName,
+        sd.salary_dept_name AS salaryDeptName,
+        y.roleName AS roleName
+        FROM
+        user AS u
+        LEFT JOIN user_detail AS ud ON u.id = ud.user_id
+        LEFT JOIN dept AS d ON u.user_dept_id = d.id
+        LEFT JOIN salary_dept AS sd ON u.salary_dept_id = sd.id
+        LEFT JOIN (
+        SELECT
+        u.id AS id,
+        GROUP_CONCAT( r.role_name ) AS roleName
+        FROM
+        user AS u
+        LEFT JOIN user_role AS ur ON u.id = ur.user_id
+        LEFT JOIN role AS r ON r.id = ur.role_id
+        ) AS y ON y.id = u.id
+        <where>
+            u.delete_flag = 0
+            AND u.admin_flag = 1
+            AND u.allow_flag = 1
+            <if test="userQueryVO.userName != null and userQueryVO.userName != ''">
+                AND u.user_name like #{userQueryVO.userName}
+            </if>
+            <if test="userQueryVO.userSalaryDeptId != null">
+                AND u.salary_dept_id = #{userQueryVO.userSalaryDeptId}
+            </if>
+        </where>
+    </select>
+
     <!-- 查询用户薪资部分列表-->
     <select id="selectUserDetailList" resultType="com.tyzq.salary.model.vo.user.UserDetailVO">
         SELECT

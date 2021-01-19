@@ -446,6 +446,28 @@ public class UserController {
     }
 
     /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 11:45 2021/1/19
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询全量系统账号 用于配置流程
+     **/
+    @ApiOperation(value = "查询全量系统账号 用于配置流程", httpMethod = "POST", notes = "查询全量系统账号 用于配置流程")
+    @PostMapping(value = "/selectAllAdminList")
+    public ApiResult selectAllAdminList(@RequestBody UserQueryVO userQueryVO, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return userService.selectAllAdminList(userQueryVO, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("查询全量系统账号基础信息列表错误异常：" + e);
+            return ApiResult.getFailedApiResponse("查询全量系统账号基础信息列表出现错误异常！");
+        }
+    }
+
+    /*
      * @Author zwc   zwc_503@163.com
      * @Date 10:53 2020/10/12
      * @Param
