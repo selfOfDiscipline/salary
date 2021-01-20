@@ -145,8 +145,8 @@ public class AgendaServiceImpl implements AgendaService {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 21:19 2020/9/27
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
      * @Description //TODO 处理当前节点(通过/驳回)
      **/
@@ -287,8 +287,8 @@ public class AgendaServiceImpl implements AgendaService {
             // 审批状态：0--待审，1--驳回，2--通过
             record.setApproverStatus(0);
             record.setDeleteFlag(0);
-            record.setCreateId(userSessionVO.getUserAccount());
-            record.setCreateName(userSessionVO.getUserName());
+            record.setCreateId(baseFlowRecord.getCreateId());
+            record.setCreateName(baseFlowRecord.getCreateName());
             record.setCreateTime(new Date());
             record.setEditTime(new Date());
             // 新增入库
@@ -361,8 +361,8 @@ public class AgendaServiceImpl implements AgendaService {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 22:30 2020/9/27
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
      * @Description //TODO 个人发起的流程列表
      **/
@@ -394,8 +394,8 @@ public class AgendaServiceImpl implements AgendaService {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 14:59 2020/10/15
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
      * @Description //TODO 汇总待办列表
      **/
