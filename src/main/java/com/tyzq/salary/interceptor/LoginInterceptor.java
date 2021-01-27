@@ -15,18 +15,26 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
 
 /*
  * @Author zwc   zwc_503@163.com
  * @Date 10:58 2019/10/24
- * @Param 
- * @return 
+ * @Param
+ * @return
  * @Version 1.0
- * @Description //TODO 
+ * @Description //TODO
  **/
 public class LoginInterceptor implements HandlerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginInterceptor.class);
+
+    /* 过滤接口*/
+    public static final List<String> URL_LIST = new ArrayList<String>() {{
+        add("/config/user/login");
+        add("/external/api/querySalaryExternal");
+    }};
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -43,8 +51,8 @@ public class LoginInterceptor implements HandlerInterceptor {
         if (StringUtils.equals(request.getMethod(), "OPTIONS")) {
             return true;
         }
-        // 过滤登录接口及文件获取
-        if (url.equals("/config/user/login")) {
+        // 过滤接口
+        if (URL_LIST.contains(url)) {
             // 后台管理登录接口
             return true;
         }

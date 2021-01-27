@@ -445,4 +445,48 @@
             </if>
         </where>
     </select>
+
+    <!-- 根据账号 & 月份 查询个人月度工资单-->
+    <select id="querySalaryExternal" resultType="com.tyzq.salary.model.vo.external.ExternalSalaryResultVO">
+        SELECT
+            u.user_name AS userName,
+            u.user_account AS userAccount,
+            s.salary_dept_name AS salaryDeptName,
+            s.user_role_name AS userRoleName,
+            s.month_rewords_money AS monthRewordsMoney,
+            s.month_bank_salary AS monthBankSalary,
+            s.month_other_bank_salary AS monthOtherBankSalary,
+            s.month_base_salary AS monthBaseSalary,
+            s.month_performance_salary AS monthPerformanceSalary,
+            s.social_security_person_pay_total AS socialSecurityPersonPayTotal,
+            s.housing_fund_person_pay_total AS housingFundPersonPayTotal,
+            s.month_person_pay_total AS monthPersonPayTotal,
+            s.bank_tax_before_should_salary AS bankTaxBeforeShouldSalary,
+            s.bank_tax_ratio AS bankTaxRatio,
+            s.bank_reality_should_tax_money AS bankRealityShouldTaxMoney,
+            s.bank_reality_salary AS bankRealitySalary,
+            s.other_bank_should_tax_money AS otherBankShouldTaxMoney,
+            s.other_bank_reality_salary AS otherBankRealitySalary,
+            s.add_computer_subsidy AS addComputerSubsidy,
+            s.add_other_subsidy AS addOtherSubsidy,
+            s.deduct_sick AS deductSick,
+            s.deduct_thing AS deductThing,
+            s.deduct_other AS deductOther,
+            s.deduct_service_fee AS deductServiceFee,
+            s.month_salary_reality_total AS monthSalaryRealityTotal
+        FROM
+            user AS u
+        LEFT JOIN user_salary AS s ON u.id = s.user_id
+        <where>
+            u.delete_flag = 0
+            AND u.admin_flag = 0
+            AND s.again_compute_flag = 4
+            <if test="salaryDate != null">
+                AND s.salary_date <![CDATA[=]]> #{salaryDate}
+            </if>
+            <if test="userAccount != null">
+                AND s.user_account = #{userAccount}
+            </if>
+        </where>
+    </select>
 </mapper>

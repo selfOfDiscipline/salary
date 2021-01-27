@@ -2,6 +2,7 @@ package com.tyzq.salary.mapper;
 
 import com.tyzq.salary.model.UserSalary;
 import com.baomidou.mybatisplus.mapper.BaseMapper;
+import com.tyzq.salary.model.vo.external.ExternalSalaryResultVO;
 import com.tyzq.salary.model.vo.salary.SalaryHistoryQueryVO;
 import com.tyzq.salary.model.vo.salary.SalaryHistoryResultVO;
 import com.tyzq.salary.model.vo.salary.UserComputeResultVO;
@@ -63,4 +64,13 @@ public interface UserSalaryMapper extends BaseMapper<UserSalary> {
      * @Description //TODO 查询历史工资单列表
      **/
     List<SalaryHistoryResultVO> selectHistorySalaryList(@Param("queryVO") SalaryHistoryQueryVO salaryHistoryQueryVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 9:48 2021/1/27
+     * @Param:
+     * @return:
+     * @Description: //TODO 根据账号和时间，查询用户薪资数据信息
+     **/
+    List<ExternalSalaryResultVO> querySalaryExternal(@Param("userAccount") String userAccount, @Param("salaryDate") String salaryDate);
 }

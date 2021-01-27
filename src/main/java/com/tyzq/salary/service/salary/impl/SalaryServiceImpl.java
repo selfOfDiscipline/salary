@@ -1117,6 +1117,8 @@ public class SalaryServiceImpl implements SalaryService {
                         // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
                         BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
                         // 本月薪资表赋值
+                        // 赋值 本月应纳税额所得额
+                        userSalary.setBankTaxableSelfMoney(theNeedMoney);
                         // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
                         userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
                         // 赋值 银行代发工资的税率
@@ -1138,6 +1140,8 @@ public class SalaryServiceImpl implements SalaryService {
                         // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
                         BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
                         // 本月薪资表赋值
+                        // 赋值 本月应纳税额所得额
+                        userSalary.setBankTaxableSelfMoney(theNeedMoney);
                         // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
                         userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
                         // 赋值 银行代发工资的税率
@@ -1156,6 +1160,8 @@ public class SalaryServiceImpl implements SalaryService {
             // 小于等于0元，不需要计税
             // 赋值
             // 本月薪资表赋值
+            // 赋值 本月应纳税额所得额
+            userSalary.setBankTaxableSelfMoney(BigDecimal.ZERO);
             // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
             userSalary.setBankTaxBeforeShouldSalary(userDetail.getBankSalary().subtract(userSalary.getMonthPersonPayTotal()));
             // 赋值 银行代发工资实发总计 = 预设银行代发工资 - 个人社保公积金
@@ -1363,6 +1369,8 @@ public class SalaryServiceImpl implements SalaryService {
                         // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
                         BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
                         // 本月薪资表赋值
+                        // 赋值 本月应纳税额所得额
+                        userSalary.setBankTaxableSelfMoney(theNeedMoney);
                         // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
                         userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
                         // 赋值 银行代发工资的税率
@@ -1390,6 +1398,8 @@ public class SalaryServiceImpl implements SalaryService {
                         // 本月纳税金额 = 计算税率相乘后金额 - 该区间国家减免税额 - 本年度累计已纳税额
                         BigDecimal theMonthTaxMoney = theMultiplyMoney.subtract(salaryPersonTax.getDeductMoney()).subtract(userDetail.getTotalAlreadyTaxableMoney());
                         // 本月薪资表赋值
+                        // 赋值 本月应纳税额所得额
+                        userSalary.setBankTaxableSelfMoney(theNeedMoney);
                         // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
                         userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
                         // 赋值 银行代发工资的税率
@@ -1416,6 +1426,8 @@ public class SalaryServiceImpl implements SalaryService {
             // 本月薪资表赋值
             // 赋值 银行代发税前应发金额 = 本月出勤工资 - 个人社保公积金
             userSalary.setBankTaxBeforeShouldSalary(theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()));
+            // 赋值 本月应纳税额所得额
+            userSalary.setBankTaxableSelfMoney(BigDecimal.ZERO);
             // 赋值 银行代发工资的税率
             userSalary.setBankTaxRatio(BigDecimal.ZERO);
             // 赋值 银行代发本月预估应缴税额  与  银行代发本月实际应缴税额
