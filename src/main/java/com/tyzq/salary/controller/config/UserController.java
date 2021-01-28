@@ -500,7 +500,7 @@ public class UserController {
      **/
     @ApiOperation(value = "批量更改管理员基础密码", httpMethod = "GET", notes = "批量更改管理员基础密码")
     @GetMapping(value = "/updateAdminPassword")
-    public ApiResult updateAdminPassword(@RequestParam("checkFlag") String checkFlag, HttpServletRequest request) {
+    public ApiResult updateAdminPassword(@RequestParam("checkFlag") String checkFlag, @RequestParam(value = "account", required = false) String account, HttpServletRequest request) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         if (null == userSessionVO) {
@@ -511,7 +511,7 @@ public class UserController {
         }
         try {
             // 业务操作
-            return userService.updateAdminPassword(userSessionVO);
+            return userService.updateAdminPassword(userSessionVO, account);
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("修改密码错误异常：" + e);

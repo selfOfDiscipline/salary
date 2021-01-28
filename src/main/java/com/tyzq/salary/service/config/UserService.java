@@ -113,7 +113,7 @@ public interface UserService {
      * @Version 1.0
      * @Description //TODO 修改管理员密码
      **/
-    ApiResult updateAdminPassword(UserSessionVO userSessionVO);
+    ApiResult updateAdminPassword(UserSessionVO userSessionVO, String account);
 
     /*
      * @Author: 郑稳超先生 zwc_503@163.com

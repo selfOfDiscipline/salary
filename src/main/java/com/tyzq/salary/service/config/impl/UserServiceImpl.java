@@ -2,6 +2,7 @@ package com.tyzq.salary.service.config.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.mapper.Condition;
+import com.baomidou.mybatisplus.mapper.Wrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.tyzq.salary.common.constants.Constants;
@@ -675,12 +676,26 @@ public class UserServiceImpl implements UserService {
      * @Description //TODO
      **/
     @Override
-    public ApiResult updateAdminPassword(UserSessionVO userSessionVO) {
-        List<User> list = userMapper.selectList(Condition.create().eq("admin_flag", 1).eq("allow_flag", 1).eq("delete_flag", 0));
+    public ApiResult updateAdminPassword(UserSessionVO userSessionVO, String account) {
+        // 定义查询条件
+        Wrapper wrapper = Condition.create().eq("admin_flag", 1).eq("allow_flag", 1).eq("delete_flag", 0);
+        // 校验是否为精确修改单个账号
+        if (StringUtils.isNotBlank(account)) {
+            wrapper = wrapper.eq("user_account", account);
+        }
+        List<User> list = userMapper.selectList(wrapper);
+        // 校验
+        if (CollectionUtils.isEmpty(list)) {
+            return ApiResult.getSuccessApiResponse("管理员账号不存在！");
+        }
         for (User user : list) {
             String passwordBySalt = PasswordUtil.getPasswordBySalt(user.getUserAccount(), "tyzq-123456", user.getUserSalt());
             user.setUserPassword(passwordBySalt);
             userMapper.updateById(user);
+        }
+        // 校验
+        if (StringUtils.isNotBlank(account)) {
+            return ApiResult.getSuccessApiResponse("账号：" + account + "的密码已重置！");
         }
         return ApiResult.getSuccessApiResponse("批量修改密码共：" + list.size() + "条！");
     }
