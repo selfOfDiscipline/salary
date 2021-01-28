@@ -3,7 +3,6 @@ package com.tyzq.salary.controller.external;
 import com.tyzq.salary.common.enums.ExternalCodeEnum;
 import com.tyzq.salary.common.vo.ApiResult;
 import com.tyzq.salary.model.vo.external.ExternalSalaryParamVO;
-import com.tyzq.salary.model.vo.user.UserLoginVO;
 import com.tyzq.salary.service.external.ExternalService;
 import com.tyzq.salary.utils.DateUtils;
 import io.swagger.annotations.ApiOperation;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpSession;
 
 /*
  * @Author: 郑稳超先生 zwc_503@163.com

@@ -233,10 +233,19 @@ public class AgendaServiceImpl implements AgendaService {
             // TODO =======================员工年度累计个人所得税等计算赋值========================
             // 校验权限是否为  人力资源总监角色    到该角色的单子，通过后即进行年度累计金额累加
             List<Long> roleIdList = userSessionVO.getRoleIdList();
-            // 校验角色
+            // 校验角色--人资资源总监
             if (CollectionUtils.isNotEmpty(roleIdList) && roleIdList.contains(Constants.FINANCE_ROLE_ID)) {
                 // 给员工累加年度金额
                 annualMoneyAccumulation(salaryFlowBill, userSessionVO);
+            }
+            // 校验角色--出纳
+            if (CollectionUtils.isNotEmpty(roleIdList) && roleIdList.contains(Constants.CASHIER_ROLE_ID)) {
+                // 将所有的薪资的  本月薪资是否已正常发放标识：0--否，1--是 改为是（20210128追加该点，用以查询工资单）
+                List<Long> userSalaryIdList = (List<Long>) JSONArray.parse(salaryFlowBill.getUserSalaryIds());
+                // 批量修改
+                userSalaryMapper.update(new UserSalary() {{
+                    setPayWagesFlag(1);
+                }}, Condition.create().in("id", userSalaryIdList));
             }
             return ApiResult.getSuccessApiResponse();
         }

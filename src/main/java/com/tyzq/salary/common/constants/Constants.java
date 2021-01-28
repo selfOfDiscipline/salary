@@ -57,10 +57,10 @@ public class Constants implements Serializable {
     /* 定义薪资核算角色ID*/
     public static final long SALARY_DEPT_ROLE_ID = 12l;
 
-    /* 定义人力资源总监角色ID----仅该角色人员才能操作汇总单据按钮*/
+    /* 定义人力资源总监角色ID----仅该角色人员才能操作汇总单据按钮，仅该角色人员下单据通过。才会累加员工的年度累计数据*/
     public static final long FINANCE_ROLE_ID = 14l;
 
-    /* 定义出纳角色ID----仅该角色人员下单据通过。才会累加员工的年度累计数据*/
+    /* 定义出纳角色ID----仅该角色人员下单据通过。才会将薪资状态改为 已正常发放（为了对接工资条）*/
     public static final long CASHIER_ROLE_ID = 16l;
 
     /* 标准计薪规则比例*/

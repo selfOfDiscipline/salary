@@ -195,7 +195,6 @@ public class SalaryHistoryResultVO extends UserSalary implements Serializable {
      */
     private BigDecimal specialDeductTotal;
 
-
     /* 序号*/
     private Integer thisNumber;
 

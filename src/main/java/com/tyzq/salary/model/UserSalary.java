@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-10-23
+ * @since 2021-01-28
  */
 public class UserSalary implements Serializable {
 
@@ -260,7 +260,7 @@ public class UserSalary implements Serializable {
      */
     private Long salaryDeptId;
     /**
-     * 是否允许再次计算：0--允许，1--不允许
+     * 是否允许再次计算：0--允许，1--不允许，3--已审核通过
      */
     private Integer againComputeFlag;
     /**
@@ -271,6 +271,10 @@ public class UserSalary implements Serializable {
      * 本月是否计算社保标识：0--计算，1--不计算
      */
     private Integer computeSocialSecurityFlag;
+    /**
+     * 本月薪资是否已正常发放标识：0--否，1--是
+     */
+    private Integer payWagesFlag;
     /**
      * 是否删除：0为正常，1为已删除
      */
@@ -805,6 +809,14 @@ public class UserSalary implements Serializable {
         this.computeSocialSecurityFlag = computeSocialSecurityFlag;
     }
 
+    public Integer getPayWagesFlag() {
+        return payWagesFlag;
+    }
+
+    public void setPayWagesFlag(Integer payWagesFlag) {
+        this.payWagesFlag = payWagesFlag;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -927,6 +939,7 @@ public class UserSalary implements Serializable {
         ", againComputeFlag=" + againComputeFlag +
         ", currentComputeFlag=" + currentComputeFlag +
         ", computeSocialSecurityFlag=" + computeSocialSecurityFlag +
+        ", payWagesFlag=" + payWagesFlag +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +
