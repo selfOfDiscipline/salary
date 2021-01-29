@@ -1,5 +1,6 @@
 package com.tyzq.salary.controller.external;
 
+import com.alibaba.fastjson.JSON;
 import com.tyzq.salary.common.enums.ExternalCodeEnum;
 import com.tyzq.salary.common.vo.ApiResult;
 import com.tyzq.salary.model.vo.external.ExternalSalaryParamVO;
@@ -46,7 +47,7 @@ public class ExternalController {
     @PostMapping(value = "/querySalaryExternal")
     public ApiResult querySalaryExternal(@RequestBody ExternalSalaryParamVO paramVO) {
         // 记录参数
-        logger.info("薪资对外查询接口调用时间为：" + DateUtils.getNowDateString() + "，参数为：{}" + paramVO);
+        logger.info("薪资对外查询接口调用时间为：" + DateUtils.getNowDateString() + "，参数为：{}", JSON.toJSONString(paramVO));
         // 校验 用户账号
         if (StringUtils.isBlank(paramVO.getUserAccount())) {
             return ApiResult.getFailedApiResponse(ExternalCodeEnum.QUERY_SALARY_10001.getCode(), ExternalCodeEnum.QUERY_SALARY_10001.getMessage());
