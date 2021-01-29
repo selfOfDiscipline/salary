@@ -18,6 +18,8 @@ import com.tyzq.salary.utils.PasswordUtil;
 import com.tyzq.salary.utils.RedisUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +41,8 @@ import java.util.stream.Collectors;
 @Transactional
 @Service
 public class UserServiceImpl implements UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Resource
     private UserMapper userMapper;
@@ -155,6 +159,8 @@ public class UserServiceImpl implements UserService {
         userDetail.setStandardSalary(null);
         // 修改
         userDetailMapper.updateById(userDetail);
+        // 记录参数
+        logger.info("用户基础信息更改接口调用时间为：" + DateUtils.getNowDateString() + "，操作人为：" + userSessionVO.getUserAccount() + "，参数为：{}", JSON.toJSONString(userSaveVO));
         return user.getId();
     }
 
@@ -215,6 +221,7 @@ public class UserServiceImpl implements UserService {
         userDetail.setEditTime(new Date());
         // 修改用户明细
         userDetailMapper.updateById(userDetail);
+        logger.info("用户转正接口调用时间为：" + DateUtils.getNowDateString() + "，操作人为：" + userSessionVO.getUserAccount() + "，参数为：{}", JSON.toJSONString(userRankParamVO));
         return ApiResult.getSuccessApiResponse(user.getId());
     }
 
@@ -473,6 +480,7 @@ public class UserServiceImpl implements UserService {
             userDetail.setPersonSickStandard(new BigDecimal("0.50"));
             // 入库
             userDetailMapper.updateById(userDetail);
+            logger.info("用户全量信息更改接口调用时间为：" + DateUtils.getNowDateString() + "，操作人为：" + userSessionVO.getUserAccount() + "，参数为：{}", JSON.toJSONString(userSaveVO));
             return user.getId();
         }
     }
