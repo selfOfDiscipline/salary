@@ -115,7 +115,7 @@
                         #{item}
                     </foreach>
             </if>
-            ORDER BY u.user_entry_date DESC
+            ORDER BY u.user_entry_date DESC, u.create_time DESC
         </where>
     </select>
 
@@ -166,7 +166,7 @@
                 AND u.salary_dept_id = #{userQueryVO.userSalaryDeptId}
             </if>
         </where>
-        ORDER BY u.user_entry_date DESC
+        ORDER BY u.user_entry_date DESC, u.create_time DESC
     </select>
 
     <!-- 查询全量系统账号列表-->
@@ -319,7 +319,7 @@
                 <foreach collection="salaryDeptIdList" index="index" item="item" open="(" separator="," close=")">
                     #{item}
                 </foreach>
-            ORDER BY u.user_entry_date DESC
+            ORDER BY u.user_entry_date DESC, u.create_time DESC
         </where>
     </select>
 </mapper>
