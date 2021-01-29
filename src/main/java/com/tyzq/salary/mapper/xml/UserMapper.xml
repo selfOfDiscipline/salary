@@ -90,6 +90,7 @@
                         user AS u
                     LEFT JOIN user_role AS ur ON u.id = ur.user_id
                     LEFT JOIN role AS r ON r.id = ur.role_id
+                    GROUP BY u.id
                   ) AS y ON y.id = u.id
         <where>
             u.delete_flag = 0
@@ -155,6 +156,7 @@
                         user AS u
                     LEFT JOIN user_role AS ur ON u.id = ur.user_id
                     LEFT JOIN role AS r ON r.id = ur.role_id
+                    GROUP BY u.id
                   ) AS y ON y.id = u.id
         <where>
             u.delete_flag = 0
@@ -198,13 +200,14 @@
         LEFT JOIN dept AS d ON u.user_dept_id = d.id
         LEFT JOIN salary_dept AS sd ON u.salary_dept_id = sd.id
         LEFT JOIN (
-        SELECT
-        u.id AS id,
-        GROUP_CONCAT( r.role_name ) AS roleName
-        FROM
-        user AS u
-        LEFT JOIN user_role AS ur ON u.id = ur.user_id
-        LEFT JOIN role AS r ON r.id = ur.role_id
+                    SELECT
+                        u.id AS id,
+                        GROUP_CONCAT( r.role_name ) AS roleName
+                    FROM
+                        user AS u
+                    LEFT JOIN user_role AS ur ON u.id = ur.user_id
+                    LEFT JOIN role AS r ON r.id = ur.role_id
+                    GROUP BY u.id
         ) AS y ON y.id = u.id
         <where>
             u.delete_flag = 0
@@ -305,6 +308,7 @@
                         user AS u
                     LEFT JOIN user_role AS ur ON u.id = ur.user_id
                     LEFT JOIN role AS r ON r.id = ur.role_id
+                    GROUP BY u.id
                   ) AS y ON y.id = u.id
         <where>
             u.delete_flag = 0
