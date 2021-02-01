@@ -151,6 +151,21 @@ public class UserServiceImpl implements UserService {
         }
         // 入库
         userMapper.updateById(user);
+        // 专项扣除部分
+        // 子女教育
+        BigDecimal childEducation = userDetail.getChildEducation() == null ? new BigDecimal("0.00") : userDetail.getChildEducation();
+        // 继续教育
+        BigDecimal continueEducation = userDetail.getContinueEducation() == null ? new BigDecimal("0.00") : userDetail.getContinueEducation();
+        // 住房贷款利息
+        BigDecimal homeLoanInterest = userDetail.getHomeLoanInterest() == null ? new BigDecimal("0.00") : userDetail.getHomeLoanInterest();
+        // 住房租金
+        BigDecimal homeRents = userDetail.getHomeRents() == null ? new BigDecimal("0.00") : userDetail.getHomeRents();
+        // 赡养老人
+        BigDecimal supportParents = userDetail.getSupportParents() == null ? new BigDecimal("0.00") : userDetail.getSupportParents();
+        // 其他扣除
+        BigDecimal otherDeduct = userDetail.getOtherDeduct() == null ? new BigDecimal("0.00") : userDetail.getOtherDeduct();
+        // 赋值专项扣除总计金额
+        userDetail.setSpecialDeductTotal(childEducation.add(continueEducation).add(homeLoanInterest).add(homeRents).add(supportParents).add(otherDeduct));
         // 修改用户明细
         userDetail.setEditId(userSessionVO.getUserAccount());
         userDetail.setEditName(userSessionVO.getUserName());
