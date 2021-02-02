@@ -320,8 +320,8 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setYilPersonPayMoney(userDetail.getYilBaseMoney().multiply(userDetail.getYilPersonRatio()).setScale(4, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilPersonAddMoney()));
             userSalary.setYilCompanyPayMoney(userDetail.getYilBaseMoney().multiply(userDetail.getYilCompanyRatio()).setScale(4, BigDecimal.ROUND_HALF_UP).add(userDetail.getYilCompanyAddMoney()));
             // 公积金  计算个人/公司  缴纳金额
-            userSalary.setHousingFundPersonPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundPersonRatio()).setScale(0, BigDecimal.ROUND_HALF_UP));
-            userSalary.setHousingFundCompanyPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundCompanyRatio()).setScale(0, BigDecimal.ROUND_HALF_UP));
+            userSalary.setHousingFundPersonPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundPersonRatio()).setScale(0, BigDecimal.ROUND_UP));
+            userSalary.setHousingFundCompanyPayTotal(userDetail.getHousingFundBaseMoney().multiply(userDetail.getHousingFundCompanyRatio()).setScale(0, BigDecimal.ROUND_UP));
             // 社保  计算个人/公司承担总计
             userSalary.setSocialSecurityPersonPayTotal(
                     userSalary.getYanglPersonPayMoney()
