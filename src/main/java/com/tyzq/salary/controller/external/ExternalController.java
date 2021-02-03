@@ -6,6 +6,7 @@ import com.tyzq.salary.common.vo.ApiResult;
 import com.tyzq.salary.model.vo.external.ExternalSalaryParamVO;
 import com.tyzq.salary.service.external.ExternalService;
 import com.tyzq.salary.utils.DateUtils;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @Date: 14:56 2021/1/26
  * @Description: //TODO 对外接口入口
  **/
+@Api(tags = "【对外接口】··【对外接口薪资模块】")
 @RestController
 @RequestMapping(value = "/external/api")
 public class ExternalController {

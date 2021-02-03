@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tyzq.salary.mapper.ProjectMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.tyzq.salary.model.Project">
+        <id column="id" property="id" />
+        <result column="project_code" property="projectCode" />
+        <result column="project_name" property="projectName" />
+        <result column="dept_id" property="deptId" />
+        <result column="dept_name" property="deptName" />
+        <result column="company_id" property="companyId" />
+        <result column="company_name" property="companyName" />
+        <result column="contract_start_date" property="contractStartDate" />
+        <result column="contract_end_date" property="contractEndDate" />
+        <result column="project_type" property="projectType" />
+        <result column="project_status" property="projectStatus" />
+        <result column="total_money" property="totalMoney" />
+        <result column="client_money" property="clientMoney" />
+        <result column="project_finish_ratio" property="projectFinishRatio" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="create_id" property="createId" />
+        <result column="create_name" property="createName" />
+        <result column="create_time" property="createTime" />
+        <result column="edit_id" property="editId" />
+        <result column="edit_name" property="editName" />
+        <result column="edit_time" property="editTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, project_code, project_name, dept_id, dept_name, company_id, company_name, contract_start_date, contract_end_date, project_type, project_status, total_money, client_money, project_finish_ratio, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+    </sql>
+
+</mapper>

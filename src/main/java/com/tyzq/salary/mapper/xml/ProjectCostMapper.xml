@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tyzq.salary.mapper.ProjectCostMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.tyzq.salary.model.ProjectCost">
+        <id column="id" property="id" />
+        <result column="user_account" property="userAccount" />
+        <result column="user_name" property="userName" />
+        <result column="user_dept_id" property="userDeptId" />
+        <result column="user_dept_name" property="userDeptName" />
+        <result column="user_role_names" property="userRoleNames" />
+        <result column="project_code" property="projectCode" />
+        <result column="project_name" property="projectName" />
+        <result column="project_type" property="projectType" />
+        <result column="user_post_type" property="userPostType" />
+        <result column="salary_date" property="salaryDate" />
+        <result column="earning_type" property="earningType" />
+        <result column="attendance_days" property="attendanceDays" />
+        <result column="month_rewords_money" property="monthRewordsMoney" />
+        <result column="total_earning_money" property="totalEarningMoney" />
+        <result column="total_cost_money" property="totalCostMoney" />
+        <result column="cost_salary" property="costSalary" />
+        <result column="cost_social_security" property="costSocialSecurity" />
+        <result column="cost_tax" property="costTax" />
+        <result column="cost_reimburse" property="costReimburse" />
+        <result column="cost_profit" property="costProfit" />
+        <result column="cost_ratio" property="costRatio" />
+        <result column="project_month_finish_ratio" property="projectMonthFinishRatio" />
+        <result column="project_total_finish_ratio" property="projectTotalFinishRatio" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="create_id" property="createId" />
+        <result column="create_name" property="createName" />
+        <result column="create_time" property="createTime" />
+        <result column="edit_id" property="editId" />
+        <result column="edit_name" property="editName" />
+        <result column="edit_time" property="editTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_account, user_name, user_dept_id, user_dept_name, user_role_names, project_code, project_name, project_type, user_post_type, salary_date, earning_type, attendance_days, month_rewords_money, total_earning_money, total_cost_money, cost_salary, cost_social_security, cost_tax, cost_reimburse, cost_profit, cost_ratio, project_month_finish_ratio, project_total_finish_ratio, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+    </sql>
+
+</mapper>

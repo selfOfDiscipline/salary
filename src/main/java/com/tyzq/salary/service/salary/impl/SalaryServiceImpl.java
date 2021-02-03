@@ -592,7 +592,6 @@ public class SalaryServiceImpl implements SalaryService {
         // ========先计算社保部分======
         computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
 
-        // todo 校验本月出勤天数  如果大于21.75天，按所传天数计算，如果小于21.75天，按21.75天计算
         BigDecimal standardDay = Constants.STANDARD_SALARY_RATIO;
 
         // 计算
@@ -606,6 +605,31 @@ public class SalaryServiceImpl implements SalaryService {
         // 转正后工资 = 转正后全勤工资 - 转正后全勤工资*转正后其他缺勤天数 - 转正后全勤工资*转正后病假缺勤天数 + 转正后全勤工资*病假比例
 
         // 本月出勤工资 = 转正前工资 + 转正后工资
+
+        // TODO 上月转正员工 计算逻辑
+        // 转正前日均工资 = (员工标准薪资 * 转正前薪资发放比例/21.75)
+        // 转正前病假扣款 = 转正前日均工资 * 转正前病假缺勤天数 * （1 - 员工病假补助标准）
+        // 转正前其他假扣款 = 转正前日均工资 * 转正前其他假缺勤天数
+        // 转正前全勤工资 = 转正前日均工资 * 转正前应出勤天数
+        // 转正前工资合计 = 转正前全勤工资 - 转正前病假扣款 - 转正前其他假扣款
+
+        // 转正前金额差额 = （员工标准薪资 - 员工标准薪资 * 转正前薪资发放比例） * 转正前应出勤天数/21.75
+
+        // 转正后工资 = 员工标准薪资 - 转正前全勤工资 - 转正前金额差额
+        // 转正后预估基本工资 = 转正后工资 * （1 - 员工绩效设定系数）
+        // 转正后本月绩效工资 = 转正后工资 * 员工绩效设定系数 * 员工本月绩效系数
+        // 转正后全勤工资  转正后预估基本工资 + 转正后本月绩效工资
+        // 转正后日均工资 = 员工标准薪资/21.75
+        // 转正后病假扣款 = 转正后日均工资 * 转正后病假缺勤天数 * （1 - 员工病假补助标准）
+        // 转正后其他假扣款 = 转正后日均工资 * 转正后其他假缺勤天数
+        // 转正后工资合计 = 转正后全勤工资 - 转正后病假扣款 - 转正后其他假扣款
+
+        // 本月电脑补助 = 本月电脑补助 - 本月电脑补助 * (转正前事假天数 + 转正前病假天数 + 转正后事假天数 + 转正后病假天数)/21.75
+
+        // ================ 本月出勤总工资 = 转正前工资合计 + 转正后工资合计 + 本月电脑补助 + 本月奖惩金额(可为正负) - 社保代缴手续费 ======PS:拿这部分去和6000比较拆分算个税==========
+        // 计薪页面 本月基本工资其实是 = 转正前工资合计 + 转正后工资合计 * (1 - 绩效占工资比例)
+        // 计薪页面 本月绩效工资其实是 = 转正后工资 * 绩效占工资比例
+
 
         // 计算 转正前部分
         // 转正前 本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
@@ -632,7 +656,7 @@ public class SalaryServiceImpl implements SalaryService {
         BigDecimal allPerformaneSalary = afterCost.multiply(userDetail.getPerformanceRatio()).multiply(computeSalaryParamVO.getMonthPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP);
         // 转正后全勤工资  转正后预估基本工资 + 转正后本月绩效工资
         BigDecimal allSalary = afterBaseSalary.add(allPerformaneSalary);
-        // 转正后  本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
+        // 转正后  本月平均一天工资为(员工标准薪资/21.75)
         BigDecimal theAfterDecimal = userDetail.getComputeStandardSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         // 转正后病假扣款
         BigDecimal afterSick = theAfterDecimal.multiply(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);

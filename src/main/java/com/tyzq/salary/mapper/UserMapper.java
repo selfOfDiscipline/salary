@@ -2,6 +2,8 @@ package com.tyzq.salary.mapper;
 
 import com.tyzq.salary.model.User;
 import com.baomidou.mybatisplus.mapper.BaseMapper;
+import com.tyzq.salary.model.vo.cost.UserCostQueryVO;
+import com.tyzq.salary.model.vo.cost.UserResultVO;
 import com.tyzq.salary.model.vo.user.UserBaseResultVO;
 import com.tyzq.salary.model.vo.user.UserDetailVO;
 import com.tyzq.salary.model.vo.user.UserQueryVO;
@@ -59,4 +61,13 @@ public interface UserMapper extends BaseMapper<User> {
      * @Description: //TODO 查询全量系统账号 用于配置流程
      **/
     List<UserBaseResultVO> selectAllAdminList(@Param("userQueryVO") UserQueryVO userQueryVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 17:54 2021/2/2
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询薪资模块的 基础员工信息列表（用于给项目挂员工）
+     **/
+    List<UserResultVO> selectBaseUserList(@Param("userCostQueryVO") UserCostQueryVO userCostQueryVO);
 }
