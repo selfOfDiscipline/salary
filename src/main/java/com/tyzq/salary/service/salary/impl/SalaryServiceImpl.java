@@ -1184,6 +1184,8 @@ public class SalaryServiceImpl implements SalaryService {
             // 小于等于0元，不需要计税
             // 赋值
             // 本月薪资表赋值
+            // 赋值本月应纳税额
+            userSalary.setBankRealityShouldTaxMoney(BigDecimal.ZERO);
             // 赋值 本月应纳税额所得额
             userSalary.setBankTaxableSelfMoney(BigDecimal.ZERO);
             // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
