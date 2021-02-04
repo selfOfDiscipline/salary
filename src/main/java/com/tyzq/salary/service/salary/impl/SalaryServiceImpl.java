@@ -475,12 +475,19 @@ public class SalaryServiceImpl implements SalaryService {
         // 本月平均一天工资为
         BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).add(computeSalaryParamVO.getMonthRewordsMoney()).setScale(2, BigDecimal.ROUND_HALF_UP);
+
+        // 本月电脑补助 = 本月电脑补助 - 本月电脑补助 * (转正前事假天数 + 转正前病假天数 + 转正后事假天数 + 转正后病假天数)/21.75
+        BigDecimal addComputerSubsidy = userDetail.getAddComputerSubsidy();
+        addComputerSubsidy = addComputerSubsidy.subtract(addComputerSubsidy.multiply(computeSalaryParamVO.getNewEntryAttendanceDays().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP)));
+
+        theMonthAttendanceSalary = theMonthAttendanceSalary.add(addComputerSubsidy);
         // 校验是否 减去 社保代缴手续费
         if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
             theMonthAttendanceSalary = theMonthAttendanceSalary.subtract(userDetail.getDeductThing());
             // 赋值本月代缴手续费
             userSalary.setDeductServiceFee(userDetail.getDeductThing());
         }
+        userSalary.setAddComputerSubsidy(addComputerSubsidy);
         // 赋值本月基本工资
         userSalary.setMonthBaseSalary(theMonthAttendanceSalary);
         // 本月奖惩金额
