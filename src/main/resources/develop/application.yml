@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 8087
   max-http-header-size: 102400
   compression:
     enabled: true
@@ -12,14 +12,20 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
   datasource:
-    url: jdbc:mysql://112.35.152.110:3306/salary?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=convertToNull
+#    url: jdbc:mysql://192.168.1.77:3306/salary?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=convertToNull
+#    username: root
+#    password: 123
+#    url: jdbc:mysql://49.233.81.91:3306/salary_prod?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=convertToNull
+#    username: root
+#    password: myroot123
+    url: jdbc:mysql://112.35.152.110:3306/salary_prod?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&zeroDateTimeBehavior=convertToNull
     username: root
     password: TYZQ123456
     driver-class-name: com.mysql.cj.jdbc.Driver
     druid:
-      initial-size: 5 #连接池初始化大小
+      initial-size: 10 #连接池初始化大小
       min-idle: 10 #最小空闲连接数
-      max-active: 20 #最大连接数
+      max-active: 500 #最大连接数
       web-stat-filter:
         exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*" #不统计这些请求数据
       stat-view-servlet: #访问监控网页的登录用户名和密码
@@ -56,3 +62,13 @@ management:
 file:
   relativePath: /uploadfiles/**
   physicalPath: /home/SALARY/
+# 对外接口秘钥
+keygen:
+  querySalary: QS21FCA75610B922B7B2609B40E3H32W
+  queryUser: QU83EG75610B922B7B2609B40E3S03G
+# 分页插件
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql

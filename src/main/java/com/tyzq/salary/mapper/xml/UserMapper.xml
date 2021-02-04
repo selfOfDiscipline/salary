@@ -95,22 +95,22 @@
         <where>
             u.delete_flag = 0
             AND u.admin_flag = 0
-            <if test="userCostQueryVO.userName != null and userCostQueryVO.userName != ''">
-                AND u.user_name like #{userCostQueryVO.userName}
+            <if test="userQueryVO.userName != null and userQueryVO.userName != ''">
+                AND u.user_name like #{userQueryVO.userName}
             </if>
-            <if test="userCostQueryVO.userRankType != null">
-                AND u.user_rank_type = #{userCostQueryVO.userRankType}
+            <if test="userQueryVO.userRankType != null">
+                AND u.user_rank_type = #{userQueryVO.userRankType}
             </if>
-            <if test="userCostQueryVO.userPostType == null">
+            <if test="userQueryVO.userPostType == null">
                 AND u.user_post_type != 0
             </if>
-            <if test="userCostQueryVO.userPostType != null">
-                AND u.user_post_type = #{userCostQueryVO.userPostType}
+            <if test="userQueryVO.userPostType != null">
+                AND u.user_post_type = #{userQueryVO.userPostType}
             </if>
-            <if test="userCostQueryVO.userSalaryDeptId != null">
-                AND u.salary_dept_id = #{userCostQueryVO.userSalaryDeptId}
+            <if test="userQueryVO.userSalaryDeptId != null">
+                AND u.salary_dept_id = #{userQueryVO.userSalaryDeptId}
             </if>
-            <if test="userCostQueryVO.userSalaryDeptId == null">
+            <if test="userQueryVO.userSalaryDeptId == null">
                 AND u.salary_dept_id in
                     <foreach collection="salaryDeptIdList" item="item" open="(" separator="," close=")">
                         #{item}
@@ -161,11 +161,11 @@
         <where>
             u.delete_flag = 0
             AND u.admin_flag = 0
-            <if test="userCostQueryVO.userName != null and userCostQueryVO.userName != ''">
-                AND u.user_name like #{userCostQueryVO.userName}
+            <if test="userQueryVO.userName != null and userQueryVO.userName != ''">
+                AND u.user_name like #{userQueryVO.userName}
             </if>
-            <if test="userCostQueryVO.userSalaryDeptId != null">
-                AND u.salary_dept_id = #{userCostQueryVO.userSalaryDeptId}
+            <if test="userQueryVO.userSalaryDeptId != null">
+                AND u.salary_dept_id = #{userQueryVO.userSalaryDeptId}
             </if>
         </where>
         ORDER BY u.user_entry_date DESC, u.create_time DESC
@@ -213,11 +213,11 @@
             u.delete_flag = 0
             AND u.admin_flag = 1
             AND u.allow_flag = 1
-            <if test="userCostQueryVO.userName != null and userCostQueryVO.userName != ''">
-                AND u.user_name like #{userCostQueryVO.userName}
+            <if test="userQueryVO.userName != null and userQueryVO.userName != ''">
+                AND u.user_name like #{userQueryVO.userName}
             </if>
-            <if test="userCostQueryVO.userSalaryDeptId != null">
-                AND u.salary_dept_id = #{userCostQueryVO.userSalaryDeptId}
+            <if test="userQueryVO.userSalaryDeptId != null">
+                AND u.salary_dept_id = #{userQueryVO.userSalaryDeptId}
             </if>
         </where>
     </select>

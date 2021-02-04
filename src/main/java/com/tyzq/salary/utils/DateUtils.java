@@ -304,4 +304,24 @@ public class DateUtils {
 		c.add(Calendar.MONTH, number);
 		return c.getTime();
 	}
+
+	/*
+	 * @Author: 郑稳超先生 zwc_503@163.com
+	 * @Date: 10:01 2021/2/3
+	 * @Param:
+	 * @return:
+	 * @Description: //TODO 给日期追加number天
+	 **/
+	public static String stepDaysWithDate(String date, String pattern, int number) {
+		SimpleDateFormat format = new SimpleDateFormat(pattern);
+		// 定义 格式
+		Calendar c = Calendar.getInstance();
+		try {
+			c.setTime(format.parse(date));
+			c.add(Calendar.DATE, number);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return format.format(c.getTime());
+	}
 }
