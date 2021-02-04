@@ -175,6 +175,7 @@
             /* 为2代表正常员工，我们即用员工实际转正日期小于上月1号*/
             <if test="userVO.menuType == 2">
                 AND (u.reality_change_formal_date <![CDATA[<]]> #{userVO.thisDateLastMonth} or u.reality_change_formal_date <![CDATA[>=]]> #{userVO.thisDateMonth})
+                AND (u.user_entry_date <![CDATA[<]]> #{userVO.thisDateLastMonth} or u.user_entry_date <![CDATA[>]]> #{userVO.thisDateMonth})
             </if>
             /* 为0查询上月入职员工，我们即用入职日期大于上月1号 并且 小于本月1号*/
             <if test="userVO.menuType == 0">
@@ -303,6 +304,7 @@
             /* 为2代表正常员工，我们即用员工实际转正日期小于上月1号*/
             <if test="userVO.menuType == 2">
                 AND (u.reality_change_formal_date <![CDATA[<]]> #{userVO.thisDateLastMonth} or u.reality_change_formal_date <![CDATA[>=]]> #{userVO.thisDateMonth})
+                AND (u.user_entry_date <![CDATA[<]]> #{userVO.thisDateLastMonth} or u.user_entry_date <![CDATA[>]]> #{userVO.thisDateMonth})
             </if>
             /* 为0查询上月入职员工，我们即用入职日期大于上月1号 并且 小于本月1号*/
             <if test="userVO.menuType == 0">
