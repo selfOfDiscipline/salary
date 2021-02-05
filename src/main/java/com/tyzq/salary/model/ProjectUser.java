@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2021-02-04
+ * @since 2021-02-05
  */
 public class ProjectUser implements Serializable {
 
@@ -75,6 +75,10 @@ public class ProjectUser implements Serializable {
      * 收入金额
      */
     private BigDecimal earningMoney;
+    /**
+     * 冗余字段，用于前端做增减逻辑
+     */
+    private String redundancyCode;
     /**
      * 是否删除：0--正常，1--已删除
      */
@@ -217,6 +221,14 @@ public class ProjectUser implements Serializable {
         this.earningMoney = earningMoney;
     }
 
+    public String getRedundancyCode() {
+        return redundancyCode;
+    }
+
+    public void setRedundancyCode(String redundancyCode) {
+        this.redundancyCode = redundancyCode;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -290,6 +302,7 @@ public class ProjectUser implements Serializable {
         ", userStatus=" + userStatus +
         ", userSource=" + userSource +
         ", earningMoney=" + earningMoney +
+        ", redundancyCode=" + redundancyCode +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +

@@ -18,6 +18,7 @@
         <result column="user_status" property="userStatus" />
         <result column="user_source" property="userSource" />
         <result column="earning_money" property="earningMoney" />
+        <result column="redundancy_code" property="redundancyCode" />
         <result column="delete_flag" property="deleteFlag" />
         <result column="create_id" property="createId" />
         <result column="create_name" property="createName" />
@@ -29,7 +30,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, user_account, user_name, user_dept_id, user_dept_name, project_code, project_name, user_role_names, user_post_type, entry_date, earning_type, user_status, user_source, earning_money, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, user_account, user_name, user_dept_id, user_dept_name, project_code, project_name, user_role_names, user_post_type, entry_date, earning_type, user_status, user_source, earning_money, redundancy_code, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
 </mapper>

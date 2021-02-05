@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2021-02-02
+ * @since 2021-02-05
  */
 public class ProjectCost implements Serializable {
 
@@ -115,6 +115,10 @@ public class ProjectCost implements Serializable {
      * 项目完成总进度
      */
     private BigDecimal projectTotalFinishRatio;
+    /**
+     * 冗余字段：用于前端做增减逻辑
+     */
+    private String redundancyCode;
     /**
      * 是否删除：0--正常，1--已删除
      */
@@ -337,6 +341,14 @@ public class ProjectCost implements Serializable {
         this.projectTotalFinishRatio = projectTotalFinishRatio;
     }
 
+    public String getRedundancyCode() {
+        return redundancyCode;
+    }
+
+    public void setRedundancyCode(String redundancyCode) {
+        this.redundancyCode = redundancyCode;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -420,6 +432,7 @@ public class ProjectCost implements Serializable {
         ", costRatio=" + costRatio +
         ", projectMonthFinishRatio=" + projectMonthFinishRatio +
         ", projectTotalFinishRatio=" + projectTotalFinishRatio +
+        ", redundancyCode=" + redundancyCode +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +

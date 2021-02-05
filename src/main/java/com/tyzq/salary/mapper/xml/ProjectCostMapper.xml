@@ -28,6 +28,7 @@
         <result column="cost_ratio" property="costRatio" />
         <result column="project_month_finish_ratio" property="projectMonthFinishRatio" />
         <result column="project_total_finish_ratio" property="projectTotalFinishRatio" />
+        <result column="redundancy_code" property="redundancyCode" />
         <result column="delete_flag" property="deleteFlag" />
         <result column="create_id" property="createId" />
         <result column="create_name" property="createName" />
@@ -39,7 +40,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, user_account, user_name, user_dept_id, user_dept_name, user_role_names, project_code, project_name, project_type, user_post_type, salary_date, earning_type, attendance_days, month_rewords_money, total_earning_money, total_cost_money, cost_salary, cost_social_security, cost_tax, cost_reimburse, cost_profit, cost_ratio, project_month_finish_ratio, project_total_finish_ratio, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, user_account, user_name, user_dept_id, user_dept_name, user_role_names, project_code, project_name, project_type, user_post_type, salary_date, earning_type, attendance_days, month_rewords_money, total_earning_money, total_cost_money, cost_salary, cost_social_security, cost_tax, cost_reimburse, cost_profit, cost_ratio, project_month_finish_ratio, project_total_finish_ratio, redundancy_code, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
 </mapper>
