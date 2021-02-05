@@ -166,4 +166,24 @@ public class BaseController {
             return ApiResult.getFailedApiResponse("批量删除用户薪资部门关联表数据错误异常！");
         }
     }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 10:23 2021/2/5
+     * @Param:
+     * @return:
+     * @Description: //TODO 获取所有合作公司列表，支持按公司名称条查
+     **/
+    @ApiOperation(value = "获取所有合作公司列表", httpMethod = "GET", notes = "获取所有合作公司列表，支持按公司名称条查")
+    @GetMapping(value = "/getCompanyList")
+    public ApiResult getCompanyList(@RequestParam(value = "companyName", required = false) String companyName) {
+        try {
+            // 业务操作
+            return baseService.getCompanyList(companyName);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("获取所有合作公司列表错误异常：" + e);
+            return ApiResult.getFailedApiResponse("获取所有合作公司列表错误异常！");
+        }
+    }
 }

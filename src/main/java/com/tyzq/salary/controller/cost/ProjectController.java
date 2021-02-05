@@ -1,7 +1,10 @@
 package com.tyzq.salary.controller.cost;
 
+import com.tyzq.salary.common.constants.Constants;
 import com.tyzq.salary.common.vo.ApiResult;
+import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.ProjectQueryVO;
+import com.tyzq.salary.model.vo.cost.ProjectSaveVO;
 import com.tyzq.salary.model.vo.cost.UserCostQueryVO;
 import com.tyzq.salary.service.cost.ProjectService;
 import io.swagger.annotations.Api;
@@ -9,10 +12,9 @@ import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 /*
  * @Author: 郑稳超先生 zwc_503@163.com
@@ -66,6 +68,48 @@ public class ProjectController {
             e.printStackTrace();
             logger.error("查询项目列表错误异常：" + e);
             return ApiResult.getFailedApiResponse("查询项目列表出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:09 2021/2/4
+     * @Param:
+     * @return:
+     * @Description: //TODO 新增修改项目列表
+     **/
+    @ApiOperation(value = "新增修改项目列表", httpMethod = "POST", notes = "新增修改项目列表")
+    @PostMapping(value = "/saveOrUpdateProject")
+    public ApiResult saveOrUpdateProject(@RequestBody ProjectSaveVO projectSaveVO, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return projectService.saveOrUpdateProject(projectSaveVO, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("新增修改项目列表错误异常：" + e);
+            return ApiResult.getFailedApiResponse("新增修改项目列表出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 11:09 2021/2/5
+     * @Param:
+     * @return:
+     * @Description: //TODO 根据项目id，查询项目详情包含项目所属人员列表
+     **/
+    @ApiOperation(value = "查询项目详情接口", httpMethod = "POST", notes = "根据项目id，查询项目详情包含项目所属人员列表")
+    @GetMapping(value = "/getProjectInfoById")
+    public ApiResult getProjectInfoById(@RequestParam("id") Long id) {
+        try {
+            // 业务操作
+            return projectService.getProjectInfoById(id);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("查询项目详情接口错误异常：" + e);
+            return ApiResult.getFailedApiResponse("查询项目详情接口出现错误异常！");
         }
     }
 }

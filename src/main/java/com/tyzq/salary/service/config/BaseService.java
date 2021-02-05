@@ -85,4 +85,13 @@ public interface BaseService {
      * @Description //TODO 批量删除用户薪资部门关联表数据
      **/
     ApiResult deleteUserSalaryDeptByIds(String ids, UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 10:53 2021/2/5
+     * @Param:
+     * @return:
+     * @Description: //TODO 获取所有合作公司列表，支持按公司名称条查
+     **/
+    ApiResult getCompanyList(String companyName);
 }

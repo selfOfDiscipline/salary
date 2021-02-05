@@ -1,25 +1,35 @@
 package com.tyzq.salary.service.cost.impl;
 
+import com.baomidou.mybatisplus.mapper.Condition;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.mapper.Wrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.google.common.collect.Lists;
 import com.tyzq.salary.common.vo.ApiResult;
 import com.tyzq.salary.common.vo.BootstrapTablePageVO;
 import com.tyzq.salary.mapper.ProjectMapper;
+import com.tyzq.salary.mapper.ProjectUserMapper;
 import com.tyzq.salary.mapper.UserMapper;
 import com.tyzq.salary.model.Project;
+import com.tyzq.salary.model.ProjectUser;
+import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.ProjectQueryVO;
+import com.tyzq.salary.model.vo.cost.ProjectSaveVO;
 import com.tyzq.salary.model.vo.cost.UserCostQueryVO;
 import com.tyzq.salary.model.vo.cost.UserResultVO;
 import com.tyzq.salary.service.cost.ProjectService;
 import com.tyzq.salary.utils.DateUtils;
+import com.tyzq.salary.utils.PasswordUtil;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /*
  * @Author: 郑稳超先生 zwc_503@163.com
@@ -35,6 +45,9 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Resource
     private ProjectMapper projectMapper;
+
+    @Resource
+    private ProjectUserMapper projectUserMapper;
 
     /*
      * @Author: 郑稳超先生 zwc_503@163.com
@@ -105,6 +118,8 @@ public class ProjectServiceImpl implements ProjectService {
             // 转换日期并加1天
             wrapper.lt("contract_end_date", DateUtils.stepDaysWithDate(projectQueryVO.getContractEndDateEnd(), "yyyy-MM-dd", 1));
         }
+        wrapper.eq("delete_flag", 0);
+        wrapper.orderBy("create_time", false);
         // 查询数据库
         PageHelper.startPage(projectQueryVO.getPageNum(), projectQueryVO.getPageSize());
         List<Project> dataList = projectMapper.selectList(wrapper);
@@ -114,5 +129,165 @@ public class ProjectServiceImpl implements ProjectService {
         tablePageVO.setTotal(info.getTotal());
         tablePageVO.setDataList(info.getList());
         return ApiResult.getSuccessApiResponse(tablePageVO);
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:15 2021/2/4
+     * @Param:
+     * @return:
+     * @Description: //TODO 新增修改项目列表
+     **/
+    @Override
+    public ApiResult saveOrUpdateProject(ProjectSaveVO projectSaveVO, UserSessionVO userSessionVO) {
+        // 获取项目对象
+        Project project = projectSaveVO.getProject();
+        // 校验
+        if (null == project) {
+            return ApiResult.getFailedApiResponse("项目对象不能为空！");
+        }
+        // 校验项目归属部门
+        if (null == project.getDeptId()) {
+            return ApiResult.getFailedApiResponse("项目归属部门不能为空！");
+        }
+        // 获取项目人员对象集合
+        List<ProjectUser> projectUserList = projectSaveVO.getProjectUserList();
+        // 判断 新增还是修改
+        if (null == project.getId()) {
+            // 生成项目编号
+            project.setProjectCode(PasswordUtil.getProjectCode("TYZQ-", DateUtils.getDateString(project.getContractStartDate(), "yyyyMMdd"), 16));
+            // 直接赋值新增
+            project.setDeleteFlag(0);
+            project.setCreateId(userSessionVO.getUserAccount());
+            project.setCreateName(userSessionVO.getUserName());
+            project.setCreateTime(new Date());
+            project.setEditTime(new Date());
+            // 入库
+            projectMapper.insert(project);
+            // 校验是否有挂 项目人员
+            if (CollectionUtils.isNotEmpty(projectUserList)) {
+                // 新增用户
+                for (ProjectUser projectUser : projectUserList) {
+                    // 赋值基础信息
+                    projectUser.setProjectCode(project.getProjectCode());
+                    projectUser.setProjectName(project.getProjectName());
+                    projectUser.setDeleteFlag(0);
+                    projectUser.setCreateId(userSessionVO.getUserAccount());
+                    projectUser.setCreateName(userSessionVO.getUserName());
+                    projectUser.setCreateTime(new Date());
+                    projectUser.setEditTime(new Date());
+                    // 入库
+                    projectUserMapper.insert(projectUser);
+                }
+            }
+            return ApiResult.getSuccessApiResponse(project.getId());
+        } else {
+            // 项目修改
+            project.setEditId(userSessionVO.getUserAccount());
+            project.setEditName(userSessionVO.getUserName());
+            project.setEditTime(new Date());
+            // 入库
+            projectMapper.updateById(project);
+            // 先查询该项目目前已关联多少员工
+            List<ProjectUser> existProjectUserList = projectUserMapper.selectList(Condition.create().eq("project_code", project.getProjectCode()).eq("delete_flag", 0));
+            // 校验 所传用户
+            if (CollectionUtils.isEmpty(projectUserList)) {
+                // 校验 数据库已存在的
+                if (CollectionUtils.isNotEmpty(existProjectUserList)) {
+                    // 获取 id集合
+                    List<Long> existIdList = existProjectUserList.stream().map(ProjectUser::getId).collect(Collectors.toList());
+                    // 将以上数据 逻辑删（逻辑删目的是为了保存记录以后可查看该员工共关联过该项目多少次）
+                    projectUserMapper.update(new ProjectUser() {{
+                        setDeleteFlag(1);
+                        setEditId(userSessionVO.getUserAccount());
+                        setEditName(userSessionVO.getUserName());
+                        setEditTime(new Date());
+                    }}, Condition.create().in("id", existIdList));
+                }
+            } else {
+                // 先校验数据库中是否存在
+                if (CollectionUtils.isEmpty(existProjectUserList)) {
+                    // 直接新增处理
+                    // 新增用户
+                    for (ProjectUser projectUser : projectUserList) {
+                        // 赋值基础信息
+                        projectUser.setProjectCode(project.getProjectCode());
+                        projectUser.setProjectName(project.getProjectName());
+                        projectUser.setDeleteFlag(0);
+                        projectUser.setCreateId(userSessionVO.getUserAccount());
+                        projectUser.setCreateName(userSessionVO.getUserName());
+                        projectUser.setCreateTime(new Date());
+                        projectUser.setEditTime(new Date());
+                        // 入库
+                        projectUserMapper.insert(projectUser);
+                    }
+                    return ApiResult.getSuccessApiResponse(project.getId());
+                }
+                // 获取数据库中数据id集合
+                List<Long> existIdList = existProjectUserList.stream().map(ProjectUser::getId).collect(Collectors.toList());
+                // 定义 已存在数据的id集合
+                List<Long> oldIdList = Lists.newArrayList();
+                // 处理数据，并记录老数据id
+                for (ProjectUser projectUser : projectUserList) {
+                    // 校验id是否相同，有id的是修改，无id的是新增
+                    if (null == projectUser.getId()) {
+                        // 新增
+                        // 赋值基础信息
+                        projectUser.setProjectCode(project.getProjectCode());
+                        projectUser.setProjectName(project.getProjectName());
+                        projectUser.setDeleteFlag(0);
+                        projectUser.setCreateId(userSessionVO.getUserAccount());
+                        projectUser.setCreateName(userSessionVO.getUserName());
+                        projectUser.setCreateTime(new Date());
+                        projectUser.setEditTime(new Date());
+                        // 入库
+                        projectUserMapper.insert(projectUser);
+                    } else {
+                        // 修改
+                        projectUser.setEditId(userSessionVO.getUserAccount());
+                        projectUser.setEditName(userSessionVO.getUserName());
+                        projectUser.setEditTime(new Date());
+                        // 入库
+                        projectUserMapper.updateById(projectUser);
+                        // 记录到老数据id集合
+                        oldIdList.add(projectUser.getId());
+                    }
+                }
+                // 将数据库中id去重
+                existIdList.removeAll(oldIdList);
+                // 将以上数据 逻辑删（逻辑删目的是为了保存记录以后可查看该员工共关联过该项目多少次）
+                projectUserMapper.update(new ProjectUser() {{
+                    setDeleteFlag(1);
+                    setEditId(userSessionVO.getUserAccount());
+                    setEditName(userSessionVO.getUserName());
+                    setEditTime(new Date());
+                }}, Condition.create().in("id", existIdList));
+            }
+            return ApiResult.getSuccessApiResponse(project.getId());
+        }
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 11:13 2021/2/5
+     * @Param:
+     * @return:
+     * @Description: //TODO 根据项目id，查询项目详情包含项目所属人员列表
+     **/
+    @Override
+    public ApiResult getProjectInfoById(Long id) {
+        // 查项目
+        Project project = projectMapper.selectById(id);
+        // 校验
+        if (null == project) {
+            return ApiResult.getFailedApiResponse("该项目不存在！");
+        }
+        // 查项目用户列表
+        List<ProjectUser> projectUserList = projectUserMapper.selectList(Condition.create().eq("project_code", project.getProjectCode()).eq("delete_flag", 0).orderBy("create_time", false));
+        // 返回用户详情接口
+        return ApiResult.getSuccessApiResponse(new ProjectSaveVO() {{
+            setProject(project);
+            setProjectUserList(projectUserList);
+        }});
     }
 }

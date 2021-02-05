@@ -9,6 +9,8 @@
         <result column="user_name" property="userName" />
         <result column="user_dept_id" property="userDeptId" />
         <result column="user_dept_name" property="userDeptName" />
+        <result column="project_code" property="projectCode" />
+        <result column="project_name" property="projectName" />
         <result column="user_role_names" property="userRoleNames" />
         <result column="user_post_type" property="userPostType" />
         <result column="entry_date" property="entryDate" />
@@ -27,7 +29,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, user_account, user_name, user_dept_id, user_dept_name, user_role_names, user_post_type, entry_date, earning_type, user_status, user_source, earning_money, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, user_account, user_name, user_dept_id, user_dept_name, project_code, project_name, user_role_names, user_post_type, entry_date, earning_type, user_status, user_source, earning_money, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
 </mapper>

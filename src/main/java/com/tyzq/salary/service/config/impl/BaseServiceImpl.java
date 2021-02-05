@@ -1,6 +1,7 @@
 package com.tyzq.salary.service.config.impl;
 
 import com.baomidou.mybatisplus.mapper.Condition;
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.mapper.Wrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.google.common.collect.Lists;
@@ -56,6 +57,9 @@ public class BaseServiceImpl implements BaseService {
 
     @Resource
     private BaseFlowGenerateMapper baseFlowGenerateMapper;
+
+    @Resource
+    private CompanyMapper companyMapper;
 
     /*
      * @Author zwc   zwc_503@163.com
@@ -177,8 +181,8 @@ public class BaseServiceImpl implements BaseService {
     /*
      * @Author zwc   zwc_503@163.com
      * @Date 16:45 2020/9/15
-     * @Param 
-     * @return 
+     * @Param
+     * @return
      * @Version 1.0
      * @Description //TODO 查询薪资核算部门列表
      **/
@@ -372,5 +376,26 @@ public class BaseServiceImpl implements BaseService {
         // 删除
         userSalaryDeptMapper.deleteBatchIds(longIdList);
         return ApiResult.getSuccessApiResponse("操作成功！您本次共删除：" + longIdList.size() + "条数据！");
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 10:54 2021/2/5
+     * @Param:
+     * @return:
+     * @Description: //TODO 获取所有合作公司列表，支持按公司名称条查
+     **/
+    @Override
+    public ApiResult getCompanyList(String companyName) {
+        Wrapper wrapper = new EntityWrapper<>();
+        // 校验
+        if (StringUtils.isNotBlank(companyName)) {
+            wrapper = wrapper.like("company_name", "%" + companyName + "%");
+        }
+        wrapper.eq("delete_flag", 0);
+        wrapper.orderBy("create_time", false);
+        // 查询
+        List<Company> companyList = companyMapper.selectList(wrapper);
+        return ApiResult.getSuccessApiResponse(companyList);
     }
 }

@@ -125,4 +125,15 @@ public final class PasswordUtil {
         $param.put("timeStamps", timeStamps);
         return PasswordUtil.getSign($param);
     }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:59 2021/2/4
+     * @Param:
+     * @return:
+     * @Description: //TODO 根据前缀 + 日期 + 随机数位数，生成单据编号
+     **/
+    public static String getProjectCode(String prefix, String date, int number) {
+        return prefix + date + "-" + randomGenerate(number);
+    }
 }

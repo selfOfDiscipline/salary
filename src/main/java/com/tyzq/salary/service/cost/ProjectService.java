@@ -1,7 +1,9 @@
 package com.tyzq.salary.service.cost;
 
 import com.tyzq.salary.common.vo.ApiResult;
+import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.ProjectQueryVO;
+import com.tyzq.salary.model.vo.cost.ProjectSaveVO;
 import com.tyzq.salary.model.vo.cost.UserCostQueryVO;
 
 /*
@@ -28,4 +30,22 @@ public interface ProjectService {
      * @Description: //TODO 查询项目列表
      **/
     ApiResult selectProjectList(ProjectQueryVO projectQueryVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:15 2021/2/4
+     * @Param:
+     * @return:
+     * @Description: //TODO 新增修改项目列表
+     **/
+    ApiResult saveOrUpdateProject(ProjectSaveVO projectSaveVO, UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 11:13 2021/2/5
+     * @Param:
+     * @return:
+     * @Description: //TODO 根据项目id，查询项目详情包含项目所属人员列表
+     **/
+    ApiResult getProjectInfoById(Long id);
 }

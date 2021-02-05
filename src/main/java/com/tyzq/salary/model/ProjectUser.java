@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2021-02-02
+ * @since 2021-02-04
  */
 public class ProjectUser implements Serializable {
 
@@ -39,6 +39,14 @@ public class ProjectUser implements Serializable {
      * 员工业务归属部门名称
      */
     private String userDeptName;
+    /**
+     * 项目编号
+     */
+    private String projectCode;
+    /**
+     * 项目名称
+     */
+    private String projectName;
     /**
      * 员工角色，多个英文逗号分开
      */
@@ -135,6 +143,22 @@ public class ProjectUser implements Serializable {
 
     public void setUserDeptName(String userDeptName) {
         this.userDeptName = userDeptName;
+    }
+
+    public String getProjectCode() {
+        return projectCode;
+    }
+
+    public void setProjectCode(String projectCode) {
+        this.projectCode = projectCode;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 
     public String getUserRoleNames() {
@@ -257,6 +281,8 @@ public class ProjectUser implements Serializable {
         ", userName=" + userName +
         ", userDeptId=" + userDeptId +
         ", userDeptName=" + userDeptName +
+        ", projectCode=" + projectCode +
+        ", projectName=" + projectName +
         ", userRoleNames=" + userRoleNames +
         ", userPostType=" + userPostType +
         ", entryDate=" + entryDate +
