@@ -476,9 +476,9 @@ public class SalaryServiceImpl implements SalaryService {
         BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).add(computeSalaryParamVO.getMonthRewordsMoney()).setScale(2, BigDecimal.ROUND_HALF_UP);
 
-        // 本月电脑补助 = 本月电脑补助 - 本月电脑补助 * (转正前事假天数 + 转正前病假天数 + 转正后事假天数 + 转正后病假天数)/21.75
+        // 本月电脑补助 = 本月电脑补助 * 本月出勤天数/21.75
         BigDecimal addComputerSubsidy = userDetail.getAddComputerSubsidy();
-        addComputerSubsidy = addComputerSubsidy.subtract(addComputerSubsidy.multiply(computeSalaryParamVO.getNewEntryAttendanceDays().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP)));
+        addComputerSubsidy = addComputerSubsidy.multiply(computeSalaryParamVO.getNewEntryAttendanceDays().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP));
 
         theMonthAttendanceSalary = theMonthAttendanceSalary.add(addComputerSubsidy);
         // 校验是否 减去 社保代缴手续费
