@@ -9,6 +9,7 @@ import com.tyzq.salary.model.vo.cost.UserCostQueryVO;
 import com.tyzq.salary.service.cost.ProjectService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,6 +111,32 @@ public class ProjectController {
             e.printStackTrace();
             logger.error("查询项目详情接口错误异常：" + e);
             return ApiResult.getFailedApiResponse("查询项目详情接口出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 15:20 2021/2/18
+     * @Param:
+     * @return:
+     * @Description: //TODO 批量删除项目及项目关联人员信息，根据所传项目ids字符串，多个项目id用英文逗号分隔
+     **/
+    @ApiOperation(value = "批量删除项目及项目人员", httpMethod = "GET", notes = "批量删除项目及项目关联人员信息，根据所传项目ids字符串，多个项目id用英文逗号分隔")
+    @GetMapping(value = "/deleteProjectByIds")
+    public ApiResult deleteProjectByIds(@RequestParam("ids") String ids, HttpServletRequest request) {
+        // 校验
+        if (StringUtils.isBlank(ids)) {
+            return ApiResult.getFailedApiResponse("请至少传一条ID！");
+        }
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return projectService.deleteProjectByIds(ids, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("批量删除项目及项目人员错误异常：" + e);
+            return ApiResult.getFailedApiResponse("批量删除项目及项目人员出现错误异常！");
         }
     }
 }

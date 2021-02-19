@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -289,5 +290,45 @@ public class ProjectServiceImpl implements ProjectService {
             setProject(project);
             setProjectUserList(projectUserList);
         }});
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 15:23 2021/2/18
+     * @Param:
+     * @return:
+     * @Description: //TODO 批量删除项目及项目关联人员信息，根据所传项目ids字符串，多个项目id用英文逗号分隔
+     **/
+    @Override
+    public ApiResult deleteProjectByIds(String ids, UserSessionVO userSessionVO) {
+        // 按照英文逗号分隔
+        List<Long> longIdList = Arrays.asList(ids.split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
+        // 校验
+        if (CollectionUtils.isEmpty(longIdList)) {
+            return ApiResult.getSuccessApiResponse("操作成功！您本次共删除：0条数据！");
+        }
+        // 修改项目表
+        projectMapper.update(new Project() {{
+            setDeleteFlag(1);
+            setEditId(userSessionVO.getUserAccount());
+            setEditName(userSessionVO.getUserName());
+            setEditTime(new Date());
+        }}, Condition.create().in("id", longIdList));
+        // 查询项目编号
+        List<Project> projectList = projectMapper.selectList(Condition.create().setSqlSelect("project_code").in("id", longIdList));
+        // 校验
+        if (CollectionUtils.isEmpty(projectList)) {
+            return ApiResult.getSuccessApiResponse("操作成功！您本次共删除：" + longIdList.size() + "条数据！");
+        }
+        // 取出项目编号集合
+        List<String> projectCodeList = projectList.stream().map(Project::getProjectCode).collect(Collectors.toList());
+        // 修改项目成员表
+        projectUserMapper.update(new ProjectUser() {{
+            setDeleteFlag(1);
+            setEditId(userSessionVO.getUserAccount());
+            setEditName(userSessionVO.getUserName());
+            setEditTime(new Date());
+        }}, Condition.create().in("project_code", projectCodeList));
+        return ApiResult.getSuccessApiResponse("操作成功！您本次共删除：" + longIdList.size() + "条数据！");
     }
 }

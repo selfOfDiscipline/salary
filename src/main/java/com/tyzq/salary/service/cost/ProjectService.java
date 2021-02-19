@@ -48,4 +48,13 @@ public interface ProjectService {
      * @Description: //TODO 根据项目id，查询项目详情包含项目所属人员列表
      **/
     ApiResult getProjectInfoById(Long id);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 15:23 2021/2/18
+     * @Param:
+     * @return:
+     * @Description: //TODO 批量删除项目及项目关联人员信息，根据所传项目ids字符串，多个项目id用英文逗号分隔
+     **/
+    ApiResult deleteProjectByIds(String ids, UserSessionVO userSessionVO);
 }
