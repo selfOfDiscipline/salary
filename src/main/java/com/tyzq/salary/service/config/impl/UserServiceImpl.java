@@ -203,6 +203,7 @@ public class UserServiceImpl implements UserService {
             BigDecimal probationRatio = userDetail.getSalaryGrantRatio();
             // 员工转正后薪资发放比例
             BigDecimal salaryGrantRatio = userRankParamVO.getSalaryGrantRatio() == null ? new BigDecimal("0.00") : userRankParamVO.getSalaryGrantRatio();
+            userDetail.setSalaryGrantRatio(salaryGrantRatio);
             // 赋值 转正后的员工计薪工资
             BigDecimal computeStandardSalary = userDetail.getStandardSalary().multiply(salaryGrantRatio).setScale(2, BigDecimal.ROUND_HALF_UP);
             userDetail.setComputeStandardSalary(computeStandardSalary);
