@@ -499,4 +499,54 @@
             </if>
         </where>
     </select>
+
+    <!--  查员工薪资数据用于生成用户当月成本。项目人员表+项目表+用户表+薪资表  4张表，根据所传日期 && 用户账号集合  -->
+    <select id="selectUserSalaryList" resultType="java.lang.Long">
+        SELECT
+            pu.user_account AS userAccount,
+            pu.user_name AS userName,
+            pu.user_dept_id AS userDeptId,
+            pu.user_dept_name AS userDeptName,
+            pu.project_code AS projectCode,
+            pu.project_name AS projectName,
+            pu.user_role_names AS userRoleNames,
+            pu.user_post_type AS userPostType,
+            pu.earning_type AS earningType,
+            pu.earning_money AS earningMoney,
+            p.project_type AS projectType,
+            p.total_money AS totalMoney,
+            p.client_money AS clientMoney,
+            p.project_finish_ratio AS projectFinishRatio,
+            u.user_rank_type AS userRankType,
+            u.user_entry_date AS userEntryDate,
+            u.reality_change_formal_date AS realityChangeFormalDate,
+            us.salary_date AS salaryDate,
+            us.new_entry_attendance_days AS newEntryAttendanceDays,
+            us.positive_before_attendance_days AS positiveBeforeAttendanceDays,
+            us.positive_after_attendance_days AS positiveAfterAttendanceDays,
+            us.positive_after_other_attendance_days AS positiveAfterOtherAttendanceDays,
+            us.positive_after_sick_attendance_days AS positiveAfterSickAttendanceDays,
+            us.positive_before_other_attendance_days AS positiveBeforeOtherAttendanceDays,
+            us.positive_before_sick_attendance_days AS positiveBeforeSickAttendanceDays,
+            us.other_absence_days AS otherAbsenceDays,
+            us.sick_adsence_days AS sickAdsenceDays,
+            us.month_company_pay_total AS monthCompanyPayTotal,
+            us.other_bank_should_tax_money AS otherBankShouldTaxMoney,
+            us.month_salary_reality_total AS monthSalaryRealityTotal
+        FROM
+            project_user AS pu
+        LEFT JOIN project AS p ON pu.project_code = p.project_code
+        LEFT JOIN user AS u ON pu.user_account = u.user_account
+        LEFT JOIN user_salary AS us ON pu.user_account = us.user_account
+        <where>
+            <if test="salaryDate != null">
+                AND us.salary_date <![CDATA[=]]> #{salaryDate}
+            </if>
+            AND us.again_compute_flag = 3
+            AND us.user_account in
+            <foreach collection="userAccountList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </where>
+    </select>
 </mapper>
