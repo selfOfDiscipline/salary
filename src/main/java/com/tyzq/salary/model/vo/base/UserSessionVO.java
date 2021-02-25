@@ -37,6 +37,17 @@ public class UserSessionVO implements Serializable {
     /* 用户的最后登录时间（也就是token的最后赋值时间）*/
     private String lastLoginTime;
 
+    /* 用户拥有的可操作业务归属部门ID集合*/
+    private List<Long> userDeptIdList;
+
+    public List<Long> getUserDeptIdList() {
+        return userDeptIdList;
+    }
+
+    public void setUserDeptIdList(List<Long> userDeptIdList) {
+        this.userDeptIdList = userDeptIdList;
+    }
+
     public Long getId() {
         return id;
     }

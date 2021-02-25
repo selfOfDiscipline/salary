@@ -4,6 +4,7 @@ import com.tyzq.salary.common.constants.Constants;
 import com.tyzq.salary.common.vo.ApiResult;
 import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.CostQueryVO;
+import com.tyzq.salary.model.vo.cost.ProjectCostQueryVO;
 import com.tyzq.salary.service.cost.CostService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -56,20 +57,18 @@ public class CostController {
      * @Date: 15:43 2021/2/23
      * @Param:
      * @return:
-     * @Description: //TODO 查询成本列表（根据权限）
+     * @Description: //TODO 查询项目的月度成本详情,根据项目编号 + 所选月份(格式：yyyy-MM)，月份不传默认为上个月，查询该项目下所有成本，用于计算
      **/
-    @ApiOperation(value = "查询成本列表", httpMethod = "POST", notes = "查询成本列表")
-    @PostMapping(value = "/selectCostList")
-    public ApiResult selectCostList(@RequestBody CostQueryVO queryVO, HttpServletRequest request) {
-        // 获取session用户
-        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+    @ApiOperation(value = "查询项目的月度成本详情", httpMethod = "POST", notes = "根据项目编号 + 所选月份(格式：yyyy-MM)，查询该项目下所有成本，用于计算")
+    @PostMapping(value = "/getProjectCostByCondition")
+    public ApiResult selectCostList(@RequestBody ProjectCostQueryVO costQueryVO) {
         try {
             // 业务操作
-            return costService.generateCostDataByDate(null, userSessionVO);
+            return costService.getProjectCostByCondition(costQueryVO);
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("查询成本列表信息错误异常：" + e);
-            return ApiResult.getFailedApiResponse("查询成本列表出现错误异常！");
+            logger.error("查询项目的月度成本详情错误异常：" + e);
+            return ApiResult.getFailedApiResponse("查询项目的月度成本详情出现错误异常！");
         }
     }
 }

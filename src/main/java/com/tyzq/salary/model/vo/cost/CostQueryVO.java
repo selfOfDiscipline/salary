@@ -13,11 +13,5 @@ public class CostQueryVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 查询类型：0 == queryFlag 查总公司；
-     * 1 == queryFlag 查所有部门；
-     * 2 == queryFlag 查该部门下所有；
-     */
-    private int queryFlag;
 
 }

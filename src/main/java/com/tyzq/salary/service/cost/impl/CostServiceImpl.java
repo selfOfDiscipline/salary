@@ -7,8 +7,11 @@ import com.tyzq.salary.mapper.ProjectCostMapper;
 import com.tyzq.salary.mapper.ProjectMapper;
 import com.tyzq.salary.mapper.ProjectUserMapper;
 import com.tyzq.salary.mapper.UserSalaryMapper;
+import com.tyzq.salary.model.Project;
 import com.tyzq.salary.model.ProjectCost;
+import com.tyzq.salary.model.ProjectUser;
 import com.tyzq.salary.model.vo.base.UserSessionVO;
+import com.tyzq.salary.model.vo.cost.ProjectCostQueryVO;
 import com.tyzq.salary.model.vo.cost.ProjectSalaryResultVO;
 import com.tyzq.salary.service.cost.CostService;
 import com.tyzq.salary.utils.DateUtils;
@@ -69,10 +72,12 @@ public class CostServiceImpl implements CostService {
             logger.info("生成" + date + "成本基础数据成功！共生成0条数据！备注：查询到的非作废且未删除状态下的项目列表为空！");
             return ApiResult.getFailedApiResponse("生成" + date + "成本基础数据成功！共生成0条数据！备注：查询到的非作废且未删除状态下的项目列表为空！");
         }
-        // 查询所有项目下关联的员工账号信息
-        List<String> userAccountList = projectUserMapper.selectObjs(Condition.create().setSqlSelect("user_account").in("project_code", projectCodeList).eq("delete_flag", 0));
+        // 查询所有项目下关联的员工账号信息  条件：员工来源：0--系统获取，1--手工录入 为系统获取
+        List<String> userAccountList = projectUserMapper.selectObjs(Condition.create().setSqlSelect("user_account").in("project_code", projectCodeList).eq("user_source", 0).eq("delete_flag", 0));
+        // 查询所有项目下关联的员工账号信息  条件：员工来源：0--系统获取，1--手工录入 为手工录入
+        List<ProjectUser> projectUserList = projectUserMapper.selectList(Condition.create().in("project_code", projectCodeList).eq("user_source", 1).eq("delete_flag", 0));
         // 校验
-        if (CollectionUtils.isEmpty(userAccountList)) {
+        if (CollectionUtils.isEmpty(userAccountList) && CollectionUtils.isEmpty(projectUserList)) {
             // 记录日志
             logger.info("生成" + date + "成本基础数据成功！共生成0条数据！备注：查询到的以上项目关联的员工数量为空！");
             return ApiResult.getFailedApiResponse("生成" + date + "成本基础数据成功！共生成0条数据！备注：查询到的以上项目关联的员工数量为空！");
@@ -158,9 +163,28 @@ public class CostServiceImpl implements CostService {
             // 新增入库
             projectCostMapper.insert(projectCost);
         }
+        // 定义手动录入员工数为0
+        int size = 0;
+        // 校验
+        if (CollectionUtils.isNotEmpty(projectUserList)) {
+            size = projectUserList.size();
+            // 生成成本手动录入部分的员工
+            for (ProjectUser projectUser : projectUserList) {
+                ProjectCost projectCost = new ProjectCost();
+                // 赋值
+                BeanUtils.copyProperties(projectUser, projectCost);
+                // 赋值基本信息
+                projectCost.setDeleteFlag(0);
+                projectCost.setCreateId(userSessionVO.getUserAccount());
+                projectCost.setCreateName(userSessionVO.getUserName());
+                projectCost.setCreateTime(new Date());
+                // 新增入库
+                projectCostMapper.insert(projectCost);
+            }
+        }
         // 记录日志
-        logger.info("生成" + date + "成本基础数据成功！共生成" + projectSalaryResultVOList.size() + "条数据！");
-        return ApiResult.getFailedApiResponse("生成" + date + "成本基础数据成功！共生成" + projectSalaryResultVOList.size() + "条数据！");
+        logger.info("生成" + date + "成本基础数据成功！共生成" + projectSalaryResultVOList.size() + size + "条数据！");
+        return ApiResult.getFailedApiResponse("生成" + date + "成本基础数据成功！共生成" + projectSalaryResultVOList.size() + size + "条数据！");
     }
 
     /*
@@ -198,5 +222,36 @@ public class CostServiceImpl implements CostService {
                     .subtract(resultVO.getPositiveAfterOtherAttendanceDays());
         }
         return days;
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 15:49 2021/2/24
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询项目的月度成本详情,根据项目编号 + 所选月份(格式：yyyy-MM)，月份不传默认为上个月，查询该项目下所有成本，用于计算
+     **/
+    @Override
+    public ApiResult getProjectCostByCondition(ProjectCostQueryVO costQueryVO) {
+        // 校验日期是否存在
+        String costDate = costQueryVO.getCostDate();
+        if (StringUtils.isBlank(costDate)) {
+            // 获取上个月日期
+            costDate = DateUtils.getDateString(DateUtils.getThisDateLastMonth(), "yyyy-MM-dd HH:mm:ss");
+        } else {
+            costDate += "-01 00:00:00";
+        }
+        // 查询成本详情
+        Project project = new Project();
+        project.setProjectCode(costQueryVO.getProjectCode());
+        project.setDeleteFlag(0);
+        project = projectMapper.selectOne(project);
+        // 校验
+        if (null == project) {
+            return ApiResult.getFailedApiResponse("该项目不存在！");
+        }
+        // 查询该项目该月份明细数据
+        List<ProjectCost> projectCostList = projectCostMapper.selectList(Condition.create().eq("project_code", project.getProjectCode()).eq("salary_date", costDate).eq("delete_flag", 0));
+        return ApiResult.getSuccessApiResponse(projectCostList);
     }
 }

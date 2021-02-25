@@ -27,6 +27,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -61,6 +62,9 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private RoleMapper roleMapper;
+
+    @Resource
+    private UserDeptMapper userDeptMapper;
 
     /*
      * @Author zwc   zwc_503@163.com
@@ -108,6 +112,14 @@ public class UserServiceImpl implements UserService {
                     userSessionVO.setAllowCollectFlag(true);
                 }
             }
+        }
+        // 获取用户的可操作性部门数据
+        List<UserDept> userDeptList = userDeptMapper.selectList(Condition.create().eq("user_account", user.getUserAccount()).eq("delete_flag", 0));
+        // 校验
+        if (CollectionUtils.isNotEmpty(userDeptList)) {
+            userSessionVO.setUserDeptIdList(userDeptList.stream().map(UserDept::getDeptId).collect(Collectors.toList()));
+        } else {
+            userSessionVO.setUserDeptIdList(new ArrayList<>());
         }
         // 生成token
         String token = PasswordUtil.getTokenWithLogin(user.getUserAccount(), user.getUserSalt(), System.currentTimeMillis());
