@@ -95,4 +95,27 @@ public class CostController {
             return ApiResult.getFailedApiResponse("计算当前明细（人员）出现错误异常！");
         }
     }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:10 2021/2/25
+     * @Param:
+     * @return:
+     * @Description: //TODO 计算项目的毛利，根据项目编号，所选月份，所填写的项目本月完成度
+     **/
+    @ApiOperation(value = "计算项目的毛利", httpMethod = "POST", notes = "计算项目的毛利，根据项目编号，所选月份，所填写的项目本月完成度")
+    @PostMapping(value = "/computeThisProject/{projectCode}/{costDate}/{monthFinishRatio}")
+    public ApiResult computeThisProject(@PathVariable("projectCode") String projectCode, @PathVariable("costDate") String costDate,
+                                     @PathVariable("monthFinishRatio") String monthFinishRatio, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return costService.computeThisProject(projectCode, costDate, monthFinishRatio, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("计算项目的毛利错误异常：" + e);
+            return ApiResult.getFailedApiResponse("计算项目的毛利出现错误异常！");
+        }
+    }
 }

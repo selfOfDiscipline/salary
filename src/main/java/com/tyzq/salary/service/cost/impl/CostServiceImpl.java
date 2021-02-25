@@ -404,4 +404,86 @@ public class CostServiceImpl implements CostService {
         }
         return ApiResult.getSuccessApiResponse(projectCost.getId());
     }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:59 2021/2/25
+     * @Param:
+     * @return:
+     * @Description: //TODO 计算项目的毛利，根据项目编号，所选月份，所填写的项目本月完成度
+     **/
+    @Override
+    public ApiResult computeThisProject(String projectCode, String costDate, String monthFinishRatio, UserSessionVO userSessionVO) {
+        // 给日期拼接后缀
+        costDate += "-01 00:00:00";
+        // 获取项目详情
+        Project project = new Project();
+        project.setProjectCode(projectCode);
+        project.setDeleteFlag(0);
+        project = projectMapper.selectOne(project);
+        // 校验
+        if (null == project) {
+            return ApiResult.getFailedApiResponse("该项目不存在！");
+        }
+        // 本月 项目完成进度
+        BigDecimal monthRatio = new BigDecimal(monthFinishRatio);
+        // 计算该项目本月完成进度下 的总收入为多少
+        BigDecimal totalEarningMoney = project.getTotalMoney().multiply(monthRatio).divide(new BigDecimal("100"));
+        // 项目已完成总进度（不加本次计算的完成度）
+        BigDecimal projectFinishRatio = project.getProjectFinishRatio();
+        // 本月完成总进度
+        // 判断该月是否已经计算过该项目的完成度
+        if (StringUtils.isNotBlank(project.getLastComputeDate()) && project.getLastComputeDate().equals(costDate)) {
+            // 代表本月已计算过
+            // 将该项目的已完成总进度更新 = 已完成总进度 - 上月完成总进度
+            // 该项目已完成 总进度
+            projectFinishRatio = project.getProjectFinishRatio().subtract(project.getLastComputeRatio());
+        }
+        // 更新本月项目完成总进度 = 已完成总进度 + 该月完成总进度
+        projectFinishRatio = projectFinishRatio.add(monthRatio);
+        // 获取该项目下所有的 该月成本数据
+        List<ProjectCost> projectCostList = projectCostMapper.selectList(Condition.create().eq("project_code", project.getProjectCode()).eq("salary_date", costDate).eq("delete_flag", 0));
+        // 校验
+        if (CollectionUtils.isNotEmpty(projectCostList)) {
+            // 不为空
+            // 获取所有的成本总金额
+            BigDecimal totalCostMoney = projectCostList.stream().map(ProjectCost::getTotalCostMoney).reduce(BigDecimal.ZERO, BigDecimal::add);
+            // 计算毛利
+            // 毛利金额 = 员工总收入金额 - 员工总成本金额
+            BigDecimal costProfit = totalEarningMoney.subtract(totalCostMoney);
+            // 毛利率 = 毛利/总收入金额
+            BigDecimal costRatio = costProfit.divide(totalEarningMoney, 2, BigDecimal.ROUND_HALF_UP);
+            // 赋值入库
+            for (ProjectCost projectCost : projectCostList) {
+                // 赋值
+                projectCost.setEditId(userSessionVO.getUserAccount());
+                projectCost.setEditName(userSessionVO.getUserName());
+                projectCost.setEditTime(new Date());
+                // 总收入金额
+                projectCost.setTotalEarningMoney(totalEarningMoney);
+                // 总成本金额
+                projectCost.setTotalCostMoney(totalCostMoney);
+                // 毛利金额
+                projectCost.setCostProfit(costProfit);
+                // 毛利率
+                projectCost.setCostRatio(costRatio);
+                // 项目本月完成进度
+                projectCost.setProjectMonthFinishRatio(monthRatio);
+                // 项目已完成总进度
+                projectCost.setProjectTotalFinishRatio(projectFinishRatio);
+                // 修改入库
+                projectCostMapper.updateById(projectCost);
+            }
+        }
+        // 给项目信息 赋值
+        // 最终计算月份
+        project.setLastComputeDate(costDate);
+        // 最红计算月份所完成进度
+        project.setLastComputeRatio(monthRatio);
+        // 项目已完成总进度
+        project.setProjectFinishRatio(projectFinishRatio);
+        // 修改入库
+        projectMapper.updateById(project);
+        return ApiResult.getSuccessApiResponse("计算成功！");
+    }
 }

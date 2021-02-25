@@ -38,4 +38,13 @@ public interface CostService {
      * @Description: //TODO 计算当前明细（人员） 计算当前明细（人员），有id是修改，无id新增
      **/
     ApiResult computeThisCost(String projectCode, String costDate, ProjectCost projectCost, UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:59 2021/2/25
+     * @Param:
+     * @return:
+     * @Description: //TODO 计算项目的毛利，根据项目编号，所选月份，所填写的项目本月完成度
+     **/
+    ApiResult computeThisProject(String projectCode, String costDate, String monthFinishRatio, UserSessionVO userSessionVO);
 }

@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2021-02-02
+ * @since 2021-02-25
  */
 public class Project implements Serializable {
 
@@ -75,6 +75,14 @@ public class Project implements Serializable {
      * 项目完成总进度
      */
     private BigDecimal projectFinishRatio;
+    /**
+     * 最终计算的日期
+     */
+    private String lastComputeDate;
+    /**
+     * 最终计算月份的完成比例
+     */
+    private BigDecimal lastComputeRatio;
     /**
      * 是否删除：0--正常，1--已删除
      */
@@ -217,6 +225,22 @@ public class Project implements Serializable {
         this.projectFinishRatio = projectFinishRatio;
     }
 
+    public String getLastComputeDate() {
+        return lastComputeDate;
+    }
+
+    public void setLastComputeDate(String lastComputeDate) {
+        this.lastComputeDate = lastComputeDate;
+    }
+
+    public BigDecimal getLastComputeRatio() {
+        return lastComputeRatio;
+    }
+
+    public void setLastComputeRatio(BigDecimal lastComputeRatio) {
+        this.lastComputeRatio = lastComputeRatio;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -290,6 +314,8 @@ public class Project implements Serializable {
         ", totalMoney=" + totalMoney +
         ", clientMoney=" + clientMoney +
         ", projectFinishRatio=" + projectFinishRatio +
+        ", lastComputeDate=" + lastComputeDate +
+        ", lastComputeRatio=" + lastComputeRatio +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +

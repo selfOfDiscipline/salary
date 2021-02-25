@@ -18,6 +18,8 @@
         <result column="total_money" property="totalMoney" />
         <result column="client_money" property="clientMoney" />
         <result column="project_finish_ratio" property="projectFinishRatio" />
+        <result column="last_compute_date" property="lastComputeDate" />
+        <result column="last_compute_ratio" property="lastComputeRatio" />
         <result column="delete_flag" property="deleteFlag" />
         <result column="create_id" property="createId" />
         <result column="create_name" property="createName" />
@@ -29,7 +31,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, project_code, project_name, dept_id, dept_name, company_id, company_name, contract_start_date, contract_end_date, project_type, project_status, total_money, client_money, project_finish_ratio, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, project_code, project_name, dept_id, dept_name, company_id, company_name, contract_start_date, contract_end_date, project_type, project_status, total_money, client_money, project_finish_ratio, last_compute_date, last_compute_ratio, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
 </mapper>
