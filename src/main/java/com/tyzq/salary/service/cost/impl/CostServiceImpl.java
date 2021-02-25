@@ -12,9 +12,11 @@ import com.tyzq.salary.model.ProjectCost;
 import com.tyzq.salary.model.ProjectUser;
 import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.ProjectCostQueryVO;
+import com.tyzq.salary.model.vo.cost.ProjectCostResultVO;
 import com.tyzq.salary.model.vo.cost.ProjectSalaryResultVO;
 import com.tyzq.salary.service.cost.CostService;
 import com.tyzq.salary.utils.DateUtils;
+import com.tyzq.salary.utils.PasswordUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -252,6 +254,154 @@ public class CostServiceImpl implements CostService {
         }
         // 查询该项目该月份明细数据
         List<ProjectCost> projectCostList = projectCostMapper.selectList(Condition.create().eq("project_code", project.getProjectCode()).eq("salary_date", costDate).eq("delete_flag", 0));
-        return ApiResult.getSuccessApiResponse(projectCostList);
+        ProjectCostResultVO projectCostResultVO = new ProjectCostResultVO();
+        projectCostResultVO.setProject(project);
+        projectCostResultVO.setProjectCostList(projectCostList);
+        return ApiResult.getSuccessApiResponse(projectCostResultVO);
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 9:28 2021/2/25
+     * @Param:
+     * @return:
+     * @Description: //TODO 计算当前明细（人员） 计算当前明细（人员），有id是修改，无id新增
+     **/
+    @Override
+    public ApiResult computeThisCost(String projectCode, String costDate, ProjectCost projectCost, UserSessionVO userSessionVO) {
+        // 获取日期并拼接
+        costDate += "-01 00:00:00";
+        // 获取项目详情
+        Project project = new Project();
+        project.setProjectCode(projectCode);
+        project.setDeleteFlag(0);
+        project = projectMapper.selectOne(project);
+        // 校验
+        if (null == project) {
+            return ApiResult.getFailedApiResponse("该项目不存在！");
+        }
+        // 判断项目类型：项目类型：0--外包，1--总包，2--自研，3--委托制
+        int projectType = project.getProjectType().intValue();
+        // 校验
+        if (null == projectCost.getId()) {
+            // 新增
+            // 判断项目类型：项目类型：0--外包，1--总包，2--自研，3--委托制
+            if (0 == projectType) {
+                // 外包
+                // 校验参数：收入类型 & 出勤天数 & 总收入金额 & 总成本金额
+                if (null == projectCost.getEarningType()
+                        || null == projectCost.getAttendanceDays()
+                        || null == projectCost.getTotalEarningMoney()
+                        || null == projectCost.getTotalCostMoney()) {
+                    return ApiResult.getFailedApiResponse("外包项目的：收入类型/出勤天数/总收入金额/总成本金额，均不能为空！");
+                }
+                // 毛利金额 = 员工总收入金额 - 员工总成本金额
+                BigDecimal costProfit = projectCost.getTotalEarningMoney().subtract(projectCost.getTotalCostMoney());
+                // 毛利率 = 毛利/总收入金额
+                BigDecimal costRatio = costProfit.divide(projectCost.getTotalEarningMoney(), 2, BigDecimal.ROUND_HALF_UP);
+                // 赋值
+                // 毛利金额
+                projectCost.setCostProfit(costProfit);
+                // 毛利率
+                projectCost.setCostRatio(costRatio);
+            } else if (1 == projectType || 2 == projectType) {
+                // 总包
+                // 校验参数：收入类型 & 出勤天数 & 总收入金额 & 总成本金额
+                if (null == projectCost.getEarningType()
+                        || null == projectCost.getAttendanceDays()
+                        || null == projectCost.getTotalEarningMoney()
+                        || null == projectCost.getTotalCostMoney()) {
+                    return ApiResult.getFailedApiResponse("总包或者自研项目的：收入类型/出勤天数/总收入金额/总成本金额，均不能为空！");
+                }
+            } else if (3 == projectType) {
+                // 委托制
+                // 不做处理，委托制如果不挂员工，是没有数据的
+            }
+            // 新增入库
+            // 随机员工账号
+            projectCost.setUserAccount("tyzq-cost-" + PasswordUtil.randomGenerate(4));
+            // 赋值基本信息
+            projectCost.setDeleteFlag(0);
+            projectCost.setCreateId(userSessionVO.getUserAccount());
+            projectCost.setCreateName(userSessionVO.getUserName());
+            projectCost.setCreateTime(new Date());
+            // 赋值项目信息
+            projectCost.setProjectCode(project.getProjectCode());
+            projectCost.setProjectName(project.getProjectName());
+            projectCost.setUserDeptId(project.getDeptId());
+            projectCost.setUserDeptName(project.getDeptName());
+            projectCost.setProjectType(project.getProjectType());
+            projectCost.setSalaryDate(DateUtils.getDate(costDate, "yyyy-MM-dd HH:mm:ss"));
+            // 入库
+            projectCostMapper.insert(projectCost);
+        } else {
+            // 修改，即二次计算
+            // 获取用户关联的项目信息
+            ProjectUser projectUser = new ProjectUser();
+            projectUser.setProjectCode(project.getProjectCode());
+            projectUser.setUserAccount(projectCost.getUserAccount());
+            projectUser.setDeleteFlag(0);
+            projectUser = projectUserMapper.selectOne(projectUser);
+            // 将 工资成本 & 社保成本 & 税务成本 & 报销成本  先置为0
+            // 工资成本
+            projectCost.setCostSalary(BigDecimal.ZERO);
+            // 社保成本
+            projectCost.setCostSocialSecurity(BigDecimal.ZERO);
+            // 税务成本
+            projectCost.setCostTax(BigDecimal.ZERO);
+            // 报销成本
+            projectCost.setCostReimburse(BigDecimal.ZERO);
+            // 判断项目类型：项目类型：0--外包，1--总包，2--自研，3--委托制
+            if (0 == projectType) {
+                // 外包
+                // 员工总收入
+                BigDecimal totalEarningMoney;
+                // 员工总成本
+                BigDecimal totalCostMoney;
+                // 判断员工收入类型：0--天结，1--月结
+                if (projectCost.getEarningType().intValue() == 0) {
+                    // 天结
+                    // 员工总收入金额 = 出勤天数 * 收入金额
+                    totalEarningMoney = projectCost.getAttendanceDays().multiply(projectUser.getEarningMoney());
+                    // 员工总成本 = （工资成本 + 社保成本 + 税务成本 + 报销成本）* 出勤天数/21.75 + 成本其他金额增减项
+                    totalCostMoney = projectCost.getTotalCostMoney().multiply(projectCost.getAttendanceDays())
+                            .divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP).add(projectCost.getMonthRewordsMoney());
+                } else {
+                    // 月结
+                    // 员工总收入金额 = 出勤天数 * 收入金额 / 员工标准计薪天数（一般是21.75）
+                    totalEarningMoney = projectCost.getAttendanceDays().multiply(projectUser.getEarningMoney()).divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+                    // 员工总成本 = （工资成本 + 社保成本 + 税务成本 + 报销成本）* 出勤天数/21.75 + 成本其他金额增减项
+                    totalCostMoney = projectCost.getTotalCostMoney().multiply(projectCost.getAttendanceDays())
+                            .divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP).add(projectCost.getMonthRewordsMoney());
+                }
+                // 毛利金额 = 员工总收入金额 - 员工总成本金额
+                BigDecimal costProfit = totalEarningMoney.subtract(totalCostMoney);
+                // 毛利率 = 毛利/总收入金额
+                BigDecimal costRatio = costProfit.divide(totalEarningMoney, 2, BigDecimal.ROUND_HALF_UP);
+                // 赋值
+                // 总收入金额
+                projectCost.setTotalEarningMoney(totalEarningMoney);
+                // 总成本金额
+                projectCost.setTotalCostMoney(totalCostMoney);
+                // 毛利金额
+                projectCost.setCostProfit(costProfit);
+                // 毛利率
+                projectCost.setCostRatio(costRatio);
+            } else if (1 == projectType || 2 == projectType) {
+                // 总包
+                // 总成本
+            } else if (3 == projectType) {
+                // 委托制
+                // 不做处理，委托制如果不挂员工，是没有数据的
+            }
+            // 新增入库
+            // 赋值基本信息
+            projectCost.setEditId(userSessionVO.getUserAccount());
+            projectCost.setEditName(userSessionVO.getUserName());
+            projectCost.setEditTime(new Date());
+            // 入库
+            projectCostMapper.updateById(projectCost);
+        }
+        return ApiResult.getSuccessApiResponse(projectCost.getId());
     }
 }

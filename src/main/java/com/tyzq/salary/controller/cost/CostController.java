@@ -2,6 +2,7 @@ package com.tyzq.salary.controller.cost;
 
 import com.tyzq.salary.common.constants.Constants;
 import com.tyzq.salary.common.vo.ApiResult;
+import com.tyzq.salary.model.ProjectCost;
 import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.CostQueryVO;
 import com.tyzq.salary.model.vo.cost.ProjectCostQueryVO;
@@ -69,6 +70,29 @@ public class CostController {
             e.printStackTrace();
             logger.error("查询项目的月度成本详情错误异常：" + e);
             return ApiResult.getFailedApiResponse("查询项目的月度成本详情出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 9:22 2021/2/25
+     * @Param:
+     * @return:
+     * @Description: //TODO 计算当前明细（人员） 计算当前明细（人员），有id是修改，无id新增
+     **/
+    @ApiOperation(value = "计算当前明细（人员）", httpMethod = "POST", notes = "计算当前明细（人员），有id是修改，无id新增")
+    @PostMapping(value = "/computeThisCost/{projectCode}/{costDate}")
+    public ApiResult computeThisCost(@PathVariable("projectCode") String projectCode, @PathVariable("costDate") String costDate,
+                                     @RequestBody ProjectCost projectCost, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return costService.computeThisCost(projectCode, costDate, projectCost, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("计算当前明细（人员）错误异常：" + e);
+            return ApiResult.getFailedApiResponse("计算当前明细（人员）出现错误异常！");
         }
     }
 }
