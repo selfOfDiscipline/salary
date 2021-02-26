@@ -9,7 +9,7 @@ import java.io.Serializable;
  * @Date: 14:42 2021/2/26
  * @Description: //TODO 计算项目明细成本接口参数VO
  **/
-public class ProjectCostComputeParamVO extends ProjectCost implements Serializable {
+public class ProjectCostComputeParamVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -19,12 +19,13 @@ public class ProjectCostComputeParamVO extends ProjectCost implements Serializab
     /* 计算日期*/
     private String costDate;
 
-    @Override
+    /* 项目成本对象*/
+    private ProjectCost projectCost;
+
     public String getProjectCode() {
         return projectCode;
     }
 
-    @Override
     public void setProjectCode(String projectCode) {
         this.projectCode = projectCode;
     }
@@ -35,5 +36,13 @@ public class ProjectCostComputeParamVO extends ProjectCost implements Serializab
 
     public void setCostDate(String costDate) {
         this.costDate = costDate;
+    }
+
+    public ProjectCost getProjectCost() {
+        return projectCost;
+    }
+
+    public void setProjectCost(ProjectCost projectCost) {
+        this.projectCost = projectCost;
     }
 }

@@ -94,13 +94,15 @@ public class CostController {
         if (StringUtils.isBlank(costComputeParamVO.getCostDate())) {
             return ApiResult.getFailedApiResponse("成本日期不能为空！");
         }
+        // 校验
+        if (null == costComputeParamVO.getProjectCost()) {
+            return ApiResult.getFailedApiResponse("明细对象不能为空！");
+        }
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         try {
             // 业务操作
-            ProjectCost projectCost = new ProjectCost();
-            BeanUtils.copyProperties(costComputeParamVO, projectCost);
-            return costService.computeThisCost(costComputeParamVO.getProjectCode(), costComputeParamVO.getCostDate(), projectCost, userSessionVO);
+            return costService.computeThisCost(costComputeParamVO.getProjectCode(), costComputeParamVO.getCostDate(), costComputeParamVO.getProjectCost(), userSessionVO);
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("计算当前明细（人员）错误异常：" + e);
