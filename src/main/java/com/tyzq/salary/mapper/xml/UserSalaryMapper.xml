@@ -501,7 +501,7 @@
     </select>
 
     <!--  查员工薪资数据用于生成用户当月成本。项目人员表+项目表+用户表+薪资表  4张表，根据所传日期 && 用户账号集合  -->
-    <select id="selectUserSalaryList" resultType="java.lang.Long">
+    <select id="selectUserSalaryWithProjectCost" resultType="com.tyzq.salary.model.vo.cost.ProjectSalaryResultVO">
         SELECT
             pu.user_account AS userAccount,
             pu.user_name AS userName,

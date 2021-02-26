@@ -139,8 +139,14 @@ public class CostServiceImpl implements CostService {
                         .add(resultVO.getOtherBankShouldTaxMoney());
                 // 毛利金额 = 员工总收入金额 - 员工总成本金额
                 BigDecimal costProfit = totalEarningMoney.subtract(totalCostMoney);
-                // 毛利率 = 毛利/总收入金额
-                BigDecimal costRatio = costProfit.divide(totalEarningMoney, 2, BigDecimal.ROUND_HALF_UP);
+                BigDecimal costRatio;
+                // 校验 总收入金额不能为0
+                if (totalEarningMoney.compareTo(BigDecimal.ZERO) == 0) {
+                    costRatio = costProfit;
+                } else {
+                    // 毛利率 = 毛利/总收入金额
+                    costRatio = costProfit.divide(totalEarningMoney, 2, BigDecimal.ROUND_HALF_UP);
+                }
                 // 赋值
                 // 总收入金额
                 projectCost.setTotalEarningMoney(totalEarningMoney);
@@ -187,8 +193,9 @@ public class CostServiceImpl implements CostService {
             }
         }
         // 记录日志
-        logger.info("生成" + date + "成本基础数据成功！共生成" + projectSalaryResultVOList.size() + size + "条数据！");
-        return ApiResult.getFailedApiResponse("生成" + date + "成本基础数据成功！共生成" + projectSalaryResultVOList.size() + size + "条数据！");
+        int successSize = projectSalaryResultVOList.size() + size;
+        logger.info("生成" + date + "成本基础数据成功！共生成" + successSize + "条数据！");
+        return ApiResult.getFailedApiResponse("生成" + date + "成本基础数据成功！共生成" + successSize + "条数据！");
     }
 
     /*
