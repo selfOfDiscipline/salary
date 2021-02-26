@@ -5,12 +5,15 @@ import com.tyzq.salary.common.vo.ApiResult;
 import com.tyzq.salary.model.ProjectCost;
 import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.CostQueryVO;
+import com.tyzq.salary.model.vo.cost.ProjectCostComputeParamVO;
 import com.tyzq.salary.model.vo.cost.ProjectCostQueryVO;
 import com.tyzq.salary.service.cost.CostService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -81,14 +84,23 @@ public class CostController {
      * @Description: //TODO 计算当前明细（人员） 计算当前明细（人员），有id是修改，无id新增
      **/
     @ApiOperation(value = "计算当前明细（人员）", httpMethod = "POST", notes = "计算当前明细（人员），有id是修改，无id新增")
-    @PostMapping(value = "/computeThisCost/{projectCode}/{costDate}")
-    public ApiResult computeThisCost(@PathVariable("projectCode") String projectCode, @PathVariable("costDate") String costDate,
-                                     @RequestBody ProjectCost projectCost, HttpServletRequest request) {
+    @PostMapping(value = "/computeThisCost")
+    public ApiResult computeThisCost(@RequestBody ProjectCostComputeParamVO costComputeParamVO, HttpServletRequest request) {
+        // 校验
+        if (StringUtils.isBlank(costComputeParamVO.getProjectCode())) {
+            return ApiResult.getFailedApiResponse("项目编号不能为空！");
+        }
+        // 校验
+        if (StringUtils.isBlank(costComputeParamVO.getCostDate())) {
+            return ApiResult.getFailedApiResponse("成本日期不能为空！");
+        }
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         try {
             // 业务操作
-            return costService.computeThisCost(projectCode, costDate, projectCost, userSessionVO);
+            ProjectCost projectCost = new ProjectCost();
+            BeanUtils.copyProperties(costComputeParamVO, projectCost);
+            return costService.computeThisCost(costComputeParamVO.getProjectCode(), costComputeParamVO.getCostDate(), projectCost, userSessionVO);
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("计算当前明细（人员）错误异常：" + e);
@@ -103,10 +115,10 @@ public class CostController {
      * @return:
      * @Description: //TODO 计算项目的毛利，根据项目编号，所选月份，所填写的项目本月完成度
      **/
-    @ApiOperation(value = "计算项目的毛利", httpMethod = "POST", notes = "计算项目的毛利，根据项目编号，所选月份，所填写的项目本月完成度")
-    @PostMapping(value = "/computeThisProject/{projectCode}/{costDate}/{monthFinishRatio}")
-    public ApiResult computeThisProject(@PathVariable("projectCode") String projectCode, @PathVariable("costDate") String costDate,
-                                     @PathVariable("monthFinishRatio") String monthFinishRatio, HttpServletRequest request) {
+    @ApiOperation(value = "计算项目的毛利", httpMethod = "GET", notes = "计算项目的毛利，根据项目编号，所选月份，所填写的项目本月完成度")
+    @GetMapping(value = "/computeThisProject")
+    public ApiResult computeThisProject(@RequestParam("projectCode") String projectCode, @RequestParam("costDate") String costDate,
+                                     @RequestParam("monthFinishRatio") String monthFinishRatio, HttpServletRequest request) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         try {
@@ -126,9 +138,9 @@ public class CostController {
      * @return:
      * @Description: //TODO 批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接
      **/
-    @ApiOperation(value = "批量删除项目成本明细", httpMethod = "POST", notes = "批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接")
-    @PostMapping(value = "/deleteProjectCostByIds/{ids}")
-    public ApiResult deleteProjectCostByIds(@PathVariable("ids") String ids, HttpServletRequest request) {
+    @ApiOperation(value = "批量删除项目成本明细", httpMethod = "GET", notes = "批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接")
+    @GetMapping(value = "/deleteProjectCostByIds")
+    public ApiResult deleteProjectCostByIds(@RequestParam("ids") String ids, HttpServletRequest request) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         try {

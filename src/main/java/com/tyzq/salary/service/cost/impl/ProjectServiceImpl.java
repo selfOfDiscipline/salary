@@ -78,7 +78,7 @@ public class ProjectServiceImpl implements ProjectService {
      * @Description: //TODO 查询项目列表
      **/
     @Override
-    public ApiResult selectProjectList(ProjectQueryVO projectQueryVO) {
+    public ApiResult selectProjectList(ProjectQueryVO projectQueryVO, UserSessionVO userSessionVO) {
         // 定义条件
         Wrapper<Project> wrapper = new EntityWrapper<>();
         // 校验 项目名称
@@ -119,6 +119,16 @@ public class ProjectServiceImpl implements ProjectService {
             // 转换日期并加1天
             wrapper.lt("contract_end_date", DateUtils.stepDaysWithDate(projectQueryVO.getContractEndDateEnd(), "yyyy-MM-dd", 1));
         }
+        // 获取用户部门权限
+//        List<Long> userDeptIdList = userSessionVO.getUserDeptIdList();
+//        // 校验
+//        if (CollectionUtils.isEmpty(userDeptIdList)) {
+//            ApiResult.getFailedApiResponse("您暂无权限查看成本管理！");
+//        }
+        // 校验 是否为 总经理权限  部门经理权限  客户经理权限
+
+
+
         wrapper.eq("delete_flag", 0);
         wrapper.orderBy("create_time", false);
         // 查询数据库

@@ -61,10 +61,12 @@ public class ProjectController {
      **/
     @ApiOperation(value = "查询项目列表", httpMethod = "POST", notes = "查询项目列表")
     @PostMapping(value = "/selectProjectList")
-    public ApiResult selectProjectList(@RequestBody ProjectQueryVO projectQueryVO) {
+    public ApiResult selectProjectList(@RequestBody ProjectQueryVO projectQueryVO, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         try {
             // 业务操作
-            return projectService.selectProjectList(projectQueryVO);
+            return projectService.selectProjectList(projectQueryVO, userSessionVO);
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("查询项目列表错误异常：" + e);

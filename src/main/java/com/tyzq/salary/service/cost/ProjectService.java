@@ -29,7 +29,7 @@ public interface ProjectService {
      * @return:
      * @Description: //TODO 查询项目列表
      **/
-    ApiResult selectProjectList(ProjectQueryVO projectQueryVO);
+    ApiResult selectProjectList(ProjectQueryVO projectQueryVO, UserSessionVO userSessionVO);
 
     /*
      * @Author: 郑稳超先生 zwc_503@163.com
