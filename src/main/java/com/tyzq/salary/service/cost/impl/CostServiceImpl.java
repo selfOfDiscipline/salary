@@ -27,8 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /*
  * @Author: 郑稳超先生 zwc_503@163.com
@@ -485,5 +487,31 @@ public class CostServiceImpl implements CostService {
         // 修改入库
         projectMapper.updateById(project);
         return ApiResult.getSuccessApiResponse("计算成功！");
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 10:03 2021/2/26
+     * @Param:
+     * @return:
+     * @Description: //TODO 批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接
+     **/
+    @Override
+    public ApiResult deleteProjectCostByIds(String ids, UserSessionVO userSessionVO) {
+        // 转换
+        // 按照英文逗号分隔
+        List<Long> longIdList = Arrays.asList(ids.split(",")).stream().map(Long::valueOf).collect(Collectors.toList());
+        // 校验
+        if (CollectionUtils.isEmpty(longIdList)) {
+            return ApiResult.getSuccessApiResponse("操作成功！您本次共删除：0条数据！");
+        }
+        // 修改项目成本表
+        projectCostMapper.update(new ProjectCost() {{
+            setDeleteFlag(1);
+            setEditId(userSessionVO.getUserAccount());
+            setEditName(userSessionVO.getUserName());
+            setEditTime(new Date());
+        }}, Condition.create().in("id", longIdList));
+        return ApiResult.getSuccessApiResponse("操作成功！您本次共删除：" + longIdList.size() + "条数据！");
     }
 }

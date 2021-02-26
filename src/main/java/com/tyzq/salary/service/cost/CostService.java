@@ -47,4 +47,13 @@ public interface CostService {
      * @Description: //TODO 计算项目的毛利，根据项目编号，所选月份，所填写的项目本月完成度
      **/
     ApiResult computeThisProject(String projectCode, String costDate, String monthFinishRatio, UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 10:03 2021/2/26
+     * @Param:
+     * @return:
+     * @Description: //TODO 批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接
+     **/
+    ApiResult deleteProjectCostByIds(String ids, UserSessionVO userSessionVO);
 }

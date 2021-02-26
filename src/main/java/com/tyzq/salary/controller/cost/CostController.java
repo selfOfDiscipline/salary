@@ -118,4 +118,26 @@ public class CostController {
             return ApiResult.getFailedApiResponse("计算项目的毛利出现错误异常！");
         }
     }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 10:00 2021/2/26
+     * @Param:
+     * @return:
+     * @Description: //TODO 批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接
+     **/
+    @ApiOperation(value = "批量删除项目成本明细", httpMethod = "POST", notes = "批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接")
+    @PostMapping(value = "/computeThisProject/{ids}")
+    public ApiResult deleteProjectCostByIds(@PathVariable("ids") String ids, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return costService.deleteProjectCostByIds(ids, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("批量删除项目成本明细错误异常：" + e);
+            return ApiResult.getFailedApiResponse("批量删除项目成本明细出现错误异常！");
+        }
+    }
 }
