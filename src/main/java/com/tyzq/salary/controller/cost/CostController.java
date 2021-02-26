@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletRequest;
  **/
 @Api(tags = "【成本中心】··【成本管理模块】")
 @RestController
-@RequestMapping(value = "/cost")
+@RequestMapping(value = "/costManage")
 public class CostController {
 
     private static final Logger logger = LoggerFactory.getLogger(CostController.class);
