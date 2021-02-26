@@ -127,7 +127,7 @@ public class CostController {
      * @Description: //TODO 批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接
      **/
     @ApiOperation(value = "批量删除项目成本明细", httpMethod = "POST", notes = "批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接")
-    @PostMapping(value = "/computeThisProject/{ids}")
+    @PostMapping(value = "/deleteProjectCostByIds/{ids}")
     public ApiResult deleteProjectCostByIds(@PathVariable("ids") String ids, HttpServletRequest request) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
