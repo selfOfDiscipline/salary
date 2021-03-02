@@ -213,6 +213,28 @@ public class SalaryHistoryResultVO extends UserSalary implements Serializable {
     /* 绩效工资*/
     private BigDecimal newPerformanceMoney;
 
+    /* 税前工资总额*/
+    private BigDecimal taxBeforeTotal;
+
+    /* 税前应发总额*/
+    private BigDecimal taxBeforeShouldTotal;
+
+    public BigDecimal getTaxBeforeTotal() {
+        return taxBeforeTotal;
+    }
+
+    public void setTaxBeforeTotal(BigDecimal taxBeforeTotal) {
+        this.taxBeforeTotal = taxBeforeTotal;
+    }
+
+    public BigDecimal getTaxBeforeShouldTotal() {
+        return taxBeforeShouldTotal;
+    }
+
+    public void setTaxBeforeShouldTotal(BigDecimal taxBeforeShouldTotal) {
+        this.taxBeforeShouldTotal = taxBeforeShouldTotal;
+    }
+
     public Integer getThisNumber() {
         return thisNumber;
     }

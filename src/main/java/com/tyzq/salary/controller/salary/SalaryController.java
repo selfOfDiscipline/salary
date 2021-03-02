@@ -359,7 +359,7 @@ public class SalaryController {
      **/
     @ApiOperation(value = "导出工资单", httpMethod = "POST", notes = "导出工资单，默认导出上月")
     @PostMapping(value = "/exportSalaryBill")
-    public ApiResult exportSalaryBill(SalaryHistoryQueryVO salaryHistoryQueryVO, HttpServletRequest request, HttpServletResponse response) {
+    public ApiResult exportSalaryBill(@RequestBody SalaryHistoryQueryVO salaryHistoryQueryVO, HttpServletRequest request, HttpServletResponse response) {
         // 获取session用户
         UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
         try {

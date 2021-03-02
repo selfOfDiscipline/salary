@@ -392,7 +392,7 @@
             s.month_post_salary AS monthPostSalary,
             s.month_post_subsidy AS monthPostSubsidy,
             s.month_other_subsidy AS monthOtherSubsidy,
-            s.tax_before_base_salary_total AS taxBeforeBaseSalaryTotal,
+            d.bank_salary AS taxBeforeBaseSalaryTotal,
             s.yangl_person_pay_money AS yanglPersonPayMoney,
             s.yangl_company_pay_money AS yanglCompanyPayMoney,
             s.shiy_person_pay_money AS shiyPersonPayMoney,

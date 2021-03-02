@@ -138,9 +138,13 @@ public class SalaryServiceImpl implements SalaryService {
             }
         }
         // 获取当月日期
-        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateMonth());
+        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateLastMonth());
         // 获取上月日期
-        userComputeSalaryQueryVO.setThisDateLastMonth(DateUtils.getThisDateLastMonth());
+        userComputeSalaryQueryVO.setThisDateLastMonth(DateUtils.stepMonthWithDate(DateUtils.getThisDateLastMonth(), -1));
+//        // 获取当月日期
+//        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateMonth());
+//        // 获取上月日期
+//        userComputeSalaryQueryVO.setThisDateLastMonth(DateUtils.getThisDateLastMonth());
         // 查询计薪列表
         PageHelper.startPage(userComputeSalaryQueryVO.getPageNum(), userComputeSalaryQueryVO.getPageSize());
         List<UserComputeResultVO> userComputeResultVOList = userSalaryMapper.selectUserListBySalaryUser(userComputeSalaryQueryVO);
@@ -1647,7 +1651,10 @@ public class SalaryServiceImpl implements SalaryService {
             salaryDeptIdList.add(salaryDeptId);
         }
         // 获取上个月时间
-        Date thisDateLastMonth = DateUtils.getThisDateLastMonth();
+        Date date = DateUtils.getThisDateLastMonth();
+
+        Date thisDateLastMonth = DateUtils.stepMonthWithDate(date, -1);
+
         // 查询薪资表id   条件为上个月份，且允许结算，且用户角色，薪资归属部门id集合， 另外加上“本月已经结算过”条件， currentComputeFlag == 0  未结算， currentComputeFlag == 1  已经结算
         Integer currentComputeFlag = 1;
         List<Long> userSalaryIdList = userSalaryMapper.selectUserSalaryList(userPostTypeString, thisDateLastMonth, salaryDeptIdList, currentComputeFlag);
@@ -1907,6 +1914,8 @@ public class SalaryServiceImpl implements SalaryService {
             resultVO.setUserStatus(resultVO.getUserRankType().intValue() == 0 ? "试用期" : resultVO.getUserRankType().intValue() == 1 ? "正式" : "离职");
             resultVO.setNewBaseMoney(new BigDecimal("0.00"));
             resultVO.setNewPerformanceMoney(new BigDecimal("0.00"));
+            resultVO.setTaxBeforeTotal(resultVO.getTaxBeforeBaseSalaryTotal().add(resultVO.getOtherBankRealitySalary()));
+            resultVO.setTaxBeforeShouldTotal(resultVO.getBankRealitySalary().add(resultVO.getOtherBankRealitySalary()));
         }
 
 
