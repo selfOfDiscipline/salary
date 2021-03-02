@@ -7,6 +7,7 @@ import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.CostQueryVO;
 import com.tyzq.salary.model.vo.cost.ProjectCostComputeParamVO;
 import com.tyzq.salary.model.vo.cost.ProjectCostQueryVO;
+import com.tyzq.salary.model.vo.cost.QueryAllCostParamVO;
 import com.tyzq.salary.service.cost.CostService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -152,6 +153,28 @@ public class CostController {
             e.printStackTrace();
             logger.error("批量删除项目成本明细错误异常：" + e);
             return ApiResult.getFailedApiResponse("批量删除项目成本明细出现错误异常！");
+        }
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 13:17 2021/3/1
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询总成本列表，可根据月份/季度/年度
+     **/
+    @ApiOperation(value = "查询总成本列表", httpMethod = "POST", notes = "查询总成本列表，可根据月份/季度/年度")
+    @PostMapping(value = "/selectAllCostListByCondition")
+    public ApiResult selectAllCostListByCondition(@RequestBody QueryAllCostParamVO costParamVO, HttpServletRequest request) {
+        // 获取session用户
+        UserSessionVO userSessionVO = (UserSessionVO) request.getSession().getAttribute(Constants.USER_SESSION);
+        try {
+            // 业务操作
+            return costService.selectAllCostListByCondition(costParamVO, userSessionVO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("查询总成本列表错误异常：" + e);
+            return ApiResult.getFailedApiResponse("查询总成本列表出现错误异常！");
         }
     }
 }

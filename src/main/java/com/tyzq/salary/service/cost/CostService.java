@@ -4,6 +4,7 @@ import com.tyzq.salary.common.vo.ApiResult;
 import com.tyzq.salary.model.ProjectCost;
 import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.ProjectCostQueryVO;
+import com.tyzq.salary.model.vo.cost.QueryAllCostParamVO;
 
 /*
  * @Author: 郑稳超先生 zwc_503@163.com
@@ -56,4 +57,13 @@ public interface CostService {
      * @Description: //TODO 批量删除项目成本明细，根据所传项目成本明细id字符串，多个用英文逗号拼接
      **/
     ApiResult deleteProjectCostByIds(String ids, UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 13:36 2021/3/1
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询总成本列表，可根据月份/季度/年度
+     **/
+    ApiResult selectAllCostListByCondition(QueryAllCostParamVO costParamVO, UserSessionVO userSessionVO);
 }

@@ -115,4 +115,25 @@ public class DeptController {
             }
         });
     }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 14:37 2021/3/1
+     * @Param:
+     * @return:
+     * @Description: //TODO 获取全量业务归属部门集合 公共方法
+     **/
+    public List<Dept> selectDeptList() {
+        // 从缓存获取全量部门集合
+        List<Dept> allDeptList = (List<Dept>) RedisUtil.get(Constants.REDIS_ALL_DEPT);
+        // 校验
+        if (CollectionUtils.isEmpty(allDeptList)) {
+            // 从数据库获取
+            List<Dept> deptList = deptMapper.selectList(Condition.create().eq("delete_flag", 0));
+            // 将全量初始部门集合放入缓存24小时
+            RedisUtil.set(Constants.REDIS_ALL_DEPT, deptList, Constants.REDIS_COMMON_SECONDS);
+            return deptList;
+        }
+        return allDeptList;
+    }
 }

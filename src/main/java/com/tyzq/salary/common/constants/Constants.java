@@ -33,6 +33,9 @@ public class Constants implements Serializable {
     /* 全量部门REDIS 部门存储KEY*/
     public static final String REDIS_DEPT = "redisDept";
 
+    /* 全量初始部门REDIS 部门存储KEY*/
+    public static final String REDIS_ALL_DEPT = "redisAllDept";
+
     /* 全量工资类个税数据REDIS 存储KEY*/
     public static final String REDIS_SALARY_PERSON_TAX = "redisSalaryPersonTax";
 
@@ -53,6 +56,12 @@ public class Constants implements Serializable {
 
     /* 定义财务经理ID*/
     public static final long MONEY_ROLE_ID = 3l;
+
+    /* 定义部门经理ID*/
+    public static final long DEPT_ROLE_ID = 6l;
+
+    /* 定义客户经理ID*/
+    public static final long CUSTOM_ROLE_ID = 7l;
 
     /* 定义薪资核算角色ID*/
     public static final long SALARY_DEPT_ROLE_ID = 12l;

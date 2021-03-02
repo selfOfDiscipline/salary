@@ -1,12 +1,15 @@
 package com.tyzq.salary.service.cost.impl;
 
 import com.baomidou.mybatisplus.mapper.Condition;
+import com.google.common.collect.Lists;
 import com.tyzq.salary.common.constants.Constants;
 import com.tyzq.salary.common.vo.ApiResult;
+import com.tyzq.salary.controller.config.DeptController;
 import com.tyzq.salary.mapper.ProjectCostMapper;
 import com.tyzq.salary.mapper.ProjectMapper;
 import com.tyzq.salary.mapper.ProjectUserMapper;
 import com.tyzq.salary.mapper.UserSalaryMapper;
+import com.tyzq.salary.model.Dept;
 import com.tyzq.salary.model.Project;
 import com.tyzq.salary.model.ProjectCost;
 import com.tyzq.salary.model.ProjectUser;
@@ -14,6 +17,10 @@ import com.tyzq.salary.model.vo.base.UserSessionVO;
 import com.tyzq.salary.model.vo.cost.ProjectCostQueryVO;
 import com.tyzq.salary.model.vo.cost.ProjectCostResultVO;
 import com.tyzq.salary.model.vo.cost.ProjectSalaryResultVO;
+import com.tyzq.salary.model.vo.cost.QueryAllCostParamVO;
+import com.tyzq.salary.model.vo.costQuery.CostResultDeptVO;
+import com.tyzq.salary.model.vo.costQuery.CostResultProjectVO;
+import com.tyzq.salary.service.config.UserService;
 import com.tyzq.salary.service.cost.CostService;
 import com.tyzq.salary.utils.DateUtils;
 import com.tyzq.salary.utils.PasswordUtil;
@@ -28,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,6 +62,12 @@ public class CostServiceImpl implements CostService {
 
     @Resource
     private ProjectCostMapper projectCostMapper;
+
+    @Resource
+    private UserService userService;
+
+    @Resource
+    private DeptController deptController;
 
     /*
      * @Author: 郑稳超先生 zwc_503@163.com
@@ -520,5 +534,195 @@ public class CostServiceImpl implements CostService {
             setEditTime(new Date());
         }}, Condition.create().in("id", longIdList));
         return ApiResult.getSuccessApiResponse("操作成功！您本次共删除：" + longIdList.size() + "条数据！");
+    }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 13:36 2021/3/1
+     * @Param:
+     * @return:
+     * @Description: //TODO 查询总成本列表，可根据月份/季度/年度
+     **/
+    @Override
+    public ApiResult selectAllCostListByCondition(QueryAllCostParamVO costParamVO, UserSessionVO userSessionVO) {
+        // 校验角色
+        int authrity = userService.checkUserCostAuthrity(userSessionVO);
+        // 未配置成本中心权限
+        if (authrity == 0) {
+            return ApiResult.getFailedApiResponse("您未配置成本中心权限！");
+        }
+        // 获取所有部门列表
+        List<Dept> deptList = deptController.selectDeptList();
+        // 总经理
+        if (authrity == 1) {
+            // 定义返回对象集合
+            List<CostResultDeptVO> resultDeptVOList = Lists.newArrayListWithCapacity(deptList.size());
+            // 校验是按 年/月/季度
+            if (0 == costParamVO.getQueryFlag()) {
+                // 月度
+                // 获取月度时间
+                String monthDate = costParamVO.getMonthDate() + "-01 00:00:00";
+                // 定义数据自增主键
+                int dataNumber = 0;
+                // 遍历业务归属部门
+                for (Dept dept : deptList) {
+                    dataNumber++;
+                    // 定义该数据返回结果 数据赋值
+                    CostResultDeptVO resultDeptVO = new CostResultDeptVO();
+                    resultDeptVO.setId(dataNumber);
+                    resultDeptVO.setDeptId(dept.getId());
+                    resultDeptVO.setDeptName(dept.getDeptName());
+                    // 先赋值基础数据 依次：总收入 总成本 毛利 毛利率 盈亏
+                    resultDeptVO.setTotalEarningMoney(BigDecimal.ZERO);
+                    resultDeptVO.setTotalCostMoney(BigDecimal.ZERO);
+                    resultDeptVO.setCostProfit(BigDecimal.ZERO);
+                    resultDeptVO.setCostRatio(BigDecimal.ZERO);
+                    resultDeptVO.setMonthType("亏损");
+                    // 查询该部门该月度所有项目集合 :业务部门id & 项目状态不是作废的 & 未删除的
+                    List<Project> projectList = projectMapper.selectList(Condition.create().eq("dept_id", dept.getId())
+                            .ne("project_status", 2).eq("delete_flag", 0));
+                    // 校验
+                    if (CollectionUtils.isEmpty(projectList)) {
+                        continue;
+                    }
+                    // 定义部门总收入金额
+                    BigDecimal totalEarningMoney = BigDecimal.ZERO;
+                    // 定义部门总成本金额
+                    BigDecimal totalCostMoney = BigDecimal.ZERO;
+                    // 定义 部门下项目集合
+                    List<CostResultProjectVO> resultProjectVOList = Lists.newArrayListWithCapacity(projectList.size());
+                    // 遍历 项目集合
+                    for (Project project : projectList) {
+                        // 定义项目返回结果
+                        CostResultProjectVO resultProjectVO = new CostResultProjectVO();
+                        BeanUtils.copyProperties(project, resultProjectVO);
+                        // 先赋值基础数据 依次：总收入 总成本 毛利 毛利率 盈亏
+                        resultProjectVO.setProjectTotalEarningMoney(BigDecimal.ZERO);
+                        resultProjectVO.setProjectTotalCostMoney(BigDecimal.ZERO);
+                        resultProjectVO.setProjectCostProfit(BigDecimal.ZERO);
+                        resultProjectVO.setProjectCostRatio(BigDecimal.ZERO);
+                        resultProjectVO.setProjectMonthType("亏损");
+                        // 查询该项目下 成本数据 :业务部门id & 项目编号 & 薪资归属日期 & 未删除
+                        // 定义成本明细集合
+                        List<ProjectCost> costList;
+                        // 校验是按 年/月/季度   queryFlag:0--月度，1--季度，2--年度
+                        // 定义 月度日期
+                        monthDate = "";
+                        // 定义 年度/季度开始日期   年度/季度结束日期
+                        String beginDate = "";
+                        String endDate = "";
+                        if (0 == costParamVO.getQueryFlag()) {
+                            // 月度
+                            // 校验月份是否存在
+                            if (StringUtils.isBlank(costParamVO.getMonthDate())) {
+                                // 默认上个月数据
+                                monthDate = DateUtils.getDateString(DateUtils.getThisDateLastMonth(), "yyyy-MM-dd HH:mm:ss");
+                            } else {
+                                monthDate += "-01 00:00:00";
+                            }
+                            costList = projectCostMapper.selectList(Condition.create().eq("user_dept_id", dept.getId())
+                                    .eq("project_code", project.getProjectCode()).eq("salary_date", monthDate).eq("delete_flag", 0));
+                        } else if (1 == costParamVO.getQueryFlag()) {
+                            // 季度
+                            // 要根据所传年和季度值，来查询区间3个月的数据
+                            int quarterDate = costParamVO.getQuarterDate();
+                            if (1 <= quarterDate && quarterDate <= 3) {
+                                // 第一季度
+                                beginDate = costParamVO.getYearDate() + "-01-01 00:00:00";
+                                endDate = costParamVO.getYearDate() + "-03-01 00:00:00";
+                            } else if (4 <= quarterDate && quarterDate <= 6) {
+                                // 第二季度
+                                beginDate = costParamVO.getYearDate() + "-04-01 00:00:00";
+                                endDate = costParamVO.getYearDate() + "-06-01 00:00:00";
+                            } else if (7 <= quarterDate && quarterDate <= 9) {
+                                // 第三季度
+                                beginDate = costParamVO.getYearDate() + "-07-01 00:00:00";
+                                endDate = costParamVO.getYearDate() + "-09-01 00:00:00";
+                            } else {
+                                // 第四季度
+                                beginDate = costParamVO.getYearDate() + "-10-01 00:00:00";
+                                endDate = costParamVO.getYearDate() + "-12-01 00:00:00";
+                            }
+
+                        }
+
+
+
+                        costList = projectCostMapper.selectList(Condition.create().eq("user_dept_id", dept.getId())
+                                .eq("project_code", project.getProjectCode()).eq("salary_date", monthDate).eq("delete_flag", 0));
+                        // 校验
+                        if (CollectionUtils.isNotEmpty(costList)) {
+                            // 定义项目总收入金额
+                            BigDecimal projectTotalEarningMoney = BigDecimal.ZERO;
+                            // 定义项目总成本金额
+                            BigDecimal projectTotalCostMoney = BigDecimal.ZERO;
+                            // 转换数据
+                            for (ProjectCost projectCost : costList) {
+                                // 部门总收入
+                                totalEarningMoney = totalEarningMoney.add(projectCost.getTotalEarningMoney());
+                                // 部门总成本
+                                totalCostMoney = totalCostMoney.add(projectCost.getTotalCostMoney());
+                                // 项目总收入
+                                projectTotalEarningMoney = projectTotalEarningMoney.add(projectCost.getTotalEarningMoney());
+                                // 项目总成本
+                                projectTotalCostMoney = projectTotalCostMoney.add(projectCost.getTotalCostMoney());
+                            }
+                            // 计算毛利金额 = 总收入 - 总成本
+                            BigDecimal projectCostProfit = projectTotalEarningMoney.subtract(projectTotalCostMoney);
+                            resultProjectVO.setProjectCostProfit(projectCostProfit);
+                            resultProjectVO.setProjectTotalEarningMoney(projectTotalEarningMoney);
+                            resultProjectVO.setProjectTotalCostMoney(projectTotalCostMoney);
+                            // 计算毛利率 = 毛利金额/总收入  如果毛利金额为0，则为0
+                            if (projectCostProfit.compareTo(BigDecimal.ZERO) == 0) {
+                                // 毛利率为0
+                                resultProjectVO.setProjectCostRatio(BigDecimal.ZERO);
+                            } else {
+                                resultProjectVO.setProjectCostRatio(projectCostProfit.divide(projectTotalEarningMoney, 2, BigDecimal.ROUND_HALF_UP));
+                                // 校验盈亏
+                                if (projectCostProfit.compareTo(BigDecimal.ZERO) == 1) {
+                                    resultDeptVO.setMonthType("盈收");
+                                }
+                            }
+                        }
+                        // 成本明细集合放入该项目对象
+                        resultProjectVO.setProjectCostList(costList);
+                        // 将该项目 放入该部门中项目对象
+                        resultProjectVOList.add(resultProjectVO);
+                    }
+                    // 计算毛利金额 = 总收入 - 总成本
+                    BigDecimal costProfit = totalEarningMoney.subtract(totalCostMoney);
+                    resultDeptVO.setCostProfit(costProfit);
+                    resultDeptVO.setTotalEarningMoney(totalEarningMoney);
+                    resultDeptVO.setTotalCostMoney(totalCostMoney);
+                    // 计算毛利率 = 毛利金额/总收入  如果毛利金额为0，则为0
+                    if (costProfit.compareTo(BigDecimal.ZERO) == 0) {
+                        // 毛利率为0
+                        resultDeptVO.setCostRatio(BigDecimal.ZERO);
+                    } else {
+                        resultDeptVO.setCostRatio(costProfit.divide(totalEarningMoney, 2, BigDecimal.ROUND_HALF_UP));
+                        // 校验盈亏
+                        if (costProfit.compareTo(BigDecimal.ZERO) == 1) {
+                            resultDeptVO.setMonthType("盈收");
+                        }
+                    }
+                    // 将部门对象放入集合中
+                    resultDeptVOList.add(resultDeptVO);
+                }
+                return ApiResult.getSuccessApiResponse(resultDeptVOList);
+            }
+
+
+
+
+
+            // 遍历查询所有业务归属部门下的成本数据信息
+
+
+
+
+        }
+
+
+        return null;
     }
 }

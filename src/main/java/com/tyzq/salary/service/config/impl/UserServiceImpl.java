@@ -815,4 +815,38 @@ public class UserServiceImpl implements UserService {
         }
         return null;
     }
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 13:45 2021/3/1
+     * @Param:
+     * @return:
+     * @Description: //TODO 校验当前登录人成本管理权限，结果：0--您未配置权限；1--总经理；2--部门经理；3--客户经理；4--财务总监
+     **/
+    @Override
+    public int checkUserCostAuthrity(UserSessionVO userSessionVO) {
+        int result = 0;
+        List<Long> userDeptIdList = userSessionVO.getUserDeptIdList();
+        // 校验
+        if (CollectionUtils.isEmpty(userDeptIdList)) {
+            return result;
+        }
+        // 总经理 权限
+        if (userDeptIdList.contains(Constants.ADMIN_ROLE_ID)) {
+            return 1;
+        }
+        // 部门经理 权限
+        if (userDeptIdList.contains(Constants.ADMIN_ROLE_ID)) {
+            return 2;
+        }
+        // 客户经理 权限
+        if (userDeptIdList.contains(Constants.ADMIN_ROLE_ID)) {
+            return 3;
+        }
+        // 财务总监 权限
+        if (userDeptIdList.contains(Constants.ADMIN_ROLE_ID)) {
+            return 4;
+        }
+        return result;
+    }
 }

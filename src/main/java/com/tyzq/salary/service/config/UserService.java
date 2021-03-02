@@ -132,4 +132,13 @@ public interface UserService {
      * @Description: //TODO 查询全量系统账号 用于配置流程
      **/
     ApiResult selectAllAdminList(UserQueryVO userQueryVO, UserSessionVO userSessionVO);
+
+    /*
+     * @Author: 郑稳超先生 zwc_503@163.com
+     * @Date: 13:41 2021/3/1
+     * @Param:
+     * @return:
+     * @Description: //TODO 校验当前登录人成本管理权限，结果：0--您未配置权限；1--总经理；2--部门经理；3--客户经理；4--财务总监
+     **/
+    int checkUserCostAuthrity(UserSessionVO userSessionVO);
 }
