@@ -1,6 +1,7 @@
 package com.tyzq.salary.model;
 
 import com.baomidou.mybatisplus.enums.IdType;
+import java.math.BigDecimal;
 import java.util.Date;
 import com.baomidou.mybatisplus.annotations.TableId;
 import java.io.Serializable;
@@ -11,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-09-28
+ * @since 2021-03-03
  */
 public class User implements Serializable {
 
@@ -162,6 +163,22 @@ public class User implements Serializable {
      * 用户类型：0--员工，1--管理员
      */
     private Integer adminFlag;
+    /**
+     * 现金类税率
+     */
+    private BigDecimal personMoneyTax;
+    /**
+     * 标准出勤天数
+     */
+    private BigDecimal standardAttendanceDays;
+    /**
+     * 绩效类型：0--无；1--月度；2--季度
+     */
+    private Integer performanceType;
+    /**
+     * 日结工资
+     */
+    private BigDecimal practiceMoney;
     /**
      * 是否删除：0--正常，1--已删除
      */
@@ -480,6 +497,38 @@ public class User implements Serializable {
         this.adminFlag = adminFlag;
     }
 
+    public BigDecimal getPersonMoneyTax() {
+        return personMoneyTax;
+    }
+
+    public void setPersonMoneyTax(BigDecimal personMoneyTax) {
+        this.personMoneyTax = personMoneyTax;
+    }
+
+    public BigDecimal getStandardAttendanceDays() {
+        return standardAttendanceDays;
+    }
+
+    public void setStandardAttendanceDays(BigDecimal standardAttendanceDays) {
+        this.standardAttendanceDays = standardAttendanceDays;
+    }
+
+    public Integer getPerformanceType() {
+        return performanceType;
+    }
+
+    public void setPerformanceType(Integer performanceType) {
+        this.performanceType = performanceType;
+    }
+
+    public BigDecimal getPracticeMoney() {
+        return practiceMoney;
+    }
+
+    public void setPracticeMoney(BigDecimal practiceMoney) {
+        this.practiceMoney = practiceMoney;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -575,6 +624,10 @@ public class User implements Serializable {
         ", userRankType=" + userRankType +
         ", allowFlag=" + allowFlag +
         ", adminFlag=" + adminFlag +
+        ", personMoneyTax=" + personMoneyTax +
+        ", standardAttendanceDays=" + standardAttendanceDays +
+        ", performanceType=" + performanceType +
+        ", practiceMoney=" + practiceMoney +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +
