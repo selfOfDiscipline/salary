@@ -235,6 +235,7 @@
             u.household_type AS householdType,
             u.salary_dept_id AS salaryDeptId,
             u.social_security_start_date AS socialSecurityStartDate,
+            u.standard_attendance_days AS standardAttendanceDays,
             ud.user_account AS userAccount,
             ud.standard_salary AS standardSalary,
             ud.salary_grant_ratio AS salaryGrantRatio,

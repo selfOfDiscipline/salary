@@ -145,6 +145,10 @@ public class SalaryController {
         if (null == computeSalaryParamVO.getMonthPerformanceRatio()) {
             computeSalaryParamVO.setMonthPerformanceRatio(new BigDecimal("1.00"));
         }
+        // 校验 标准天数
+        if (null == computeSalaryParamVO.getStandardAttendanceDays()) {
+            computeSalaryParamVO.setStandardAttendanceDays(new BigDecimal("21.75"));
+        }
         try {
             // 业务操作
             return salaryService.lastMonthIncomeCompute(computeSalaryParamVO, userSessionVO);
@@ -188,10 +192,6 @@ public class SalaryController {
         if (null == computeSalaryParamVO.getPositiveBeforeSickAttendanceDays()) {
             computeSalaryParamVO.setPositiveBeforeSickAttendanceDays(new BigDecimal("0.00"));
         }
-        // 校验必填参数
-        if (null == computeSalaryParamVO.getPositiveAfterAttendanceDays()) {
-            return ApiResult.getFailedApiResponse("转正后应出勤天数不能为空！");
-        }
         // 校验 转正后其他缺勤天数
         if (null == computeSalaryParamVO.getPositiveAfterOtherAttendanceDays()) {
             computeSalaryParamVO.setPositiveAfterOtherAttendanceDays(new BigDecimal("0.00"));
@@ -203,6 +203,10 @@ public class SalaryController {
         // 校验 绩效
         if (null == computeSalaryParamVO.getMonthPerformanceRatio()) {
             computeSalaryParamVO.setMonthPerformanceRatio(new BigDecimal("1.00"));
+        }
+        // 校验 标准天数
+        if (null == computeSalaryParamVO.getStandardAttendanceDays()) {
+            computeSalaryParamVO.setStandardAttendanceDays(new BigDecimal("21.75"));
         }
         try {
             // 业务操作
@@ -246,6 +250,10 @@ public class SalaryController {
         // 校验 绩效
         if (null == computeSalaryParamVO.getMonthPerformanceRatio()) {
             computeSalaryParamVO.setMonthPerformanceRatio(new BigDecimal("1.00"));
+        }
+        // 校验 标准天数
+        if (null == computeSalaryParamVO.getStandardAttendanceDays()) {
+            computeSalaryParamVO.setStandardAttendanceDays(new BigDecimal("21.75"));
         }
         try {
             // 业务操作

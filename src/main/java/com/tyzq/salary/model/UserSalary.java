@@ -12,7 +12,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2021-03-03
+ * @since 2021-03-04
  */
 public class UserSalary implements Serializable {
 
@@ -279,6 +279,10 @@ public class UserSalary implements Serializable {
      * 本月标准计薪天数
      */
     private BigDecimal standardAttendanceDays;
+    /**
+     * 是否有计件薪资：0--无，1--有
+     */
+    private Integer pieceFlag;
     /**
      * 是否删除：0为正常，1为已删除
      */
@@ -829,6 +833,14 @@ public class UserSalary implements Serializable {
         this.standardAttendanceDays = standardAttendanceDays;
     }
 
+    public Integer getPieceFlag() {
+        return pieceFlag;
+    }
+
+    public void setPieceFlag(Integer pieceFlag) {
+        this.pieceFlag = pieceFlag;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -953,6 +965,7 @@ public class UserSalary implements Serializable {
         ", computeSocialSecurityFlag=" + computeSocialSecurityFlag +
         ", payWagesFlag=" + payWagesFlag +
         ", standardAttendanceDays=" + standardAttendanceDays +
+        ", pieceFlag=" + pieceFlag +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +

@@ -246,6 +246,7 @@ public class SalaryServiceImpl implements SalaryService {
                             userSalary.setMonthPostSubsidy(user.getPostSubsidy());// 本月岗位津贴
                             userSalary.setMonthOtherSubsidy(user.getOtherSubsidy());// 本月基本工资（用于导出工资表）
                             userSalary.setDeductServiceFee(user.getDeductThing());// 本月社保代缴手续费
+                            userSalary.setStandardAttendanceDays(user.getStandardAttendanceDays());// 标准出勤天数
                             // 新增入库
                             userSalaryMapper.insert(userSalary);
                         }
@@ -285,6 +286,7 @@ public class SalaryServiceImpl implements SalaryService {
             userSalary.setMonthPostSubsidy(user.getPostSubsidy());// 本月岗位津贴
             userSalary.setMonthOtherSubsidy(user.getOtherSubsidy());// 本月基本工资（用于导出工资表）
             userSalary.setDeductServiceFee(user.getDeductThing());// 本月社保代缴手续费
+            userSalary.setStandardAttendanceDays(user.getStandardAttendanceDays());// 标准出勤天数
             // 新增入库
             userSalaryMapper.insert(userSalary);
         }
@@ -452,6 +454,8 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 查询到基础薪资数据
         UserSalary userSalary = userSalaryMapper.selectById(computeSalaryParamVO.getId());
+        // 用户
+        User user = userMapper.selectById(userSalary.getUserId());
         // 查询用户详情数据
         UserDetail userDetail = new UserDetail();
         userDetail.setDeleteFlag(0);
@@ -463,78 +467,162 @@ public class SalaryServiceImpl implements SalaryService {
             // 置换生成
             convertProduct(userSalary, userDetail);
         }
-        // ========先计算社保部分======
-        computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
-        // todo 校验本月出勤天数  如果大于21.75天，按所传天数计算，如果小于21.75天，按21.75天计算
-        BigDecimal standardDay = Constants.STANDARD_SALARY_RATIO;
+        // TODO 20210304 zwc 逻辑迭代：追加校验1、是否为实习生或兼职人员；2、出勤天数；3、是否计算绩效；4，是否有个人单独现金类个税计算税率
 
-        BigDecimal addDay = computeSalaryParamVO.getNewEntryAttendanceDays();
-        if (addDay.compareTo(standardDay) == 1) {
-            // 所传出勤天数 > 21.75
-            standardDay = addDay;
-        }
-        // 计算
-        // PS:上月入职员工无绩效
-        // 本月出勤工资 = （员工标准薪资*薪资发放比例/21.75）*出勤天数
-        // 本月平均一天工资为
-        BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
-        BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).add(computeSalaryParamVO.getMonthRewordsMoney()).setScale(2, BigDecimal.ROUND_HALF_UP);
+        // 1. 实习生或兼职人员：该类人不计算社保公积金，并且不缴纳个税
+        // 日结工资 ！= 0 元 即代表是这类人员， 为0的时候代表是正常员工
+        if (user.getPracticeMoney().compareTo(BigDecimal.ZERO) == 0) {
+            // 非日结实习生或兼职人员计算薪资
+            // ========先计算社保部分======
+            computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
+            // todo 校验本月出勤天数  根据前端填的出勤天数计算，大部分是21.75  少部分22 或者实际法定工作日天数
+            BigDecimal standardDay = computeSalaryParamVO.getStandardAttendanceDays();
+            // 计算
+            // PS:上月入职员工无绩效
+            // 本月出勤工资 = （员工标准薪资*薪资发放比例/标准出勤天数）* 出勤天数
+            // 本月平均一天工资为
+            BigDecimal oneDayMoney = userDetail.getComputeStandardSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
+            BigDecimal theMonthAttendanceSalary = oneDayMoney.multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
+            // 赋值本月基本工资
+            userSalary.setMonthBaseSalary(theMonthAttendanceSalary);
+            // 本月奖惩金额
+            userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
 
-        // 本月电脑补助 = 本月电脑补助 * 本月出勤天数/21.75
-        BigDecimal addComputerSubsidy = userDetail.getAddComputerSubsidy();
-        addComputerSubsidy = addComputerSubsidy.multiply(computeSalaryParamVO.getNewEntryAttendanceDays().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP));
+            theMonthAttendanceSalary = theMonthAttendanceSalary.add(computeSalaryParamVO.getMonthRewordsMoney());
 
-        theMonthAttendanceSalary = theMonthAttendanceSalary.add(addComputerSubsidy);
-        // 校验是否 减去 社保代缴手续费
-        if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
-            theMonthAttendanceSalary = theMonthAttendanceSalary.subtract(userDetail.getDeductThing());
-            // 赋值本月代缴手续费
-            userSalary.setDeductServiceFee(userDetail.getDeductThing());
-        }
-        userSalary.setAddComputerSubsidy(addComputerSubsidy);
-        // 赋值本月基本工资
-        userSalary.setMonthBaseSalary(theMonthAttendanceSalary);
-        // 本月奖惩金额
-        userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
-        // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，相等代表该员工全部以工资类发放，否则要拆分两部分发放工资
-        // 预设银行代发工资
-        BigDecimal bankSalary = userDetail.getBankSalary();
-        if (userDetail.getStandardSalary().compareTo(bankSalary) == 0) {
-            // 相等  该员工所有工资由同一个银行发放
-            // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
+            // 本月电脑补助 = 本月电脑补助 * 本月出勤天数/标准出勤天数
+            BigDecimal addComputerSubsidy = userDetail.getAddComputerSubsidy();
+            addComputerSubsidy = addComputerSubsidy.multiply(computeSalaryParamVO.getNewEntryAttendanceDays().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP));
+
+            theMonthAttendanceSalary = theMonthAttendanceSalary.add(addComputerSubsidy);
+            // 校验是否 减去 社保代缴手续费
             if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
-                // 计算社保  走工资类
-                lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+                theMonthAttendanceSalary = theMonthAttendanceSalary.subtract(userDetail.getDeductThing());
+                // 赋值本月代缴手续费
+                userSalary.setDeductServiceFee(userDetail.getDeductThing());
+            }
+            userSalary.setAddComputerSubsidy(addComputerSubsidy);
+            // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，不相等要拆分两部分发放工资，
+            //  相等代表先判断当前数据是否选了有计件工资，选了否，则工资用一张卡发放，选了是，则工资还是要两张卡发放
+            // 预设银行代发工资
+            BigDecimal bankSalary = userDetail.getBankSalary();
+            if (userDetail.getStandardSalary().compareTo(bankSalary) == 0) {
+                // 相等
+                // 判断是否有计件工资 标识    pieceFlag == 0为否，  pieceFlag == 1为是，
+                if (0 == computeSalaryParamVO.getPieceFlag()) {
+                    // 该员工所有工资由同一个银行发放
+                    // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
+                    if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                        // 计算社保  走工资类
+                        lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+                    } else {
+                        // 不计算社保  走现金类
+                        lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    }
+                } else {
+                    // 工资还是由两张卡发放
+                    // 不相等，这里判断员工工资是由两部分发放还是一部分发放
+                    if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
+                        // 【本月出勤工资 >= 预设银行代发工资】
+                        // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
+                        if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                            // 计算社保  走两个银行发放
+                            moreThanBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                        } else {
+                            // 不计算社保  走现金类
+                            lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                        }
+                    } else {
+                        // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
+                        // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
+                        if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                            // 计算社保  走工资类
+                            lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+                        } else {
+                            // 不计算社保  走现金类
+                            lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                        }
+                    }
+                }
             } else {
-                // 不计算社保  走现金类
-                lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                // 不相等，这里判断员工工资是由两部分发放还是一部分发放
+                if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
+                    // 【本月出勤工资 >= 预设银行代发工资】
+                    // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
+                    if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                        // 计算社保  走两个银行发放
+                        moreThanBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                    } else {
+                        // 不计算社保  走现金类
+                        lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    }
+                } else {
+                    // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
+                    // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
+                    if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                        // 计算社保  走工资类
+                        lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+                    } else {
+                        // 不计算社保  走现金类
+                        lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    }
+                }
             }
         } else {
-            // 不相等，这里判断员工工资是由两部分发放还是一部分发放
-            if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
-                // 【本月出勤工资 >= 预设银行代发工资】
-                // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
-                if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
-                    // 计算社保  走两个银行发放
-                    moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
-                } else {
-                    // 不计算社保  走现金类
-                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
-                }
-            } else {
-                // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
-                // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
-                if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
-                    // 计算社保  走工资类
-                    lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
-                } else {
-                    // 不计算社保  走现金类
-                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
-                }
-            }
+            // 是日结工资人员
+            // 本月工资 = 日结金额 * 本月出勤天数
+            BigDecimal theMonthRealitySalary = user.getPracticeMoney().multiply(computeSalaryParamVO.getNewEntryAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
+            // 给员工信息赋值
+            // 赋值本月基本工资
+            userSalary.setMonthBaseSalary(theMonthRealitySalary);
+            // 本月奖惩金额
+            userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
+            // 本月他行代发金额
+            userSalary.setMonthOtherBankSalary(theMonthRealitySalary.add(computeSalaryParamVO.getMonthRewordsMoney()));
+            userSalary.setOtherBankShouldTaxMoney(BigDecimal.ZERO);// 他行发放部分个税
+            userSalary.setOtherBankRealitySalary(theMonthRealitySalary.add(computeSalaryParamVO.getMonthRewordsMoney()));// 他行实发小计
+            userSalary.setMonthSalaryRealityTotal(theMonthRealitySalary.add(computeSalaryParamVO.getMonthRewordsMoney()));// 本月总工资实发总计（银行代发实发+他行实发）
+            userSalary.setNewEntryAttendanceDays(computeSalaryParamVO.getNewEntryAttendanceDays());// 本月出勤天数
+            // 赋值本月 其他数据为0
+            userSalary.setMonthBankSalary(BigDecimal.ZERO);// 本月银行代发工资金额
+            userSalary.setMonthPerformanceSalary(BigDecimal.ZERO);// 本月绩效工资
+            userSalary.setTaxBeforeBaseSalaryTotal(BigDecimal.ZERO);// 税前基本工资小计
+            userSalary.setYanglPersonPayMoney(BigDecimal.ZERO);// 养老个人缴纳金额
+            userSalary.setYanglCompanyPayMoney(BigDecimal.ZERO);// 养老公司缴纳金额
+            userSalary.setShiyPersonPayMoney(BigDecimal.ZERO);// 失业个人缴纳金额
+            userSalary.setShiyCompanyPayMoney(BigDecimal.ZERO);// 失业公司缴纳金额
+            userSalary.setGongsPersonPayMoney(BigDecimal.ZERO);// 工伤个人缴纳金额
+            userSalary.setGongsCompanyPayMoney(BigDecimal.ZERO);// 工伤公司缴纳金额
+            userSalary.setShengyPersonPayMoney(BigDecimal.ZERO);// 生育个人缴纳金额
+            userSalary.setShengyCompanyPayMoney(BigDecimal.ZERO);// 生育公司缴纳金额
+            userSalary.setYilPersonPayMoney(BigDecimal.ZERO);// 医疗个人缴纳金额
+            userSalary.setYilCompanyPayMoney(BigDecimal.ZERO);// 医疗公司缴纳金额
+            userSalary.setOtherPersonPayMoney(BigDecimal.ZERO);// 其他险个人缴纳金额
+            userSalary.setOtherCompanyPayMoney(BigDecimal.ZERO);// 其他险公司缴纳金额
+            userSalary.setSocialSecurityPersonPayTotal(BigDecimal.ZERO);// 社保个人承担合计
+            userSalary.setSocailSecurityCompanyPayTotal(BigDecimal.ZERO);// 社保公司承担合计
+            userSalary.setHousingFundPersonPayTotal(BigDecimal.ZERO);// 公积金个人承担合计
+            userSalary.setHousingFundCompanyPayTotal(BigDecimal.ZERO);// 公积金公司承担合计
+            userSalary.setMonthPersonPayTotal(BigDecimal.ZERO);// 本月费用个人总计
+            userSalary.setMonthCompanyPayTotal(BigDecimal.ZERO);// 本月费用公司总计
+            userSalary.setMonthPersonCompanyPayTotal(BigDecimal.ZERO);// 本月个人+公司费用总计
+            userSalary.setBankTaxBeforeShouldSalary(BigDecimal.ZERO);// 银行代发税前应发金额
+            userSalary.setBankTaxableSelfMoney(BigDecimal.ZERO);// 银行代发应纳税所得额
+            userSalary.setBankTaxRatio(BigDecimal.ZERO);// 银行代发税率
+            userSalary.setBankPlanShouldTaxMoney(BigDecimal.ZERO);// 银行代发本月预估应缴税额
+            userSalary.setBankRealityShouldTaxMoney(BigDecimal.ZERO);// 银行代发本月实际应缴税额
+            userSalary.setBankRealitySalary(BigDecimal.ZERO);// 银行代发工资实发总计
+            userSalary.setAddComputerSubsidy(BigDecimal.ZERO);// 增加项：电脑补
+            userSalary.setAddOtherSubsidy(BigDecimal.ZERO);// 增加项：其他
+            userSalary.setDeductSick(BigDecimal.ZERO);// 扣款项：病假
+            userSalary.setDeductThing(BigDecimal.ZERO);// 扣款项：事假
+            userSalary.setDeductOther(BigDecimal.ZERO);// 扣款项：其他
+            userSalary.setDeductServiceFee(BigDecimal.ZERO);// 扣款项：代缴手续费
         }
         // 操作数据库
         // 将用户本月薪资表更新
+        userSalary.setStandardAttendanceDays(computeSalaryParamVO.getStandardAttendanceDays());// 本月标准计薪天数
+        userSalary.setPieceFlag(computeSalaryParamVO.getPieceFlag());// 是否为计件薪资
         userSalary.setNewEntryAttendanceDays(computeSalaryParamVO.getNewEntryAttendanceDays());// 赋值上月出勤天数
         userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());// 赋值本月奖惩金额
         userSalary.setCurrentComputeFlag(1);// 给本月是否计算过标识赋值为 本月已计算过。
@@ -589,6 +677,8 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 查询到基础薪资数据
         UserSalary userSalary = userSalaryMapper.selectById(computeSalaryParamVO.getId());
+        // user
+        User user = userMapper.selectById(userSalary.getUserId());
         // 查询用户详情数据
         UserDetail userDetail = new UserDetail();
         userDetail.setDeleteFlag(0);
@@ -603,7 +693,11 @@ public class SalaryServiceImpl implements SalaryService {
         // ========先计算社保部分======
         computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
 
-        BigDecimal standardDay = Constants.STANDARD_SALARY_RATIO;
+        // TODO 20210304 zwc 逻辑迭代：追加校验1、是否为实习生或兼职人员；2、出勤天数；3、是否计算绩效；4，是否有个人单独现金类个税计算税率
+        // 本月标准计薪天数
+        BigDecimal standardDay = computeSalaryParamVO.getStandardAttendanceDays();
+        // 员工绩效类型：0--无，1--月度，2--季度
+        int performanceType = user.getPerformanceType().intValue();
 
         // 计算
         // PS:上月转正员工，转正前无绩效，转正后有绩效
@@ -643,7 +737,7 @@ public class SalaryServiceImpl implements SalaryService {
 
 
         // 计算 转正前部分
-        // 转正前 本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
+        // 转正前 本月平均一天工资为(员工标准薪资*转正前薪资发放比例/标准薪资)
         BigDecimal theBeforeDecimal = userDetail.getComputeProbationSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         // todo 计算
         // 转正前病假扣款
@@ -660,14 +754,32 @@ public class SalaryServiceImpl implements SalaryService {
                 .subtract(beforeOther)
                 .add(theBeforeDecimal.multiply(computeSalaryParamVO.getPositiveBeforeSickAttendanceDays()).multiply(userDetail.getPersonSickStandard()).setScale(2, BigDecimal.ROUND_HALF_UP));
         // 当月转正后工资 = 转正后薪资 - 转正前满勤工资 - 转正前金额差额
-        BigDecimal afterCost = userDetail.getComputeStandardSalary().subtract(beforeWithAttendanceDay).subtract(divide);
+        BigDecimal computeStandardSalary = userDetail.getComputeStandardSalary().multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal afterCost = computeStandardSalary.subtract(beforeWithAttendanceDay).subtract(divide);
+
         // 转正后预估基本工资
-        BigDecimal afterBaseSalary = afterCost.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal afterBaseSalary = afterCost;
         // 转正后本月绩效工资
-        BigDecimal allPerformaneSalary = afterCost.multiply(userDetail.getPerformanceRatio()).multiply(computeSalaryParamVO.getMonthPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal allPerformaneSalary = BigDecimal.ZERO;
+        // 校验此人是否有绩效
+        if (1 == performanceType) {
+            // 有月度绩效
+            // 转正后预估基本工资
+            afterBaseSalary = afterCost.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+            // 转正后本月绩效工资
+            allPerformaneSalary = afterCost.multiply(userDetail.getPerformanceRatio()).multiply(computeSalaryParamVO.getMonthPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP);
+        } else if (2 == performanceType) {
+            // 季度绩效员工，不在这里计算绩效金额，只计算基本工资金额
+            afterBaseSalary = afterCost.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+        }
+        // 赋值本月基本工资 = 转正前工资 + 转正后预估基本工资
+        userSalary.setMonthBaseSalary(beforeSalary.add(afterBaseSalary));
+        // 赋值本月绩效工资 = 转正后预估基本工资
+        userSalary.setMonthPerformanceSalary(allPerformaneSalary);
+
         // 转正后全勤工资  转正后预估基本工资 + 转正后本月绩效工资
         BigDecimal allSalary = afterBaseSalary.add(allPerformaneSalary);
-        // 转正后  本月平均一天工资为(员工标准薪资/21.75)
+        // 转正后  本月平均一天工资为(员工标准薪资/标准天数)
         BigDecimal theAfterDecimal = userDetail.getComputeStandardSalary().divide(standardDay, 2, BigDecimal.ROUND_HALF_UP);
         // 转正后病假扣款
         BigDecimal afterSick = theAfterDecimal.multiply(computeSalaryParamVO.getPositiveAfterSickAttendanceDays()).setScale(2, BigDecimal.ROUND_HALF_UP);
@@ -681,7 +793,7 @@ public class SalaryServiceImpl implements SalaryService {
         // 本月出勤工资
         BigDecimal theMonthAttendanceSalary = beforeSalary.add(afterSalary);
 
-        // 本月电脑补助 = 本月电脑补助 - 本月电脑补助 * (转正前事假天数 + 转正前病假天数 + 转正后事假天数 + 转正后病假天数)/21.75
+        // 本月电脑补助 = 本月电脑补助 - 本月电脑补助 * (转正前事假天数 + 转正前病假天数 + 转正后事假天数 + 转正后病假天数)/标准天数
         BigDecimal addComputerSubsidy = userDetail.getAddComputerSubsidy();
         addComputerSubsidy = addComputerSubsidy.subtract(addComputerSubsidy.multiply((
                 computeSalaryParamVO.getPositiveBeforeSickAttendanceDays().add(computeSalaryParamVO.getPositiveBeforeOtherAttendanceDays())
@@ -706,23 +818,49 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setDeductSick(allSick);
         userSalary.setDeductThing(beforeOther.add(afterOther));
         userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
-        // 赋值本月基本工资 = 转正前工资 + 转正后工资*(1 - 绩效占工资比例)
-        userSalary.setMonthBaseSalary(afterSalary.multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP).add(beforeSalary));
-        // 赋值本月绩效工资 = 转正后工资*绩效占工资比例
-        userSalary.setMonthPerformanceSalary(afterSalary.multiply(userDetail.getPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP));
 
-        // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，相等代表该员工全部以工资类发放，否则要拆分两部分发放工资
+
+        // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，不相等要拆分两部分发放工资，
+        //  相等代表先判断当前数据是否选了有计件工资，选了否，则工资用一张卡发放，选了是，则工资还是要两张卡发放
         // 预设银行代发工资
         BigDecimal bankSalary = userDetail.getBankSalary();
         if (userDetail.getStandardSalary().compareTo(bankSalary) == 0) {
-            // 相等  该员工所有工资由同一个银行发放
-            // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
-            if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
-                // 计算社保  走工资类
-                lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+            // 相等
+            // 判断是否有计件工资 标识    pieceFlag == 0为否，  pieceFlag == 1为是，
+            if (0 == computeSalaryParamVO.getPieceFlag()) {
+                // 该员工所有工资由同一个银行发放
+                // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
+                if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                    // 计算社保  走工资类
+                    lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+                } else {
+                    // 不计算社保  走现金类
+                    lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                }
             } else {
-                // 不计算社保  走现金类
-                lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                // 工资还是由两张卡发放
+                // 不相等，这里判断员工工资是由两部分发放还是一部分发放
+                if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
+                    // 【本月出勤工资 >= 预设银行代发工资】
+                    // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
+                    if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                        // 计算社保  走两个银行发放
+                        moreThanBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                    } else {
+                        // 不计算社保  走现金类
+                        lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    }
+                } else {
+                    // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
+                    // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
+                    if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                        // 计算社保  走工资类
+                        lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+                    } else {
+                        // 不计算社保  走现金类
+                        lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    }
+                }
             }
         } else {
             // 不相等，这里判断员工工资是由两部分发放还是一部分发放
@@ -731,10 +869,10 @@ public class SalaryServiceImpl implements SalaryService {
                 // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
                 if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
                     // 计算社保  走两个银行发放
-                    moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                    moreThanBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
                 } else {
                     // 不计算社保  走现金类
-                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
                 }
             } else {
                 // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
@@ -744,16 +882,17 @@ public class SalaryServiceImpl implements SalaryService {
                     lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
                 } else {
                     // 不计算社保  走现金类
-                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
                 }
             }
         }
         // 操作数据库
         // 赋值
+        userSalary.setStandardAttendanceDays(computeSalaryParamVO.getStandardAttendanceDays());// 本月标准计薪天数
+        userSalary.setPieceFlag(computeSalaryParamVO.getPieceFlag());// 是否为计件薪资
         userSalary.setPositiveBeforeAttendanceDays(computeSalaryParamVO.getPositiveBeforeAttendanceDays());// 转正前应出勤天数
         userSalary.setPositiveBeforeOtherAttendanceDays(computeSalaryParamVO.getPositiveBeforeOtherAttendanceDays());// 转正前其他缺勤天数
         userSalary.setPositiveBeforeSickAttendanceDays(computeSalaryParamVO.getPositiveBeforeSickAttendanceDays());// 转正前病假缺勤天数
-        userSalary.setPositiveAfterAttendanceDays(computeSalaryParamVO.getPositiveAfterAttendanceDays());// 转正后应出勤天数
         userSalary.setPositiveAfterOtherAttendanceDays(computeSalaryParamVO.getPositiveAfterOtherAttendanceDays());// 转正后其他缺勤天数
         userSalary.setPositiveAfterSickAttendanceDays(computeSalaryParamVO.getPositiveAfterSickAttendanceDays());// 转正后病假天数
         userSalary.setMonthPerformanceRatio(computeSalaryParamVO.getMonthPerformanceRatio());// 本月绩效比例
@@ -1012,6 +1151,8 @@ public class SalaryServiceImpl implements SalaryService {
         }
         // 查询到基础薪资数据
         UserSalary userSalary = userSalaryMapper.selectById(computeSalaryParamVO.getId());
+        // 查询用户信息
+        User user = userMapper.selectById(userSalary.getUserId());
         // 查询用户详情数据
         UserDetail userDetail = new UserDetail();
         userDetail.setDeleteFlag(0);
@@ -1023,6 +1164,8 @@ public class SalaryServiceImpl implements SalaryService {
             // 置换生成
             convertProduct(userSalary, userDetail);
         }
+        // TODO 20210304 zwc 逻辑迭代：追加校验1、是否为实习生或兼职人员；2、出勤天数；3、是否计算绩效；4，是否有个人单独现金类个税计算税率
+
         // ========先计算社保部分======
         computeSocialSecurity(computeSalaryParamVO.getComputeSocialSecurityFlag(), userSalary, userDetail);
         // 计算
@@ -1033,15 +1176,39 @@ public class SalaryServiceImpl implements SalaryService {
         // 本月全勤工资 = 本月预估基本工资 + 本月预估绩效工资
         // 本月出勤工资 = 本月全勤工资 - 本月全勤工资*其他缺勤天数 - 本月全勤工资*病假缺勤天数 + 本月全勤工资*病假比例
 
+        // 本月标准计薪天数
+        BigDecimal standardDays = computeSalaryParamVO.getStandardAttendanceDays();
+        // 员工绩效类型：0--无，1--月度，2--季度
+        int performanceType = user.getPerformanceType().intValue();
+
         // 计算
         // 本月预估基本工资
-        BigDecimal baseSalary = userDetail.getComputeStandardSalary().multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal baseSalary = userDetail.getComputeStandardSalary();
         // 本月预估绩效工资
-        BigDecimal allPerformaneSalary = userDetail.getComputeStandardSalary().multiply(userDetail.getPerformanceRatio()).multiply(computeSalaryParamVO.getMonthPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal allPerformaneSalary = BigDecimal.ZERO;
+        // 赋值本月基本工资 = 本月出勤工资*(1 - 绩效占工资比例)
+        userSalary.setMonthBaseSalary(baseSalary);
+        // 赋值本月绩效工资 = 本月出勤工资*绩效占工资比例
+        userSalary.setMonthPerformanceSalary(allPerformaneSalary);
+        // 校验此人是否有绩效
+        if (1 == performanceType) {
+            // 有月度绩效
+            baseSalary = userDetail.getComputeStandardSalary().multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+            // 本月预估绩效工资
+            allPerformaneSalary = userDetail.getComputeStandardSalary().multiply(userDetail.getPerformanceRatio()).multiply(computeSalaryParamVO.getMonthPerformanceRatio()).setScale(2, BigDecimal.ROUND_HALF_UP);
+            // 赋值本月基本工资 = 本月出勤工资*(1 - 绩效占工资比例)
+            userSalary.setMonthBaseSalary(baseSalary);
+            // 赋值本月绩效工资 = 本月出勤工资*绩效占工资比例
+            userSalary.setMonthPerformanceSalary(allPerformaneSalary);
+        } else if (2 == performanceType) {
+            // 季度绩效员工，不在这里计算绩效金额，只计算基本工资金额
+            baseSalary = userDetail.getComputeStandardSalary().multiply(new BigDecimal("1.00").subtract(userDetail.getPerformanceRatio())).setScale(2, BigDecimal.ROUND_HALF_UP);
+        }
+
         // 本月全勤工资
         BigDecimal allSalary = baseSalary.add(allPerformaneSalary);
-        // 本月平均一天工资为(员工标准薪资*转正前薪资发放比例/21.75)
-        BigDecimal oneDayMoney = allSalary.divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP);
+        // 本月平均一天工资为(员工标准薪资*转正前薪资发放比例/标准天数)
+        BigDecimal oneDayMoney = allSalary.divide(standardDays, 2, BigDecimal.ROUND_HALF_UP);
         // 本月出勤工资
         BigDecimal theMonthAttendanceSalary = allSalary.subtract(oneDayMoney.multiply(computeSalaryParamVO.getOtherAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
                 .subtract(oneDayMoney.multiply(computeSalaryParamVO.getSickAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP))
@@ -1049,7 +1216,7 @@ public class SalaryServiceImpl implements SalaryService {
 
         // 本月电脑补助 = 本月电脑补助 - 本月电脑补助 * (事假天数 + 病假天数)/21.75
         BigDecimal addComputerSubsidy = userDetail.getAddComputerSubsidy();
-        addComputerSubsidy = addComputerSubsidy.subtract(addComputerSubsidy.multiply((computeSalaryParamVO.getOtherAbsenceDays().add(computeSalaryParamVO.getSickAbsenceDays())).divide(Constants.STANDARD_SALARY_RATIO, 2, BigDecimal.ROUND_HALF_UP)));
+        addComputerSubsidy = addComputerSubsidy.subtract(addComputerSubsidy.multiply((computeSalaryParamVO.getOtherAbsenceDays().add(computeSalaryParamVO.getSickAbsenceDays())).divide(standardDays, 2, BigDecimal.ROUND_HALF_UP)));
 
         // 本月出勤工资 = 本月出勤工资 + 电脑补 + 本月奖惩金额(可为正负) - 社保代缴手续费
         theMonthAttendanceSalary = theMonthAttendanceSalary.add(addComputerSubsidy).add(computeSalaryParamVO.getMonthRewordsMoney());
@@ -1067,23 +1234,47 @@ public class SalaryServiceImpl implements SalaryService {
         userSalary.setDeductThing(oneDayMoney.multiply(computeSalaryParamVO.getOtherAbsenceDays()).setScale(2, BigDecimal.ROUND_HALF_UP));
         userSalary.setMonthRewordsMoney(computeSalaryParamVO.getMonthRewordsMoney());
 
-        // 赋值本月基本工资 = 本月出勤工资*(1 - 绩效占工资比例)
-        userSalary.setMonthBaseSalary(baseSalary);
-        // 赋值本月绩效工资 = 本月出勤工资*绩效占工资比例
-        userSalary.setMonthPerformanceSalary(allPerformaneSalary);
-
-        // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，相等代表该员工全部以工资类发放，否则要拆分两部分发放工资
+        // TODO 计算个税，先判断员工 标准薪资 和 员工预设银行代发工资 是否相等，不相等要拆分两部分发放工资，
+        //  相等代表先判断当前数据是否选了有计件工资，选了否，则工资用一张卡发放，选了是，则工资还是要两张卡发放
         // 预设银行代发工资
         BigDecimal bankSalary = userDetail.getBankSalary();
         if (userDetail.getStandardSalary().compareTo(bankSalary) == 0) {
-            // 相等  该员工所有工资由同一个银行发放
-            // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
-            if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
-                // 计算社保  走工资类
-                lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+            // 相等
+            // 判断是否有计件工资 标识    pieceFlag == 0为否，  pieceFlag == 1为是，
+            if (0 == computeSalaryParamVO.getPieceFlag()) {
+                // 该员工所有工资由同一个银行发放
+                // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
+                if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                    // 计算社保  走工资类
+                    lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+                } else {
+                    // 不计算社保  走现金类
+                    lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                }
             } else {
-                // 不计算社保  走现金类
-                lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                // 工资还是由两张卡发放
+                // 不相等，这里判断员工工资是由两部分发放还是一部分发放
+                if (theMonthAttendanceSalary.compareTo(bankSalary) > -1) {
+                    // 【本月出勤工资 >= 预设银行代发工资】
+                    // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
+                    if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                        // 计算社保  走两个银行发放
+                        moreThanBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                    } else {
+                        // 不计算社保  走现金类
+                        lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    }
+                } else {
+                    // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
+                    // 判断是否计算社保，如果计算社保，薪资全部走工资类发放，不计算社保全部走现金类发放
+                    if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
+                        // 计算社保  走工资类
+                        lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
+                    } else {
+                        // 不计算社保  走现金类
+                        lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    }
+                }
             }
         } else {
             // 不相等，这里判断员工工资是由两部分发放还是一部分发放
@@ -1092,10 +1283,10 @@ public class SalaryServiceImpl implements SalaryService {
                 // 判断是否计算社保，如果计算社保，两个银行发放，不计算社保全部走现金类发放
                 if (0 == computeSalaryParamVO.getComputeSocialSecurityFlag()) {
                     // 计算社保  走两个银行发放
-                    moreThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
+                    moreThanBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList, salaryNonPersonTaxList);
                 } else {
                     // 不计算社保  走现金类
-                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
                 }
             } else {
                 // 【本月出勤工资 < 预设银行代发工资】 一个银行发放
@@ -1105,12 +1296,14 @@ public class SalaryServiceImpl implements SalaryService {
                     lessThanBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryPersonTaxList);
                 } else {
                     // 不计算社保  走现金类
-                    lessThanOtherBankSalary(userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
+                    lessThanOtherBankSalary(user, userSalary, userDetail, theMonthAttendanceSalary, salaryNonPersonTaxList);
                 }
             }
         }
         // 操作数据库
         // 赋值
+        userSalary.setStandardAttendanceDays(computeSalaryParamVO.getStandardAttendanceDays());// 本月标准计薪天数
+        userSalary.setPieceFlag(computeSalaryParamVO.getPieceFlag());// 是否为计件薪资
         userSalary.setOtherAbsenceDays(computeSalaryParamVO.getOtherAbsenceDays());// 其他缺勤天数
         userSalary.setSickAdsenceDays(computeSalaryParamVO.getSickAbsenceDays());// 病假缺勤天数
         userSalary.setMonthPerformanceRatio(computeSalaryParamVO.getMonthPerformanceRatio());// 本月绩效比例
@@ -1128,7 +1321,7 @@ public class SalaryServiceImpl implements SalaryService {
      * @return:
      * @Description: //TODO 本月出勤工资 >= 预设银行代发工资
      **/
-    public void moreThanBankSalary(UserSalary userSalary, UserDetail userDetail, BigDecimal theMonthAttendanceSalary,
+    public void moreThanBankSalary(User user, UserSalary userSalary, UserDetail userDetail, BigDecimal theMonthAttendanceSalary,
                                    List<SalaryPersonTax> salaryPersonTaxList, List<SalaryNonPersonTax> salaryNonPersonTaxList) {
         // 本月出勤工资 >= 预设银行代发工资
         // 第一：拿 【预设银行代发工资】去计算银行代发工资个税
@@ -1210,46 +1403,73 @@ public class SalaryServiceImpl implements SalaryService {
         BigDecimal monthOtherBankSalary = theMonthAttendanceSalary.subtract(userDetail.getBankSalary());
         // TODO 他行代发工资应纳税所得额 = 本月出勤工资 - 个人社保公积金 - 五项专项扣除合计 - 纳税起步金额
         BigDecimal theMonthOtherBankSelfMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getSpecialDeductTotal()).subtract(userDetail.getStipulationStartTaxMoney());
-        // 判断所在区间并计算
-        for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
-            // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-            // 接上：是的时候，只判断当前钱数是否大于开始钱数
-            // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-            if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
-                // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
-                    // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                    BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                    // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                    BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                    BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                    // 赋值 他行代发部分个税
-                    userSalary.setOtherBankShouldTaxMoney(divide);
-                    // 赋值 他行实发小计
-                    userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
-                    // 赋值 本月总工资实发总计
-                    userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                    // 跳出循环
-                    break;
+        // 这里校验金额是否大于0元，大于0元走下面匹配逻辑，否则直接赋值不用扣税
+        if (theMonthOtherBankSelfMoney.compareTo(new BigDecimal("0.00")) == 1) {
+            // 判断用户是否有自己固定的 现金类个税计算比例
+            if (user.getPersonMoneyTax().compareTo(BigDecimal.ZERO) == 0) {
+                // 判断所在区间并计算
+                for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
+                    // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
+                    // 接上：是的时候，只判断当前钱数是否大于开始钱数
+                    // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
+                    if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
+                        // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
+                        if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
+                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                            BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                            // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
+                            BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
+                            BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
+                            // 赋值 他行代发部分个税
+                            userSalary.setOtherBankShouldTaxMoney(divide);
+                            // 赋值 他行实发小计
+                            userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
+                            // 赋值 本月总工资实发总计
+                            userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+                            // 跳出循环
+                            break;
+                        }
+                    } else {
+                        // 是：只判断当前钱数是否大于开始钱数
+                        if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
+                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                            BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                            // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
+                            BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
+                            BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
+                            // 赋值 他行代发部分个税
+                            userSalary.setOtherBankShouldTaxMoney(divide);
+                            // 赋值 他行实发小计
+                            userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
+                            // 赋值 本月总工资实发总计
+                            userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+                            // 跳出循环
+                            break;
+                        }
+                    }
                 }
             } else {
-                // 是：只判断当前钱数是否大于开始钱数
-                if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
-                    // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                    BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                    // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                    BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                    BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                    // 赋值 他行代发部分个税
-                    userSalary.setOtherBankShouldTaxMoney(divide);
-                    // 赋值 他行实发小计
-                    userSalary.setOtherBankRealitySalary(monthOtherBankSalary.subtract(divide));
-                    // 赋值 本月总工资实发总计
-                    userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                    // 跳出循环
-                    break;
-                }
+                // 此人配置了单独现金类个税   这一类公司不给承担一半
+                // 此人单独个税为
+                BigDecimal personMoneyTax = user.getPersonMoneyTax().divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+                // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(personMoneyTax).setScale(2, BigDecimal.ROUND_HALF_UP);
+                // 本月应缴税额 = (计算税率相乘后金额 - 银行代发工资本月缴纳税额)
+                BigDecimal subtract = theMultiplyMoney.subtract(userSalary.getBankRealityShouldTaxMoney());
+                // 赋值 他行代发部分个税
+                userSalary.setOtherBankShouldTaxMoney(subtract);
+                // 赋值 他行实发小计
+                userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(subtract));
+                // 赋值 本月总工资实发总计
+                userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
             }
+        } else {
+            // 赋值 他行代发部分个税
+            userSalary.setOtherBankShouldTaxMoney(new BigDecimal("0.00"));
+            // 赋值 他行实发小计
+            userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary);
+            // 赋值 本月总工资实发总计
+            userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
         }
     }
     /*
@@ -1488,7 +1708,7 @@ public class SalaryServiceImpl implements SalaryService {
      * @return:
      * @Description: //TODO 本月出勤工资 < 预设银行代发工资  同一个银行发放  走现金类发放
      **/
-    public void lessThanOtherBankSalary(UserSalary userSalary, UserDetail userDetail, BigDecimal theMonthAttendanceSalary,
+    public void lessThanOtherBankSalary(User user, UserSalary userSalary, UserDetail userDetail, BigDecimal theMonthAttendanceSalary,
                                    List<SalaryNonPersonTax> salaryNonPersonTaxList) {
         // 将该员工所有的工资类的置为0
         // 赋值 银行代发税前应发金额 = 预设银行代发工资 - 个人社保公积金
@@ -1506,46 +1726,64 @@ public class SalaryServiceImpl implements SalaryService {
         BigDecimal theMonthOtherBankSelfMoney = theMonthAttendanceSalary.subtract(userSalary.getMonthPersonPayTotal()).subtract(userDetail.getSpecialDeductTotal()).subtract(userDetail.getStipulationStartTaxMoney());
         // 这里校验金额是否大于0元，大于0元走下面匹配逻辑，否则直接赋值不用扣税
         if (theMonthOtherBankSelfMoney.compareTo(new BigDecimal("0.00")) == 1) {
-            // 判断所在区间并计算
-            for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
-                // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
-                // 接上：是的时候，只判断当前钱数是否大于开始钱数
-                // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
-                if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
-                    // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
-                    if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
-                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                        BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                        BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                        BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                        // 赋值 他行代发部分个税
-                        userSalary.setOtherBankShouldTaxMoney(divide);
-                        // 赋值 他行实发小计
-                        userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(divide));
-                        // 赋值 本月总工资实发总计
-                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                        // 跳出循环
-                        break;
-                    }
-                } else {
-                    // 是：只判断当前钱数是否大于开始钱数
-                    if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
-                        // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
-                        BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
-                        BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
-                        BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
-                        // 赋值 他行代发部分个税
-                        userSalary.setOtherBankShouldTaxMoney(divide);
-                        // 赋值 他行实发小计
-                        userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(divide));
-                        // 赋值 本月总工资实发总计
-                        userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
-                        // 跳出循环
-                        break;
+            // 判断用户是否有自己固定的 现金类个税计算比例
+            if (user.getPersonMoneyTax().compareTo(BigDecimal.ZERO) == 0) {
+                // 未配置个人单独个税，走公共计税方式
+                // 判断所在区间并计算
+                for (SalaryNonPersonTax nonPersonTax : salaryNonPersonTaxList) {
+                    // 规则：先判断当前数据是否是最大所得额标识：0--否，1--是
+                    // 接上：是的时候，只判断当前钱数是否大于开始钱数
+                    // 接上：否的时候，判断当前钱数要大于开始钱数，小于等于结束钱数
+                    if (0 == nonPersonTax.getMaxTaxFlag().intValue()) {
+                        // 否：判断当前钱数要大于开始钱数，小于等于结束钱数
+                        if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1 && theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getEndMoney()) < 1) {
+                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                            BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                            // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
+                            BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
+                            BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
+                            // 赋值 他行代发部分个税
+                            userSalary.setOtherBankShouldTaxMoney(divide);
+                            // 赋值 他行实发小计
+                            userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(divide));
+                            // 赋值 本月总工资实发总计
+                            userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+                            // 跳出循环
+                            break;
+                        }
+                    } else {
+                        // 是：只判断当前钱数是否大于开始钱数
+                        if (theMonthOtherBankSelfMoney.compareTo(nonPersonTax.getStartMoney()) == 1) {
+                            // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                            BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(nonPersonTax.getTax()).setScale(2, BigDecimal.ROUND_HALF_UP);
+                            // 本月应缴税额 = (计算税率相乘后金额 - 该区间国家减免税额 - 银行代发工资本月缴纳税额)/2
+                            BigDecimal subtract = theMultiplyMoney.subtract(nonPersonTax.getDeductMoney()).subtract(userSalary.getBankRealityShouldTaxMoney());
+                            BigDecimal divide = subtract.divide(new BigDecimal("2.00"), 2, BigDecimal.ROUND_HALF_UP);
+                            // 赋值 他行代发部分个税
+                            userSalary.setOtherBankShouldTaxMoney(divide);
+                            // 赋值 他行实发小计
+                            userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(divide));
+                            // 赋值 本月总工资实发总计
+                            userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
+                            // 跳出循环
+                            break;
+                        }
                     }
                 }
+            } else {
+                // 此人配置了单独现金类个税   这一类公司不给承担一半
+                // 此人单独个税为
+                BigDecimal personMoneyTax = user.getPersonMoneyTax().divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+                // 计算税率相乘后金额 = 本月应纳税所得额 * 所在区间税率
+                BigDecimal theMultiplyMoney = theMonthOtherBankSelfMoney.multiply(personMoneyTax).setScale(2, BigDecimal.ROUND_HALF_UP);
+                // 本月应缴税额 = (计算税率相乘后金额 - 银行代发工资本月缴纳税额)
+                BigDecimal subtract = theMultiplyMoney.subtract(userSalary.getBankRealityShouldTaxMoney());
+                // 赋值 他行代发部分个税
+                userSalary.setOtherBankShouldTaxMoney(subtract);
+                // 赋值 他行实发小计
+                userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(subtract));
+                // 赋值 本月总工资实发总计
+                userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
             }
         } else {
             // 赋值 他行代发部分个税

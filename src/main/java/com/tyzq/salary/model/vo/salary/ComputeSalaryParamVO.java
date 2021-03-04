@@ -63,6 +63,30 @@ public class ComputeSalaryParamVO implements Serializable {
     /* computeSocialSecurityFlag  本月是否计算社保标识，为0计算，为1则不计算，默认为0*/
     private int computeSocialSecurityFlag = 0;
 
+    /* pieceFlag  是否有计件工资，0--无，1--是，默认为0*/
+    private int pieceFlag = 0;
+
+    /**
+     * 标准天数
+     */
+    private BigDecimal standardAttendanceDays;
+
+    public int getPieceFlag() {
+        return pieceFlag;
+    }
+
+    public void setPieceFlag(int pieceFlag) {
+        this.pieceFlag = pieceFlag;
+    }
+
+    public BigDecimal getStandardAttendanceDays() {
+        return standardAttendanceDays;
+    }
+
+    public void setStandardAttendanceDays(BigDecimal standardAttendanceDays) {
+        this.standardAttendanceDays = standardAttendanceDays;
+    }
+
     public Long getId() {
         return id;
     }
