@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tyzq.salary.mapper.PerformanceSalaryMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.tyzq.salary.model.PerformanceSalary">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="user_account" property="userAccount" />
+        <result column="user_name" property="userName" />
+        <result column="user_role_name" property="userRoleName" />
+        <result column="salary_dept_name" property="salaryDeptName" />
+        <result column="belong_year" property="belongYear" />
+        <result column="belong_quarter" property="belongQuarter" />
+        <result column="performance_salary" property="performanceSalary" />
+        <result column="performance_ratio" property="performanceRatio" />
+        <result column="quarter_rewords_money" property="quarterRewordsMoney" />
+        <result column="should_reality_salary" property="shouldRealitySalary" />
+        <result column="tax" property="tax" />
+        <result column="tax_money" property="taxMoney" />
+        <result column="reality_salary" property="realitySalary" />
+        <result column="non_reality_salary" property="nonRealitySalary" />
+        <result column="last_send_money" property="lastSendMoney" />
+        <result column="last_send_date" property="lastSendDate" />
+        <result column="salary_dept_id" property="salaryDeptId" />
+        <result column="again_compute_flag" property="againComputeFlag" />
+        <result column="current_compute_flag" property="currentComputeFlag" />
+        <result column="pay_wages_flag" property="payWagesFlag" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="create_id" property="createId" />
+        <result column="create_name" property="createName" />
+        <result column="create_time" property="createTime" />
+        <result column="edit_id" property="editId" />
+        <result column="edit_name" property="editName" />
+        <result column="edit_time" property="editTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, user_account, user_name, user_role_name, salary_dept_name, belong_year, belong_quarter, performance_salary, performance_ratio, quarter_rewords_money, should_reality_salary, tax, tax_money, reality_salary, non_reality_salary, last_send_money, last_send_date, salary_dept_id, again_compute_flag, current_compute_flag, pay_wages_flag, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+    </sql>
+
+</mapper>

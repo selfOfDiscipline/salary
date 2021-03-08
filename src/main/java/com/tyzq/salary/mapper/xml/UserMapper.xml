@@ -367,4 +367,38 @@
             ORDER BY u.user_entry_date DESC, u.create_time DESC
         </where>
     </select>
+
+    <!-- 查询所有 有季度绩效的员工信息-->
+    <select id="selectAllQuarterUserList" resultType="com.tyzq.salary.model.vo.salary.PerformanceBaseUserVO">
+        SELECT
+            ud.user_id AS userId,
+            u.user_name AS userName,
+            u.salary_dept_id AS salaryDeptId,
+            ud.user_account AS userAccount,
+            ud.standard_salary AS standardSalary,
+            ud.performance_ratio AS performanceRatio,
+            sd.salary_dept_name AS salaryDeptName,
+            y.roleName AS userRoleName
+        FROM
+        user AS u
+        LEFT JOIN user_detail AS ud ON u.id = ud.user_id
+        LEFT JOIN dept AS d ON u.user_dept_id = d.id
+        LEFT JOIN salary_dept AS sd ON u.salary_dept_id = sd.id
+        LEFT JOIN (
+                        SELECT
+                            u.id AS id,
+                            GROUP_CONCAT( r.role_name ) AS roleName
+                        FROM
+                        user AS u
+                        LEFT JOIN user_role AS ur ON u.id = ur.user_id
+                        LEFT JOIN role AS r ON r.id = ur.role_id
+                        GROUP BY u.id
+                    ) AS y ON y.id = u.id
+        <where>
+            u.delete_flag = 0
+            AND u.admin_flag = 0
+            AND u.performance_type = 2
+            ORDER BY u.user_entry_date DESC, u.create_time DESC
+        </where>
+    </select>
 </mapper>

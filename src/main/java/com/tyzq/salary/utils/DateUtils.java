@@ -324,4 +324,48 @@ public class DateUtils {
 		}
 		return format.format(c.getTime());
 	}
+
+	/*
+	 * @Author: 郑稳超先生 zwc_503@163.com
+	 * @Date: 11:50 2021/3/5
+	 * @Param:
+	 * @return:
+	 * @Description: //TODO 获取当前年
+	 **/
+	public static int getThisYear() {
+		return Calendar.getInstance().get(Calendar.YEAR);
+	}
+
+	/*
+	 * @Author: 郑稳超先生 zwc_503@163.com
+	 * @Date: 11:50 2021/3/5
+	 * @Param:
+	 * @return:
+	 * @Description: //TODO 获取当前月
+	 **/
+	public static int getThisMonth() {
+		return Calendar.getInstance().get(Calendar.MONTH) + 1;
+	}
+
+	/*
+	 * @Author: 郑稳超先生 zwc_503@163.com
+	 * @Date: 11:50 2021/3/5
+	 * @Param:
+	 * @return:
+	 * @Description: //TODO 获取当前月份的上个季度，
+	 **/
+	public static int getThisMonthLastQuarter() {
+		int thisMonth = getThisMonth();
+		// 定义
+		int quarter = 4;
+		// 判断本次生成是生成第几季度的数据
+		if (4 <= thisMonth && thisMonth <= 6) {
+			quarter = 1;
+		} else if (7 <= thisMonth && thisMonth <= 9) {
+			quarter = 2;
+		} else if (10 <= thisMonth && thisMonth <= 12) {
+			quarter = 3;
+		}
+		return quarter;
+	}
 }
