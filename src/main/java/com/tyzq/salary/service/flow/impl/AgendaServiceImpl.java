@@ -135,9 +135,9 @@ public class AgendaServiceImpl implements AgendaService {
         UserComputeSalaryQueryVO userComputeSalaryQueryVO = new UserComputeSalaryQueryVO();
         userComputeSalaryQueryVO.setMenuType(menuType);
         // 获取当月日期
-        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateMonth());
+        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.stepMonthWithDate(DateUtils.getThisDateMonth(), 1));
         // 获取上月日期
-        userComputeSalaryQueryVO.setThisDateLastMonth(DateUtils.getThisDateLastMonth());
+        userComputeSalaryQueryVO.setThisDateLastMonth(salaryFlowBill.getSalaryDate());
         List<UserComputeResultVO> userComputeResultVOList = userSalaryMapper.selectUserListByIds(userComputeSalaryQueryVO, stringList);
         return ApiResult.getSuccessApiResponse(userComputeResultVOList);
     }

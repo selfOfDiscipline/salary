@@ -3,6 +3,7 @@ package com.tyzq.salary.model.vo.user;
 import com.tyzq.salary.model.UserDetail;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -32,6 +33,17 @@ public class UserDetailVO extends UserDetail implements Serializable {
 
     /* 用户的社保开始缴纳日期*/
     private Date socialSecurityStartDate;
+
+    /* 员工标准出勤天数*/
+    private BigDecimal standardAttendanceDays;
+
+    public BigDecimal getStandardAttendanceDays() {
+        return standardAttendanceDays;
+    }
+
+    public void setStandardAttendanceDays(BigDecimal standardAttendanceDays) {
+        this.standardAttendanceDays = standardAttendanceDays;
+    }
 
     public String getUserName() {
         return userName;

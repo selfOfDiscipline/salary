@@ -40,6 +40,10 @@
         <result column="user_rank_type" property="userRankType" />
         <result column="allow_flag" property="allowFlag" />
         <result column="admin_flag" property="adminFlag" />
+        <result column="person_money_tax" property="personMoneyTax" />
+        <result column="standard_attendance_days" property="standardAttendanceDays" />
+        <result column="performance_type" property="performanceType" />
+        <result column="practice_money" property="practiceMoney" />
         <result column="delete_flag" property="deleteFlag" />
         <result column="create_id" property="createId" />
         <result column="create_name" property="createName" />
@@ -51,7 +55,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, user_name, user_card, user_tel, user_account, user_password, user_salt, user_email, user_sex, original_address, now_address, user_entry_date, plan_change_formal_date, reality_change_formal_date, user_leave_date, user_dept_id, salary_dept_id, remark, household_type, salary_bank_card, salary_bank_open, salary_bank_open_name, salary_bank_open_province, salary_bank_open_city, other_bank_card, other_bank_open, other_bank_open_name, other_bank_open_province, other_bank_open_city, social_security_card, social_security_start_date, work_city, user_post_type, user_rank_type, allow_flag, admin_flag, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
+        id, user_name, user_card, user_tel, user_account, user_password, user_salt, user_email, user_sex, original_address, now_address, user_entry_date, plan_change_formal_date, reality_change_formal_date, user_leave_date, user_dept_id, salary_dept_id, remark, household_type, salary_bank_card, salary_bank_open, salary_bank_open_name, salary_bank_open_province, salary_bank_open_city, other_bank_card, other_bank_open, other_bank_open_name, other_bank_open_province, other_bank_open_city, social_security_card, social_security_start_date, work_city, user_post_type, user_rank_type, allow_flag, admin_flag, person_money_tax, standard_attendance_days, performance_type, practice_money, delete_flag, create_id, create_name, create_time, edit_id, edit_name, edit_time
     </sql>
 
     <!-- 查询用户列表-->
@@ -231,6 +235,7 @@
             u.household_type AS householdType,
             u.salary_dept_id AS salaryDeptId,
             u.social_security_start_date AS socialSecurityStartDate,
+            u.standard_attendance_days AS standardAttendanceDays,
             ud.user_account AS userAccount,
             ud.standard_salary AS standardSalary,
             ud.salary_grant_ratio AS salaryGrantRatio,
@@ -359,6 +364,40 @@
             <if test="userCostQueryVO.userDeptId != null">
                 AND u.user_dept_id = #{userCostQueryVO.userDeptId}
             </if>
+            ORDER BY u.user_entry_date DESC, u.create_time DESC
+        </where>
+    </select>
+
+    <!-- 查询所有 有季度绩效的员工信息-->
+    <select id="selectAllQuarterUserList" resultType="com.tyzq.salary.model.vo.salary.PerformanceBaseUserVO">
+        SELECT
+            ud.user_id AS userId,
+            u.user_name AS userName,
+            u.salary_dept_id AS salaryDeptId,
+            ud.user_account AS userAccount,
+            ud.standard_salary AS standardSalary,
+            ud.performance_ratio AS performanceRatio,
+            sd.salary_dept_name AS salaryDeptName,
+            y.roleName AS userRoleName
+        FROM
+        user AS u
+        LEFT JOIN user_detail AS ud ON u.id = ud.user_id
+        LEFT JOIN dept AS d ON u.user_dept_id = d.id
+        LEFT JOIN salary_dept AS sd ON u.salary_dept_id = sd.id
+        LEFT JOIN (
+                        SELECT
+                            u.id AS id,
+                            GROUP_CONCAT( r.role_name ) AS roleName
+                        FROM
+                        user AS u
+                        LEFT JOIN user_role AS ur ON u.id = ur.user_id
+                        LEFT JOIN role AS r ON r.id = ur.role_id
+                        GROUP BY u.id
+                    ) AS y ON y.id = u.id
+        <where>
+            u.delete_flag = 0
+            AND u.admin_flag = 0
+            AND u.performance_type = 2
             ORDER BY u.user_entry_date DESC, u.create_time DESC
         </where>
     </select>
