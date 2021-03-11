@@ -203,7 +203,7 @@ public class BaseServiceImpl implements BaseService {
         boolean adminFlag = false;
         if (roleIdList.contains(Constants.ADMIN_ROLE_ID)
                 || roleIdList.contains(Constants.OTHER_ROLE_ID)
-                || roleIdList.contains(Constants.MONEY_ROLE_ID)
+                || roleIdList.contains(Constants.CASHIER_ROLE_ID)
                 || roleIdList.contains(Constants.FINANCE_ROLE_ID)) {
             adminFlag = true;
         }

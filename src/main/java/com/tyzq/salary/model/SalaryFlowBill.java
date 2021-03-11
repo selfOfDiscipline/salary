@@ -11,7 +11,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author zwc_503@163.com
- * @since 2020-10-16
+ * @since 2021-03-10
  */
 public class SalaryFlowBill implements Serializable {
 
@@ -86,6 +86,10 @@ public class SalaryFlowBill implements Serializable {
      * 薪资表id字符串，多个用英文逗号分隔
      */
     private String userSalaryIds;
+    /**
+     * 是否被汇总：0--否，1--是
+     */
+    private Integer collectFlag;
     /**
      * 是否删除：0--正常，1--已删除
      */
@@ -252,6 +256,14 @@ public class SalaryFlowBill implements Serializable {
         this.userSalaryIds = userSalaryIds;
     }
 
+    public Integer getCollectFlag() {
+        return collectFlag;
+    }
+
+    public void setCollectFlag(Integer collectFlag) {
+        this.collectFlag = collectFlag;
+    }
+
     public Integer getDeleteFlag() {
         return deleteFlag;
     }
@@ -328,6 +340,7 @@ public class SalaryFlowBill implements Serializable {
         ", handleOpinion=" + handleOpinion +
         ", handleDate=" + handleDate +
         ", userSalaryIds=" + userSalaryIds +
+        ", collectFlag=" + collectFlag +
         ", deleteFlag=" + deleteFlag +
         ", createId=" + createId +
         ", createName=" + createName +

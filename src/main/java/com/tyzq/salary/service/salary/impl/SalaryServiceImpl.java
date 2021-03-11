@@ -138,9 +138,9 @@ public class SalaryServiceImpl implements SalaryService {
             }
         }
         // 获取当月日期
-        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateLastMonth());
+        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateMonth());
         // 获取上月日期
-        userComputeSalaryQueryVO.setThisDateLastMonth(DateUtils.stepMonthWithDate(DateUtils.getThisDateLastMonth(), -1));
+        userComputeSalaryQueryVO.setThisDateLastMonth(DateUtils.getThisDateLastMonth());
 //        // 获取当月日期
 //        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateMonth());
 //        // 获取上月日期
@@ -1467,7 +1467,7 @@ public class SalaryServiceImpl implements SalaryService {
             // 赋值 他行代发部分个税
             userSalary.setOtherBankShouldTaxMoney(new BigDecimal("0.00"));
             // 赋值 他行实发小计
-            userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary);
+            userSalary.setOtherBankRealitySalary(theMonthAttendanceSalary.subtract(userDetail.getBankSalary()));
             // 赋值 本月总工资实发总计
             userSalary.setMonthSalaryRealityTotal(userSalary.getBankRealitySalary().add(userSalary.getOtherBankRealitySalary()));
         }
@@ -1889,9 +1889,9 @@ public class SalaryServiceImpl implements SalaryService {
             salaryDeptIdList.add(salaryDeptId);
         }
         // 获取上个月时间
-        Date date = DateUtils.getThisDateLastMonth();
-
-        Date thisDateLastMonth = DateUtils.stepMonthWithDate(date, -1);
+//        Date date = DateUtils.getThisDateLastMonth();
+//        Date thisDateLastMonth = DateUtils.stepMonthWithDate(date, -1);
+        Date thisDateLastMonth = DateUtils.getThisDateLastMonth();
 
         // 查询薪资表id   条件为上个月份，且允许结算，且用户角色，薪资归属部门id集合， 另外加上“本月已经结算过”条件， currentComputeFlag == 0  未结算， currentComputeFlag == 1  已经结算
         Integer currentComputeFlag = 1;

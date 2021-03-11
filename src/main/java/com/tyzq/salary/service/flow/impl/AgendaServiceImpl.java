@@ -135,7 +135,7 @@ public class AgendaServiceImpl implements AgendaService {
         UserComputeSalaryQueryVO userComputeSalaryQueryVO = new UserComputeSalaryQueryVO();
         userComputeSalaryQueryVO.setMenuType(menuType);
         // 获取当月日期
-        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.stepMonthWithDate(DateUtils.getThisDateMonth(), 1));
+        userComputeSalaryQueryVO.setThisDateMonth(DateUtils.getThisDateMonth());
         // 获取上月日期
         userComputeSalaryQueryVO.setThisDateLastMonth(salaryFlowBill.getSalaryDate());
         List<UserComputeResultVO> userComputeResultVOList = userSalaryMapper.selectUserListByIds(userComputeSalaryQueryVO, stringList);
@@ -437,6 +437,11 @@ public class AgendaServiceImpl implements AgendaService {
         if (collectBillList.size() > 1) {
             return ApiResult.getFailedApiResponse("请选择同一个月份的流程单据汇总！");
         }
+        // 校验 是否都是未被汇总过的单子
+        List<SalaryFlowBill> collectList = flowBillList.stream().filter(s -> s.getCollectFlag() == 1).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(collectList)) {
+            return ApiResult.getFailedApiResponse("已被汇总过的单据不允许重复汇总！");
+        }
         // 校验是否是全部的单据
         // 查询所有薪资归属部门集合
         Integer salaryDeptCount = salaryDeptMapper.selectCount(Condition.create().eq("delete_flag", 0));
@@ -452,6 +457,12 @@ public class AgendaServiceImpl implements AgendaService {
         // 循环取值
         for (SalaryFlowBill flowBill : flowBillList) {
             salaryIdList.addAll((List<Long>) JSONArray.parse(flowBill.getUserSalaryIds()));
+            // 单据更新为 已被汇总
+            flowBill.setCollectFlag(1);
+            flowBill.setEditId(userSessionVO.getUserAccount());
+            flowBill.setEditName(userSessionVO.getUserName());
+            flowBill.setEditTime(new Date());
+            salaryFlowBillMapper.updateById(flowBill);
         }
         // 获取流程
         // 查询人力资源总监角色的流程

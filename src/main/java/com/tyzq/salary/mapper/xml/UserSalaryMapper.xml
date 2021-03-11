@@ -185,7 +185,7 @@
             /* 为0查询上月入职员工，我们即用入职日期大于上月1号 并且 小于本月1号*/
             <if test="userVO.menuType == 0">
                 AND u.user_entry_date <![CDATA[>=]]> #{userVO.thisDateLastMonth} AND u.user_entry_date <![CDATA[<]]> #{userVO.thisDateMonth}
-                AND u.practice_money <![CDATA[!=]]> 0
+                OR u.practice_money <![CDATA[!=]]> 0
             </if>
             /* 为1查询上月转正员工，我们即用实际转正日期大于上月1号 并且 小于本月1号*/
             <if test="userVO.menuType == 1">
@@ -317,7 +317,7 @@
             /* 为0查询上月入职员工，我们即用入职日期大于上月1号 并且 小于本月1号*/
             <if test="userVO.menuType == 0">
                 AND u.user_entry_date <![CDATA[>=]]> #{userVO.thisDateLastMonth} AND u.user_entry_date <![CDATA[<]]> #{userVO.thisDateMonth}
-                AND u.practice_money <![CDATA[!=]]> 0
+                OR u.practice_money <![CDATA[!=]]> 0
             </if>
             /* 为1查询上月转正员工，我们即用实际转正日期大于上月1号 并且 小于本月1号*/
             <if test="userVO.menuType == 1">
